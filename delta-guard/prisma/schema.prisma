@@ -1,0 +1,73 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// A file or image uploaded by a user to be scanned
+model Package {
+  id           String    @id @default(uuid())
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  originalName String
+  storedPath   String
+  mediaType    String
+  sizeBytes    Int
+  sha256       String
+  packageType  PackageType
+  status       PackageStatus @default(UPLOADED)
+  scans        Scan[]
+}
+
+/// A single scan execution and its results
+model Scan {
+  id          String        @id @default(uuid())
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  package     Package       @relation(fields: [packageId], references: [id])
+  packageId   String
+  scanType    ScanType
+  status      ScanStatus    @default(PENDING)
+  startedAt   DateTime?
+  finishedAt  DateTime?
+  output      Json?
+  rawOutput   String?
+  error       String?
+}
+
+enum PackageType {
+  BINARY
+  CONTAINER
+}
+
+enum PackageStatus {
+  UPLOADED
+  SCANNING
+  COMPLETED
+  FAILED
+}
+
+enum ScanType {
+  BIN
+  CONTAINER
+  LICENSE
+  VULN
+  REDHAT
+}
+
+enum ScanStatus {
+  PENDING
+  RUNNING
+  SUCCEEDED
+  FAILED
+}
