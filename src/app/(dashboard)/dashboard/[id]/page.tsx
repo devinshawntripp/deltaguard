@@ -1,4 +1,5 @@
 import Link from "next/link";
+import ProgressGraph from "@/components/ProgressGraph";
 
 async function getData(id: string) {
     const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL ?? ""}/api/packages/${id}`, {
@@ -33,6 +34,12 @@ export default async function PackageDetails({ params }: { params: { id: string 
                 <div className="text-sm opacity-80">SHA256: {data.sha256}</div>
                 <div className="text-sm opacity-80">Size: {data.sizeBytes} bytes</div>
             </div>
+            {last?.id && (
+                <div className="grid gap-2">
+                    <div className="font-medium">Workflow</div>
+                    <ProgressGraph scanId={last.id} />
+                </div>
+            )}
             <div className="grid gap-2">
                 <div className="font-medium">Findings</div>
                 {findings.length === 0 ? (

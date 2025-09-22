@@ -1,9 +1,8 @@
 import { spawn } from "node:child_process";
 import fs from "node:fs";
-import { pathToFileURL } from "node:url";
 import path from "node:path";
 
-type ScanCommand =
+export type ScanCommand =
   | { type: "BIN"; path: string }
   | { type: "CONTAINER"; tar: string }
   | { type: "LICENSE"; path: string }
@@ -16,25 +15,50 @@ export type ScanResult = {
   code: number | null;
 };
 
-const SCANNER_MODE = process.env.SCANNER_MODE ?? "local"; // local | docker | mock
-const SCANNER_IMAGE = process.env.SCANNER_IMAGE ?? "deltaguard/scanner:latest";
+const SCANNER_MODE = (process.env.SCANNER_MODE ?? "system") as
+  | "local"
+  | "docker"
+  | "mock"
+  | "system";
+const SCANNER_IMAGE = process.env.SCANNER_IMAGE ?? "devintripp/deltaguard:1.0.2";
+const SCANNER_USE_PROGRESS = (process.env.SCANNER_USE_PROGRESS ?? "true").toLowerCase() === "true";
+const SCANNER_PROGRESS_DIR = process.env.SCANNER_PROGRESS_DIR ?? "/tmp/deltaguard";
+
+export type RunOptions = {
+  progressFilePath?: string;
+  scanId?: string;
+};
 
 function buildArgs(command: ScanCommand): string[] {
   switch (command.type) {
     case "BIN":
-      return ["Bin", "--path", command.path];
+      return ["bin", "--path", command.path, "--format", "json"];
     case "CONTAINER":
-      return ["Container", "--tar", command.tar];
+      // Use unified scan interface so JSON is emitted on stdout
+      return ["scan", "--file", command.tar, "--format", "json"];
     case "LICENSE":
-      return ["License", "--path", command.path];
+      return ["license", "--path", command.path, "--format", "json"];
     case "VULN":
-      return ["Vuln", "--component", command.component, "--version", command.version];
+      return ["vuln", "--component", command.component, "--version", command.version, "--format", "json"];
     case "REDHAT":
-      return ["Redhat", "--cve", command.cve, "--oval", command.oval];
+      return ["redhat", "--cve", command.cve, "--oval", command.oval, "--format", "json"];
   }
 }
 
-export function runScanner(command: ScanCommand, cwd?: string): Promise<ScanResult> {
+// Track running scans so we can cancel by id
+const runningScans = new Map<string, ReturnType<typeof spawn>>();
+export function cancelScanById(scanId: string): boolean {
+  const child = runningScans.get(scanId);
+  if (!child) return false;
+  try {
+    child.kill("SIGTERM");
+    setTimeout(() => { try { child.kill("SIGKILL"); } catch { } }, 1500);
+  } catch { }
+  runningScans.delete(scanId);
+  return true;
+}
+
+export function runScanner(command: ScanCommand, cwd?: string, options?: RunOptions): Promise<ScanResult> {
   if (SCANNER_MODE === "mock") {
     const text = buildMockOutput(command);
     return Promise.resolve({ stdout: text, stderr: "", code: 0 });
@@ -42,29 +66,52 @@ export function runScanner(command: ScanCommand, cwd?: string): Promise<ScanResu
   if (SCANNER_MODE === "docker") {
     // Mount uploads dir into /data inside container
     const uploads = process.env.UPLOADS_DIR ?? "var/uploads";
+    const progressArgs: string[] = SCANNER_USE_PROGRESS && options?.progressFilePath
+      ? ["--progress", "--progress-file", options.progressFilePath]
+      : [];
     const args = [
       "run",
       "--rm",
       "-v",
       `${path.resolve(uploads)}:/data`,
       SCANNER_IMAGE,
+      ...progressArgs,
       ...buildArgs(mapPathsToContainer(command)),
     ];
-    return spawnPromise("docker", args, cwd);
+    return spawnPromise("docker", args, cwd, options);
+  }
+  if (SCANNER_MODE === "system") {
+    // Use scanner from PATH
+    const baseName = process.platform === "win32" ? "scanner.exe" : "scanner";
+    // Ensure progress dir exists if using progress
+    if (SCANNER_USE_PROGRESS && options?.progressFilePath) {
+      try {
+        const dir = require("node:path").dirname(options.progressFilePath);
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      } catch { }
+    }
+    const progressArgs: string[] = SCANNER_USE_PROGRESS && options?.progressFilePath
+      ? ["--progress", "--progress-file", options.progressFilePath]
+      : [];
+    const args = [...progressArgs, ...buildArgs(command)];
+    return spawnPromise(baseName, args, cwd, options);
   }
 
-  // Assume local scanner binary named "scanner" is in PATH or project dir
+  // local default
   const localBinary = process.platform === "win32" ? "scanner.exe" : "scanner";
   const candidate = path.resolve(process.cwd(), localBinary);
   const binary = fs.existsSync(candidate) ? candidate : localBinary;
-  return spawnPromise(binary, buildArgs(command), cwd);
+  const progressArgs: string[] = SCANNER_USE_PROGRESS && options?.progressFilePath
+    ? ["--progress", "--progress-file", options.progressFilePath]
+    : [];
+  return spawnPromise(binary, [...progressArgs, ...buildArgs(command)], cwd, options);
 }
 
 function mapPathsToContainer(command: ScanCommand): ScanCommand {
-  // When running in docker, map local var/uploads -> /data
   const toContainerPath = (p: string) => {
+    const uploads = process.env.UPLOADS_DIR ?? "var/uploads";
     const resolved = path.resolve(p);
-    return resolved.replace(path.resolve(process.env.UPLOADS_DIR ?? "var/uploads"), "/data");
+    return resolved.replace(path.resolve(uploads), "/data");
   };
   switch (command.type) {
     case "BIN":
@@ -74,30 +121,64 @@ function mapPathsToContainer(command: ScanCommand): ScanCommand {
     case "LICENSE":
       return { type: "LICENSE", path: toContainerPath(command.path) };
     case "VULN":
-      return command; // no file paths
+      return command;
     case "REDHAT":
-      return command; // no file paths
+      return command;
   }
 }
 
-function spawnPromise(cmd: string, args: string[], cwd?: string): Promise<ScanResult> {
+function spawnPromise(cmd: string, args: string[], cwd?: string, options?: RunOptions): Promise<ScanResult> {
   return new Promise((resolve, reject) => {
+    try { console.log("[scanner] spawn", { cmd, args, cwd, mode: SCANNER_MODE }); } catch { }
     const child = spawn(cmd, args, { cwd, env: process.env });
+    if (options?.scanId) runningScans.set(options.scanId, child);
     let stdout = "";
     let stderr = "";
     child.stdout.on("data", (d) => (stdout += d.toString()));
     child.stderr.on("data", (d) => (stderr += d.toString()));
-    child.on("error", (err) => reject(err));
-    child.on("close", (code) => resolve({ stdout, stderr, code }));
+    child.on("error", (err: any) => {
+      const code = err?.code;
+      if (code === "ENOENT") {
+        // Retry via shell so interactive PATH initialization (if any) can locate the binary
+        const isWin = process.platform === "win32";
+        const q = (s: string) => `'${s.replace(/'/g, "'\\''")}'`;
+        const cmdline = [cmd, ...args.map(q)].join(" ");
+        const shell = isWin ? "cmd" : "/bin/sh";
+        const shellArgs = isWin ? ["/c", cmdline] : ["-lc", cmdline];
+        try { console.warn("[scanner] ENOENT; retry via shell", { shell, cmdline }); } catch { }
+        let sOut = ""; let sErr = "";
+        const sh = spawn(shell, shellArgs, { cwd, env: process.env });
+        sh.stdout.on("data", (d) => (sOut += d.toString()));
+        sh.stderr.on("data", (d) => (sErr += d.toString()));
+        sh.on("close", (code2) => {
+          try { console.log("[scanner] shell exit", { code2, stderrPreview: (sErr || "").slice(0, 300) }); } catch { }
+          if (code2 === 0 || code2 === null) return resolve({ stdout: sOut, stderr: sErr, code: code2 });
+          const msg = `scanner not found or failed via shell. PATH=${process.env.PATH || ""}`;
+          return resolve({ stdout: sOut, stderr: sErr || msg, code: code2 ?? 1 });
+        });
+        sh.on("error", () => {
+          const msg = `scanner not found on PATH (tried '${cmd}'). Ensure it's installed and PATH is set.`;
+          return resolve({ stdout: "", stderr: msg, code: 1 });
+        });
+        return;
+      }
+      try { console.error("[scanner] spawn error", String(err)); } catch { }
+      reject(err);
+    });
+    child.on("close", (code) => {
+      if (options?.scanId) runningScans.delete(options.scanId);
+      try { console.log("[scanner] exit", { code, stderrPreview: (stderr || "").slice(0, 300) }); } catch { }
+      resolve({ stdout, stderr, code });
+    });
   });
 }
 
 export type NormalizedFinding = {
-  id: string; // e.g., CVE-2019-5747
+  id: string;
   title?: string;
   description?: string;
   severity?: string;
-  source?: string; // e.g., NVD
+  source?: string;
 };
 
 export type NormalizedScan = {
@@ -109,7 +190,6 @@ export function parseScannerTextToNormalized(stdout: string): NormalizedScan | n
   const lines = stdout.split(/\r?\n/);
   const findings: NormalizedFinding[] = [];
   for (const line of lines) {
-    // Match lines like: "🔹 CVE-2019-5747: Description..."
     const match = line.match(/CVE-\d{4}-\d{4,7}/i);
     if (match) {
       const id = match[0];
@@ -119,6 +199,25 @@ export function parseScannerTextToNormalized(stdout: string): NormalizedScan | n
   }
   if (findings.length === 0) return null;
   return { findings };
+}
+
+// Try JSON first; fall back to text-based CVE extraction
+export function parseScannerOutputAuto(text: string): NormalizedScan | null {
+  try {
+    const j = JSON.parse(text);
+    const f: NormalizedFinding[] = Array.isArray(j.findings)
+      ? j.findings.map((x: any) => ({
+        id: String(x.id || ""),
+        description: x.description || undefined,
+        severity: x.severity || undefined,
+        source: (x.source_ids && x.source_ids[0]) || undefined,
+      }))
+      : [];
+    const res: NormalizedScan = { findings: f };
+    return res;
+  } catch {
+    return parseScannerTextToNormalized(text);
+  }
 }
 
 function buildMockOutput(command: ScanCommand): string {

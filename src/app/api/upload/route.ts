@@ -3,8 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import crypto from "node:crypto";
 import { prisma } from "@/lib/prisma";
-import { runScanner, parseScannerTextToNormalized } from "@/lib/scanner";
-import { memoryDb } from "@/lib/memory";
+import { runScanner, parseScannerOutputAuto } from "@/lib/scanner";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -29,10 +28,19 @@ export async function POST(req: NextRequest) {
   const storedName = `${Date.now()}_${file.name}`;
   const storedPath = path.join(uploadsDir, storedName);
   await fs.mkdir(uploadsDir, { recursive: true });
-  await fs.writeFile(storedPath, buffer);
+  try {
+    await fs.writeFile(storedPath, buffer);
+  } catch (e: any) {
+    console.error("[upload] write failed", e);
+    return NextResponse.json({ error: `Failed to write upload: ${String(e?.message || e)}` }, { status: 500 });
+  }
 
   let created: any;
-  let usingMemory = false;
+  // Infer type from filename if user did not set correctly
+  const nameLower = file.name.toLowerCase();
+  const looksLikeContainer = /(\.tar$)|(\.tar\.gz$)|(\.tgz$)|(\.tar\.bz2$)|(\.tbz2$)/.test(nameLower);
+  const effectiveType = looksLikeContainer ? "CONTAINER" : packageType;
+
   try {
     created = await prisma.package.create({
       data: {
@@ -41,104 +49,66 @@ export async function POST(req: NextRequest) {
         mediaType: file.type || "application/octet-stream",
         sizeBytes: buffer.length,
         sha256,
-        packageType: packageType === "CONTAINER" ? "CONTAINER" : "BINARY",
+        packageType: effectiveType === "CONTAINER" ? "CONTAINER" : "BINARY",
         status: "UPLOADED",
         scans: {
           create: {
-            scanType: packageType === "CONTAINER" ? "CONTAINER" : "BIN",
+            scanType: effectiveType === "CONTAINER" ? "CONTAINER" : "BIN",
             status: "PENDING",
           },
         },
       },
       include: { scans: true },
     });
-  } catch {
-    usingMemory = true;
-    const id = crypto.randomUUID();
-    const scanId = crypto.randomUUID();
-    const now = new Date().toISOString();
-    const memPkg = {
-      id,
-      createdAt: now,
-      updatedAt: now,
-      originalName: file.name,
-      storedPath,
-      mediaType: file.type || "application/octet-stream",
-      sizeBytes: buffer.length,
-      sha256,
-      packageType: packageType === "CONTAINER" ? "CONTAINER" : "BINARY",
-      status: "UPLOADED" as const,
-    };
-    const memScan = {
-      id: scanId,
-      createdAt: now,
-      updatedAt: now,
-      packageId: id,
-      scanType: packageType === "CONTAINER" ? "CONTAINER" : "BIN",
-      status: "PENDING" as const,
-    } as const;
-    memoryDb.packages.unshift(memPkg);
-    memoryDb.scans.unshift(memScan as any);
-    created = { ...memPkg, scans: [memScan] };
+  } catch (e: any) {
+    console.error("[upload] db create failed", e);
+    return NextResponse.json({ error: `Failed to create package: ${String(e?.message || e)}` }, { status: 500 });
   }
 
   // Fire and forget scan (intentionally not awaited). For simplicity we run inline.
   const scan = created.scans[0];
   void (async () => {
     try {
-      if (usingMemory) {
-        const idx = memoryDb.packages.findIndex((p) => p.id === created.id);
-        if (idx >= 0) memoryDb.packages[idx].status = "SCANNING";
-        const sIdx = memoryDb.scans.findIndex((s) => s.id === scan.id);
-        if (sIdx >= 0) {
-          memoryDb.scans[sIdx].status = "RUNNING";
-          memoryDb.scans[sIdx].startedAt = new Date().toISOString();
-        }
-      } else {
-        await prisma.package.update({ where: { id: created.id }, data: { status: "SCANNING" } });
-        await prisma.scan.update({ where: { id: scan.id }, data: { status: "RUNNING", startedAt: new Date() } });
-      }
+      await prisma.package.update({ where: { id: created.id }, data: { status: "SCANNING" } });
+      await prisma.scan.update({ where: { id: scan.id }, data: { status: "RUNNING", startedAt: new Date() } });
       const cmd = created.packageType === "CONTAINER" ? { type: "CONTAINER" as const, tar: storedPath } : { type: "BIN" as const, path: storedPath };
-      const result = await runScanner(cmd);
-      const normalized = parseScannerTextToNormalized(result.stdout || result.stderr);
-      if (usingMemory) {
-        const sIdx = memoryDb.scans.findIndex((s) => s.id === scan.id);
-        if (sIdx >= 0) {
-          memoryDb.scans[sIdx].status = result.code === 0 ? "SUCCEEDED" : "FAILED";
-          memoryDb.scans[sIdx].finishedAt = new Date().toISOString();
-          memoryDb.scans[sIdx].rawOutput = result.stdout || result.stderr;
-          memoryDb.scans[sIdx].output = normalized ?? undefined;
-        }
-        const pIdx = memoryDb.packages.findIndex((p) => p.id === created.id);
-        if (pIdx >= 0) memoryDb.packages[pIdx].status = result.code === 0 ? "COMPLETED" : "FAILED";
-      } else {
-        await prisma.scan.update({
-          where: { id: scan.id },
-          data: {
-            status: result.code === 0 ? "SUCCEEDED" : "FAILED",
-            finishedAt: new Date(),
-            rawOutput: result.stdout || result.stderr,
-            output: normalized as any,
-          },
-        });
-        await prisma.package.update({ where: { id: created.id }, data: { status: result.code === 0 ? "COMPLETED" : "FAILED" } });
-      }
+      // Progress file for SSE tailing (keyed by scan id)
+      const progressFilePath = `/tmp/deltaguard/${scan.id}.ndjson`;
+      const result = await runScanner(cmd, undefined, { progressFilePath, scanId: scan.id });
+      const normalized = parseScannerOutputAuto(result.stdout || result.stderr);
+      await prisma.scan.update({
+        where: { id: scan.id },
+        data: {
+          status: result.code === 0 ? "SUCCEEDED" : "FAILED",
+          finishedAt: new Date(),
+          rawOutput: result.stdout || result.stderr,
+          output: normalized as any,
+        },
+      });
+      await prisma.package.update({ where: { id: created.id }, data: { status: result.code === 0 ? "COMPLETED" : "FAILED" } });
+      // Append a final summary progress event for UI
+      try {
+        // Prefer scanner's built JSON summary if available
+        let parsed: any = null;
+        try { parsed = JSON.parse(result.stdout || result.stderr || ""); } catch { }
+        const summary = parsed?.summary ?? (() => {
+          const f = (normalized?.findings ?? []) as any[];
+          const count = (sev: string) => f.filter((x) => String(x.severity || "").toLowerCase().includes(sev)).length;
+          return { total_findings: f.length, critical: count("critical"), high: count("high"), medium: count("medium"), low: count("low") };
+        })();
+        await fs.appendFile(progressFilePath, JSON.stringify({ stage: "scan.summary", detail: JSON.stringify(summary), ts: new Date().toISOString() }) + "\n");
+      } catch { }
       // Optionally remove file after scan if desired
       // await fs.unlink(storedPath).catch(() => {});
     } catch (err) {
-      if (usingMemory) {
-        const sIdx = memoryDb.scans.findIndex((s) => s.id === scan.id);
-        if (sIdx >= 0) {
-          memoryDb.scans[sIdx].status = "FAILED";
-          memoryDb.scans[sIdx].finishedAt = new Date().toISOString();
-          memoryDb.scans[sIdx].error = String(err);
-        }
-        const pIdx = memoryDb.packages.findIndex((p) => p.id === created.id);
-        if (pIdx >= 0) memoryDb.packages[pIdx].status = "FAILED";
-      } else {
-        await prisma.scan.update({ where: { id: scan.id }, data: { status: "FAILED", error: String(err), finishedAt: new Date() } });
-        await prisma.package.update({ where: { id: created.id }, data: { status: "FAILED" } });
-      }
+      console.error("[upload] scan failed", err);
+      await prisma.scan.update({ where: { id: scan.id }, data: { status: "FAILED", error: String(err), finishedAt: new Date() } });
+      await prisma.package.update({ where: { id: created.id }, data: { status: "FAILED" } });
+      // Append an error summary progress event for UI
+      try {
+        const progressFilePath = `/tmp/deltaguard/${scan.id}.ndjson`;
+        await fs.appendFile(progressFilePath, JSON.stringify({ stage: "scan.summary", detail: JSON.stringify({ error: String(err) }), ts: new Date().toISOString() }) + "\n");
+      } catch { }
     }
   })();
 
