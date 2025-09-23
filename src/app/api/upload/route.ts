@@ -4,6 +4,7 @@ import path from "node:path";
 import crypto from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import { runScanner, parseScannerOutputAuto } from "@/lib/scanner";
+import { uploadBufferToS3 } from "@/lib/s3";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -27,12 +28,23 @@ export async function POST(req: NextRequest) {
   const uploadsDir = process.env.UPLOADS_DIR ?? "var/uploads";
   const storedName = `${Date.now()}_${file.name}`;
   const storedPath = path.join(uploadsDir, storedName);
-  await fs.mkdir(uploadsDir, { recursive: true });
-  try {
-    await fs.writeFile(storedPath, buffer);
-  } catch (e: any) {
-    console.error("[upload] write failed", e);
-    return NextResponse.json({ error: `Failed to write upload: ${String(e?.message || e)}` }, { status: 500 });
+  const s3Bucket = process.env.MINIO_BUCKET;
+  const s3Enabled = Boolean(process.env.MINIO_ENDPOINT && process.env.MINIO_ACCESS_KEY_ID && process.env.MINIO_SECRET_ACCESS_KEY && s3Bucket);
+  if (s3Enabled) {
+    try {
+      await uploadBufferToS3({ bucket: s3Bucket as string, key: storedName, buffer, contentType: (file as any).type || "application/octet-stream" });
+    } catch (e: any) {
+      console.error("[upload] s3 failed", e);
+      return NextResponse.json({ error: `Failed to upload to S3: ${String(e?.message || e)}` }, { status: 500 });
+    }
+  } else {
+    await fs.mkdir(uploadsDir, { recursive: true });
+    try {
+      await fs.writeFile(storedPath, buffer);
+    } catch (e: any) {
+      console.error("[upload] write failed", e);
+      return NextResponse.json({ error: `Failed to write upload: ${String(e?.message || e)}` }, { status: 500 });
+    }
   }
 
   let created: any;
@@ -71,7 +83,10 @@ export async function POST(req: NextRequest) {
     try {
       await prisma.package.update({ where: { id: created.id }, data: { status: "SCANNING" } });
       await prisma.scan.update({ where: { id: scan.id }, data: { status: "RUNNING", startedAt: new Date() } });
-      const cmd = created.packageType === "CONTAINER" ? { type: "CONTAINER" as const, tar: storedPath } : { type: "BIN" as const, path: storedPath };
+      const localOrS3Path = s3Enabled ? storedName : storedPath;
+      const cmd = created.packageType === "CONTAINER"
+        ? { type: "CONTAINER" as const, tar: localOrS3Path }
+        : { type: "BIN" as const, path: localOrS3Path };
       // Progress file for SSE tailing (keyed by scan id)
       const progressFilePath = `/tmp/deltaguard/${scan.id}.ndjson`;
       const result = await runScanner(cmd, undefined, { progressFilePath, scanId: scan.id });

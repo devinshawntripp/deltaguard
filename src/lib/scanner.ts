@@ -32,30 +32,16 @@ export type RunOptions = {
 function buildArgs(command: ScanCommand): string[] {
   switch (command.type) {
     case "BIN":
-      return ["bin", "--path", command.path, "--format", "json"];
+      return ["bin", "--path", command.path];
     case "CONTAINER":
-      // Use unified scan interface so JSON is emitted on stdout
-      return ["scan", "--file", command.tar, "--format", "json"];
+      return ["container", "--tar", command.tar];
     case "LICENSE":
-      return ["license", "--path", command.path, "--format", "json"];
+      return ["license", "--path", command.path];
     case "VULN":
-      return ["vuln", "--component", command.component, "--version", command.version, "--format", "json"];
+      return ["vuln", "--component", command.component, "--version", command.version];
     case "REDHAT":
-      return ["redhat", "--cve", command.cve, "--oval", command.oval, "--format", "json"];
+      return ["redhat", "--cve", command.cve, "--oval", command.oval];
   }
-}
-
-// Track running scans so we can cancel by id
-const runningScans = new Map<string, ReturnType<typeof spawn>>();
-export function cancelScanById(scanId: string): boolean {
-  const child = runningScans.get(scanId);
-  if (!child) return false;
-  try {
-    child.kill("SIGTERM");
-    setTimeout(() => { try { child.kill("SIGKILL"); } catch { } }, 1500);
-  } catch { }
-  runningScans.delete(scanId);
-  return true;
 }
 
 export function runScanner(command: ScanCommand, cwd?: string, options?: RunOptions): Promise<ScanResult> {
@@ -78,7 +64,7 @@ export function runScanner(command: ScanCommand, cwd?: string, options?: RunOpti
       ...progressArgs,
       ...buildArgs(mapPathsToContainer(command)),
     ];
-    return spawnPromise("docker", args, cwd, options);
+    return spawnPromise("docker", args, cwd);
   }
   if (SCANNER_MODE === "system") {
     // Use scanner from PATH
@@ -94,7 +80,7 @@ export function runScanner(command: ScanCommand, cwd?: string, options?: RunOpti
       ? ["--progress", "--progress-file", options.progressFilePath]
       : [];
     const args = [...progressArgs, ...buildArgs(command)];
-    return spawnPromise(baseName, args, cwd, options);
+    return spawnPromise(baseName, args, cwd);
   }
 
   // local default
@@ -104,7 +90,7 @@ export function runScanner(command: ScanCommand, cwd?: string, options?: RunOpti
   const progressArgs: string[] = SCANNER_USE_PROGRESS && options?.progressFilePath
     ? ["--progress", "--progress-file", options.progressFilePath]
     : [];
-  return spawnPromise(binary, [...progressArgs, ...buildArgs(command)], cwd, options);
+  return spawnPromise(binary, [...progressArgs, ...buildArgs(command)], cwd);
 }
 
 function mapPathsToContainer(command: ScanCommand): ScanCommand {
@@ -127,11 +113,10 @@ function mapPathsToContainer(command: ScanCommand): ScanCommand {
   }
 }
 
-function spawnPromise(cmd: string, args: string[], cwd?: string, options?: RunOptions): Promise<ScanResult> {
+function spawnPromise(cmd: string, args: string[], cwd?: string): Promise<ScanResult> {
   return new Promise((resolve, reject) => {
     try { console.log("[scanner] spawn", { cmd, args, cwd, mode: SCANNER_MODE }); } catch { }
     const child = spawn(cmd, args, { cwd, env: process.env });
-    if (options?.scanId) runningScans.set(options.scanId, child);
     let stdout = "";
     let stderr = "";
     child.stdout.on("data", (d) => (stdout += d.toString()));
@@ -166,7 +151,6 @@ function spawnPromise(cmd: string, args: string[], cwd?: string, options?: RunOp
       reject(err);
     });
     child.on("close", (code) => {
-      if (options?.scanId) runningScans.delete(options.scanId);
       try { console.log("[scanner] exit", { code, stderrPreview: (stderr || "").slice(0, 300) }); } catch { }
       resolve({ stdout, stderr, code });
     });
@@ -201,20 +185,18 @@ export function parseScannerTextToNormalized(stdout: string): NormalizedScan | n
   return { findings };
 }
 
-// Try JSON first; fall back to text-based CVE extraction
 export function parseScannerOutputAuto(text: string): NormalizedScan | null {
   try {
     const j = JSON.parse(text);
-    const f: NormalizedFinding[] = Array.isArray(j.findings)
-      ? j.findings.map((x: any) => ({
-        id: String(x.id || ""),
-        description: x.description || undefined,
-        severity: x.severity || undefined,
-        source: (x.source_ids && x.source_ids[0]) || undefined,
+    const findings: NormalizedFinding[] = Array.isArray(j.findings)
+      ? j.findings.map((f: any) => ({
+        id: String(f.id || ""),
+        description: f.description || undefined,
+        severity: f.severity || undefined,
+        source: (f.source_ids && f.source_ids[0]) || undefined,
       }))
       : [];
-    const res: NormalizedScan = { findings: f };
-    return res;
+    return { findings };
   } catch {
     return parseScannerTextToNormalized(text);
   }
