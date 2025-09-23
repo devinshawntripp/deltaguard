@@ -29,18 +29,33 @@ export type RunOptions = {
   scanId?: string;
 };
 
+// Track running scans so we can cancel them
+const runningScans = new Map<string, ReturnType<typeof spawn>>();
+export function cancelScanById(scanId: string): boolean {
+  const child = runningScans.get(scanId);
+  if (!child) return false;
+  try {
+    child.kill("SIGTERM");
+    setTimeout(() => { try { child.kill("SIGKILL"); } catch { } }, 1500);
+  } catch { }
+  runningScans.delete(scanId);
+  return true;
+}
+
 function buildArgs(command: ScanCommand): string[] {
   switch (command.type) {
     case "BIN":
-      return ["bin", "--path", command.path];
+      // Use unified scan command; it auto-detects input type
+      return ["scan", "--file", command.path, "--format", "json"];
     case "CONTAINER":
-      return ["container", "--tar", command.tar];
+      return ["scan", "--file", command.tar, "--format", "json"];
     case "LICENSE":
-      return ["license", "--path", command.path];
+      // Route license through unified scan as well
+      return ["scan", "--file", command.path, "--format", "json"];
     case "VULN":
-      return ["vuln", "--component", command.component, "--version", command.version];
+      return ["vuln", "--component", command.component, "--version", command.version, "--format", "json"];
     case "REDHAT":
-      return ["redhat", "--cve", command.cve, "--oval", command.oval];
+      return ["redhat", "--cve", command.cve, "--oval", command.oval, "--format", "json"];
   }
 }
 
@@ -113,10 +128,11 @@ function mapPathsToContainer(command: ScanCommand): ScanCommand {
   }
 }
 
-function spawnPromise(cmd: string, args: string[], cwd?: string): Promise<ScanResult> {
+function spawnPromise(cmd: string, args: string[], cwd?: string, options?: RunOptions): Promise<ScanResult> {
   return new Promise((resolve, reject) => {
     try { console.log("[scanner] spawn", { cmd, args, cwd, mode: SCANNER_MODE }); } catch { }
     const child = spawn(cmd, args, { cwd, env: process.env });
+    if (options?.scanId) runningScans.set(options.scanId, child);
     let stdout = "";
     let stderr = "";
     child.stdout.on("data", (d) => (stdout += d.toString()));
@@ -137,7 +153,10 @@ function spawnPromise(cmd: string, args: string[], cwd?: string): Promise<ScanRe
         sh.stderr.on("data", (d) => (sErr += d.toString()));
         sh.on("close", (code2) => {
           try { console.log("[scanner] shell exit", { code2, stderrPreview: (sErr || "").slice(0, 300) }); } catch { }
-          if (code2 === 0 || code2 === null) return resolve({ stdout: sOut, stderr: sErr, code: code2 });
+          if (code2 === 0 || code2 === null) {
+            if (options?.scanId) runningScans.delete(options.scanId);
+            return resolve({ stdout: sOut, stderr: sErr, code: code2 });
+          }
           const msg = `scanner not found or failed via shell. PATH=${process.env.PATH || ""}`;
           return resolve({ stdout: sOut, stderr: sErr || msg, code: code2 ?? 1 });
         });
@@ -151,6 +170,7 @@ function spawnPromise(cmd: string, args: string[], cwd?: string): Promise<ScanRe
       reject(err);
     });
     child.on("close", (code) => {
+      if (options?.scanId) runningScans.delete(options.scanId);
       try { console.log("[scanner] exit", { code, stderrPreview: (stderr || "").slice(0, 300) }); } catch { }
       resolve({ stdout, stderr, code });
     });

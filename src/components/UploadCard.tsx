@@ -13,13 +13,22 @@ export default function UploadCard() {
     setLoading(true);
     setMessage(null);
     try {
-      const form = new FormData();
-      form.append("file", file);
-      form.append("packageType", type);
-      const res = await fetch("/api/upload", { method: "POST", body: form });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Upload failed");
-      setMessage("Upload queued: " + data.id);
+      // 1) Presign
+      const presign = await fetch("/api/uploads/presign", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ filename: file.name, contentType: file.type || "application/octet-stream" }) });
+      const p = await presign.json();
+      if (!presign.ok) throw new Error(p.error || "Presign failed");
+      // 2) PUT to MinIO
+      const putForm = new FormData();
+      Object.entries(p.fields || {}).forEach(([k, v]) => putForm.append(k, String(v)));
+      putForm.append("Content-Type", file.type || "application/octet-stream");
+      putForm.append("file", file);
+      const putRes = await fetch(p.url, { method: "POST", body: putForm });
+      if (!putRes.ok) throw new Error("MinIO upload failed");
+      // 3) Trigger scan
+      const start = await fetch("/api/scan/from-s3", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ key: p.fields.key || p.key, packageType: type }) });
+      const d = await start.json();
+      if (!start.ok) throw new Error(d.error || "Scan start failed");
+      setMessage("Upload queued: " + d.id);
     } catch (err: any) {
       setMessage(err.message || String(err));
     } finally {

@@ -24,7 +24,11 @@ type Package = {
   scans: Scan[];
 };
 
-const fetcher = (url: string) => fetch(url).then((r) => r.json());
+const fetcher = (url: string) =>
+  fetch(url).then((r) => {
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return r.json();
+  });
 
 export default function PackagesTable() {
   const { mutate: globalMutate } = useSWRConfig();
@@ -49,6 +53,8 @@ export default function PackagesTable() {
   if (error) return <div className="text-sm text-red-500">Failed to load</div>;
   if (isLoading) return <div className="opacity-60">Loading…</div>;
 
+  const list = Array.isArray(data) ? data : [];
+
   return (
     <div className="overflow-hidden rounded-xl border border-black/10 dark:border-white/10">
       <table className="w-full text-sm">
@@ -62,7 +68,7 @@ export default function PackagesTable() {
           </tr>
         </thead>
         <tbody>
-          {data?.map((pkg) => {
+          {list.map((pkg) => {
             const lastScan = pkg.scans[0];
             const isOpen = pkg.id === openId;
             const showError = isOpen && lastScan && lastScan.status === "FAILED";

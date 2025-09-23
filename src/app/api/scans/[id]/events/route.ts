@@ -12,8 +12,8 @@ function sseHeaders() {
     });
 }
 
-export async function GET(_req: NextRequest, context: { params: { id: string } }) {
-    const scanId = context.params.id;
+export async function GET(_req: NextRequest, context: { params: Promise<{ id: string }> }) {
+    const { id: scanId } = await context.params;
     const encoder = new TextEncoder();
     let closed = false;
 
