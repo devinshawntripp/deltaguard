@@ -1,12 +1,12 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { cancelScanById } from "@/lib/scanner";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function POST(_req: Request, { params }: { params: { id: string } }) {
-    const id = params.id;
+export async function POST(_req: NextRequest, context: { params: Promise<{ id: string }> }) {
+    const { id } = await context.params;
     try {
         const scan = await prisma.scan.findUnique({ where: { id }, select: { id: true, packageId: true } });
         if (!scan) return NextResponse.json({ ok: false, error: "Scan not found" }, { status: 404 });
