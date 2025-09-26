@@ -19,7 +19,8 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
 
     const stream = new ReadableStream<Uint8Array>({
         start: async (controller) => {
-            const progressPath = `/tmp/deltaguard/${scanId}.ndjson`;
+            const dir = process.env.PROGRESS_DIR || "/tmp/deltaguard";
+            const progressPath = `${dir}/${scanId}.ndjson`;
             // send backlog immediately if file exists
             try {
                 const fs = await import("node:fs");
@@ -29,6 +30,10 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
                     for (const line of lines.slice(-500)) {
                         controller.enqueue(encoder.encode(`data: ${line}\n\n`));
                     }
+                    try {
+                        const st = fs.statSync(progressPath);
+                        console.log(`[sse] backlog for ${scanId} from`, progressPath, 'size', st.size);
+                    } catch { }
                 }
             } catch { }
             controller.enqueue(encoder.encode(`: ping\n\n`));

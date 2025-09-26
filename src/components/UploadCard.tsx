@@ -17,15 +17,17 @@ export default function UploadCard() {
       const presign = await fetch("/api/uploads/presign", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ filename: file.name, contentType: file.type || "application/octet-stream" }) });
       const p = await presign.json();
       if (!presign.ok) throw new Error(p.error || "Presign failed");
+      if (!p || !p.url || !p.fields) throw new Error("Presign response missing url/fields");
       // 2) PUT to MinIO
       const putForm = new FormData();
       Object.entries(p.fields || {}).forEach(([k, v]) => putForm.append(k, String(v)));
+      if (!("key" in (p.fields || {})) && p.key) putForm.append("key", String(p.key));
       putForm.append("Content-Type", file.type || "application/octet-stream");
       putForm.append("file", file);
-      const putRes = await fetch(p.url, { method: "POST", body: putForm });
+      const putRes = await fetch(String(p.url), { method: "POST", body: putForm });
       if (!putRes.ok) throw new Error("MinIO upload failed");
       // 3) Trigger scan
-      const start = await fetch("/api/scan/from-s3", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ key: p.fields.key || p.key, packageType: type }) });
+      const start = await fetch("/api/scan/from-s3", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ key: (p.fields && p.fields.key) ? p.fields.key : p.key, packageType: type }) });
       const d = await start.json();
       if (!start.ok) throw new Error(d.error || "Scan start failed");
       setMessage("Upload queued: " + d.id);

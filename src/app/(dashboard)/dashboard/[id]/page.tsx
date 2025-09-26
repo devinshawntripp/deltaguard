@@ -9,8 +9,9 @@ async function getData(id: string) {
     return res.json();
 }
 
-export default async function PackageDetails({ params }: { params: { id: string } }) {
-    const data = await getData(params.id);
+export default async function PackageDetails({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = await params;
+    const data = await getData(id);
     if (!data) {
         return (
             <div className="grid gap-4">

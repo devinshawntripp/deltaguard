@@ -88,7 +88,8 @@ export async function POST(req: NextRequest) {
         ? { type: "CONTAINER" as const, tar: storedPath }
         : { type: "BIN" as const, path: storedPath };
       // Progress file for SSE tailing (keyed by scan id)
-      const progressFilePath = `/tmp/deltaguard/${scan.id}.ndjson`;
+      const progressDir = process.env.PROGRESS_DIR || "/tmp/deltaguard";
+      const progressFilePath = `${progressDir}/${scan.id}.ndjson`;
       const result = await runScanner(cmd, undefined, { progressFilePath, scanId: scan.id });
       const normalized = parseScannerOutputAuto(result.stdout || result.stderr);
       await prisma.scan.update({
@@ -121,7 +122,8 @@ export async function POST(req: NextRequest) {
       await prisma.package.update({ where: { id: created.id }, data: { status: "FAILED" } });
       // Append an error summary progress event for UI
       try {
-        const progressFilePath = `/tmp/deltaguard/${scan.id}.ndjson`;
+        const progressDir = process.env.PROGRESS_DIR || "/tmp/deltaguard";
+        const progressFilePath = `${progressDir}/${scan.id}.ndjson`;
         await fs.appendFile(progressFilePath, JSON.stringify({ stage: "scan.summary", detail: JSON.stringify({ error: String(err) }), ts: new Date().toISOString() }) + "\n");
       } catch { }
     }

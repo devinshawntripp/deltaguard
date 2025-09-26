@@ -49,7 +49,8 @@ export async function POST(req: NextRequest) {
 
         const scan = created.scans[0];
         void (async () => {
-            const progressFilePath = `/tmp/deltaguard/${scan.id}.ndjson`;
+            const progressDir = process.env.PROGRESS_DIR || "/tmp/deltaguard";
+            const progressFilePath = `${progressDir}/${scan.id}.ndjson`;
             try {
                 await prisma.package.update({ where: { id: created.id }, data: { status: "SCANNING" } });
                 await prisma.scan.update({ where: { id: scan.id }, data: { status: "RUNNING", startedAt: new Date() } });

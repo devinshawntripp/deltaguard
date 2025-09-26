@@ -34,7 +34,9 @@ export async function GET() {
                     lastUpdatedAt = items[0].updatedAt;
                     await send({ type: "snapshot", items });
                 }
-            } catch { }
+            } catch (e) {
+                console.error("Failed to send snapshot", e);
+            }
 
             const interval = setInterval(async () => {
                 if (closed) return;
@@ -50,7 +52,9 @@ export async function GET() {
                         lastUpdatedAt = fresh[0].updatedAt;
                         await send({ type: "changed", items: fresh });
                     }
-                } catch { }
+                } catch (e) {
+                    console.error("Failed to send changed", e);
+                }
             }, 1500);
 
             const hb = setInterval(() => {

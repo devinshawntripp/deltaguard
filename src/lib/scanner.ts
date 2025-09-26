@@ -22,7 +22,8 @@ const SCANNER_MODE = (process.env.SCANNER_MODE ?? "system") as
   | "system";
 const SCANNER_IMAGE = process.env.SCANNER_IMAGE ?? "devintripp/deltaguard:1.0.2";
 const SCANNER_USE_PROGRESS = (process.env.SCANNER_USE_PROGRESS ?? "true").toLowerCase() === "true";
-const SCANNER_PROGRESS_DIR = process.env.SCANNER_PROGRESS_DIR ?? "/tmp/deltaguard";
+// Progress files directory can be overridden by PROGRESS_DIR
+const PROGRESS_DIR = process.env.PROGRESS_DIR || "/tmp/deltaguard";
 
 export type RunOptions = {
   progressFilePath?: string;
@@ -85,9 +86,9 @@ export function runScanner(command: ScanCommand, cwd?: string, options?: RunOpti
     // Use scanner from PATH
     const baseName = process.platform === "win32" ? "scanner.exe" : "scanner";
     // Ensure progress dir exists if using progress
-    if (SCANNER_USE_PROGRESS && options?.progressFilePath) {
+    if (SCANNER_USE_PROGRESS) {
       try {
-        const dir = require("node:path").dirname(options.progressFilePath);
+        const dir = options?.progressFilePath ? path.dirname(options.progressFilePath) : PROGRESS_DIR;
         if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
       } catch { }
     }
@@ -137,8 +138,8 @@ function spawnPromise(cmd: string, args: string[], cwd?: string, options?: RunOp
     let stderr = "";
     child.stdout.on("data", (d) => (stdout += d.toString()));
     child.stderr.on("data", (d) => (stderr += d.toString()));
-    child.on("error", (err: any) => {
-      const code = err?.code;
+    child.on("error", (err: unknown) => {
+      const code = (err as NodeJS.ErrnoException | undefined)?.code;
       if (code === "ENOENT") {
         // Retry via shell so interactive PATH initialization (if any) can locate the binary
         const isWin = process.platform === "win32";
@@ -209,11 +210,11 @@ export function parseScannerOutputAuto(text: string): NormalizedScan | null {
   try {
     const j = JSON.parse(text);
     const findings: NormalizedFinding[] = Array.isArray(j.findings)
-      ? j.findings.map((f: any) => ({
-        id: String(f.id || ""),
-        description: f.description || undefined,
-        severity: f.severity || undefined,
-        source: (f.source_ids && f.source_ids[0]) || undefined,
+      ? j.findings.map((f: Record<string, unknown>) => ({
+        id: String((f as any).id || ""),
+        description: (f as any).description || undefined,
+        severity: (f as any).severity || undefined,
+        source: ((f as any).source_ids && (f as any).source_ids[0]) || undefined,
       }))
       : [];
     return { findings };

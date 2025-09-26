@@ -5,8 +5,9 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+  output        = "../src/generated/prisma"
 }
 
 datasource db {
@@ -16,9 +17,9 @@ datasource db {
 
 /// A file or image uploaded by a user to be scanned
 model Package {
-  id           String    @id @default(uuid())
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id           String        @id @default(uuid())
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
   originalName String
   storedPath   String
   mediaType    String
@@ -31,18 +32,18 @@ model Package {
 
 /// A single scan execution and its results
 model Scan {
-  id          String        @id @default(uuid())
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  package     Package       @relation(fields: [packageId], references: [id])
-  packageId   String
-  scanType    ScanType
-  status      ScanStatus    @default(PENDING)
-  startedAt   DateTime?
-  finishedAt  DateTime?
-  output      Json?
-  rawOutput   String?
-  error       String?
+  id         String     @id @default(uuid())
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  package    Package    @relation(fields: [packageId], references: [id])
+  packageId  String
+  scanType   ScanType
+  status     ScanStatus @default(PENDING)
+  startedAt  DateTime?
+  finishedAt DateTime?
+  output     Json?
+  rawOutput  String?
+  error      String?
 }
 
 enum PackageType {

@@ -13,6 +13,7 @@ export async function GET() {
     });
     return NextResponse.json(items);
   } catch (e) {
+    console.error("Failed to load packages", e);
     return NextResponse.json({ error: "Failed to load" }, { status: 500 });
   }
 }

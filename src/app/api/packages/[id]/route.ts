@@ -10,7 +10,8 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
     const item = await prisma.package.findUnique({ where: { id }, include: { scans: { orderBy: { createdAt: "desc" } } } });
     if (!item) return NextResponse.json({ error: "Not found" }, { status: 404 });
     return NextResponse.json(item);
-  } catch {
+  } catch (e) {
+    console.error("Failed to load package", e);
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 }

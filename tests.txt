@@ -1,0 +1,62 @@
+root@primedev:~# zpool status
+  pool: zfs-data
+ state: ONLINE
+  scan: scrub repaired 0B in 02:07:22 with 0 errors on Sun Sep 14 02:31:23 2025
+config:
+
+        NAME                                     STATE     READ WRITE CKSUM
+        zfs-data                                 ONLINE       0     0     0
+          ata-FIKWOT_FS810_4TB_AA00000000040064  ONLINE       0     0     0
+
+errors: No known data errors
+root@primedev:~# ls -lsah /dev/disk/by-id
+total 0
+0 drwxr-xr-x  2 root root 880 Sep 24 12:08 .
+0 drwxr-xr-x 11 root root 220 Sep 18 11:08 ..
+0 lrwxrwxrwx  1 root root   9 Sep 18 11:04 ata-FIKWOT_FS810_4TB_AA00000000040064 -> ../../sdb
+0 lrwxrwxrwx  1 root root  10 Sep 18 11:04 ata-FIKWOT_FS810_4TB_AA00000000040064-part1 -> ../../sdb1
+0 lrwxrwxrwx  1 root root  10 Sep 18 11:04 ata-FIKWOT_FS810_4TB_AA00000000040064-part9 -> ../../sdb9
+0 lrwxrwxrwx  1 root root   9 Sep 18 11:05 ata-PLDS_DVD-ROM_DU-8D5LH_C8XM5736396216244A04 -> ../../sr0
+0 lrwxrwxrwx  1 root root   9 Sep 24 12:08 ata-TEAM_T2534TB_TPBF2503170110100660 -> ../../sde
+0 lrwxrwxrwx  1 root root   9 Sep 18 11:04 ata-WDC_WD5000LPVX-22V0TT0_WD-WXQ1E34KYRE9 -> ../../sda
+0 lrwxrwxrwx  1 root root  10 Sep 18 11:05 ata-WDC_WD5000LPVX-22V0TT0_WD-WXQ1E34KYRE9-part1 -> ../../sda1
+0 lrwxrwxrwx  1 root root  10 Sep 18 11:04 ata-WDC_WD5000LPVX-22V0TT0_WD-WXQ1E34KYRE9-part2 -> ../../sda2
+0 lrwxrwxrwx  1 root root  10 Sep 18 11:05 ata-WDC_WD5000LPVX-22V0TT0_WD-WXQ1E34KYRE9-part3 -> ../../sda3
+0 lrwxrwxrwx  1 root root  10 Sep 18 11:04 ata-WDC_WD5000LPVX-22V0TT0_WD-WXQ1E34KYRE9-part5 -> ../../sda5
+0 lrwxrwxrwx  1 root root  10 Sep 18 11:05 ata-WDC_WD5000LPVX-22V0TT0_WD-WXQ1E34KYRE9-part6 -> ../../sda6
+0 lrwxrwxrwx  1 root root  10 Sep 18 11:04 ata-WDC_WD5000LPVX-22V0TT0_WD-WXQ1E34KYRE9-part7 -> ../../sda7
+0 lrwxrwxrwx  1 root root  10 Sep 18 11:04 dm-name-pve-root -> ../../dm-1
+0 lrwxrwxrwx  1 root root  10 Sep 18 11:04 dm-name-pve-swap -> ../../dm-0
+0 lrwxrwxrwx  1 root root  10 Sep 18 11:08 dm-name-pve-vm--106--disk--0 -> ../../dm-6
+0 lrwxrwxrwx  1 root root  10 Sep 18 11:08 dm-uuid-LVM-WfFsZudMz9BgvERwIcPVl47oh9nOapsHOtxzXr7wKwq4YSR1KCF2ZJ0byxa2VX2I -> ../../dm-6
+0 lrwxrwxrwx  1 root root  10 Sep 18 11:04 dm-uuid-LVM-WfFsZudMz9BgvERwIcPVl47oh9nOapsHpCtrU8S2FRShXtNloecp2LoYFiRji7gE -> ../../dm-1
+0 lrwxrwxrwx  1 root root  10 Sep 18 11:04 dm-uuid-LVM-WfFsZudMz9BgvERwIcPVl47oh9nOapsHujvKNR7Y1gHBKoXnpYWrJeRhs267zAsB -> ../../dm-0
+0 lrwxrwxrwx  1 root root  10 Sep 18 11:04 lvm-pv-uuid-yV8g7f-ZxcE-PdRr-7fIJ-rRGh-TXST-EgEEgB -> ../../sdd3
+0 lrwxrwxrwx  1 root root   9 Sep 18 11:04 scsi-3614187703fd824003038e69b2f287c22 -> ../../sdc
+0 lrwxrwxrwx  1 root root  10 Sep 18 11:04 scsi-3614187703fd824003038e69b2f287c22-part1 -> ../../sdc1
+0 lrwxrwxrwx  1 root root  10 Sep 18 11:04 scsi-3614187703fd824003038e69b2f287c22-part2 -> ../../sdc2
+0 lrwxrwxrwx  1 root root  10 Sep 18 11:04 scsi-3614187703fd824003038e69b2f287c22-part3 -> ../../sdc3
+0 lrwxrwxrwx  1 root root   9 Sep 18 11:04 scsi-3614187703fd82400303bc9823f39bc5a -> ../../sdd
+0 lrwxrwxrwx  1 root root  10 Sep 18 11:04 scsi-3614187703fd82400303bc9823f39bc5a-part1 -> ../../sdd1
+0 lrwxrwxrwx  1 root root  10 Sep 18 11:04 scsi-3614187703fd82400303bc9823f39bc5a-part2 -> ../../sdd2
+0 lrwxrwxrwx  1 root root  10 Sep 18 11:04 scsi-3614187703fd82400303bc9823f39bc5a-part3 -> ../../sdd3
+0 lrwxrwxrwx  1 root root   9 Sep 18 11:04 wwn-0x50014ee604b6b4d8 -> ../../sda
+0 lrwxrwxrwx  1 root root  10 Sep 18 11:05 wwn-0x50014ee604b6b4d8-part1 -> ../../sda1
+0 lrwxrwxrwx  1 root root  10 Sep 18 11:04 wwn-0x50014ee604b6b4d8-part2 -> ../../sda2
+0 lrwxrwxrwx  1 root root  10 Sep 18 11:05 wwn-0x50014ee604b6b4d8-part3 -> ../../sda3
+0 lrwxrwxrwx  1 root root  10 Sep 18 11:04 wwn-0x50014ee604b6b4d8-part5 -> ../../sda5
+0 lrwxrwxrwx  1 root root  10 Sep 18 11:05 wwn-0x50014ee604b6b4d8-part6 -> ../../sda6
+0 lrwxrwxrwx  1 root root  10 Sep 18 11:04 wwn-0x50014ee604b6b4d8-part7 -> ../../sda7
+0 lrwxrwxrwx  1 root root   9 Sep 18 11:04 wwn-0x614187703fd824003038e69b2f287c22 -> ../../sdc
+0 lrwxrwxrwx  1 root root  10 Sep 18 11:04 wwn-0x614187703fd824003038e69b2f287c22-part1 -> ../../sdc1
+0 lrwxrwxrwx  1 root root  10 Sep 18 11:04 wwn-0x614187703fd824003038e69b2f287c22-part2 -> ../../sdc2
+0 lrwxrwxrwx  1 root root  10 Sep 18 11:04 wwn-0x614187703fd824003038e69b2f287c22-part3 -> ../../sdc3
+0 lrwxrwxrwx  1 root root   9 Sep 18 11:04 wwn-0x614187703fd82400303bc9823f39bc5a -> ../../sdd
+0 lrwxrwxrwx  1 root root  10 Sep 18 11:04 wwn-0x614187703fd82400303bc9823f39bc5a-part1 -> ../../sdd1
+0 lrwxrwxrwx  1 root root  10 Sep 18 11:04 wwn-0x614187703fd82400303bc9823f39bc5a-part2 -> ../../sdd2
+0 lrwxrwxrwx  1 root root  10 Sep 18 11:04 wwn-0x614187703fd82400303bc9823f39bc5a-part3 -> ../../sdd3
+root@primedev:~# 
+
+
+docker build -f Dockerfile -t devintripp/deltaguard-ui:latest -t devintripp/deltaguard-ui:1.0.4 .
+docker push devintripp/deltaguard-ui:latest
