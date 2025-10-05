@@ -1,13 +1,18 @@
-import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, GetObjectCommand, PutObjectCommandInput } from "@aws-sdk/client-s3";
 import { createPresignedPost } from "@aws-sdk/s3-presigned-post";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
-const accessKeyId = (process.env.MINIO_ACCESS_KEY_ID ?? '').trim();
-const secretAccessKey = (process.env.MINIO_SECRET_ACCESS_KEY ?? '').trim();
-const region = process.env.MINIO_REGION || "us-east-1";
+// Support both legacy MINIO_* and new S3_* envs
+const accessKeyId = (process.env.S3_ACCESS_KEY || process.env.MINIO_ACCESS_KEY_ID || '').trim();
+const secretAccessKey = (process.env.S3_SECRET_KEY || process.env.MINIO_SECRET_ACCESS_KEY || '').trim();
+const region = (process.env.S3_REGION || process.env.MINIO_REGION || "us-east-1").trim();
+const useSSL = String(process.env.S3_USE_SSL || 'true').toLowerCase() === 'true';
+const endpointBase = (process.env.S3_ENDPOINT || process.env.MINIO_ENDPOINT || '').trim().replace(/\/$/, '');
+const publicBase = (process.env.MINIO_PUBLIC_URL || endpointBase).replace(/\/$/, '');
 
 // External/public endpoint for browser uploads (HTTPS)
 export const s3Public = new S3Client({
-    endpoint: (process.env.MINIO_PUBLIC_URL || process.env.MINIO_ENDPOINT || '').trim().replace(/\/$/, ''),
+    endpoint: publicBase.startsWith('http') ? publicBase : `${useSSL ? 'https' : 'http'}://${publicBase}`,
     region,
     credentials: { accessKeyId, secretAccessKey },
     forcePathStyle: true,
@@ -15,7 +20,7 @@ export const s3Public = new S3Client({
 
 // Internal/cluster endpoint for server-side gets/puts
 export const s3Internal = new S3Client({
-    endpoint: (process.env.MINIO_INTERNAL_ENDPOINT || process.env.MINIO_ENDPOINT || '').trim().replace(/\/$/, ''),
+    endpoint: endpointBase.startsWith('http') ? endpointBase : `${useSSL ? 'https' : 'http'}://${endpointBase}`,
     region,
     credentials: { accessKeyId, secretAccessKey },
     forcePathStyle: true,
@@ -45,9 +50,28 @@ export async function presignPost(args: { bucket: string; key: string; contentTy
         Expires: args.expiresSeconds ?? 3600,
     });
     // Some MinIO setups include url; otherwise synthesize from public base
-    const publicBase = (process.env.MINIO_PUBLIC_URL || process.env.MINIO_ENDPOINT || '').trim().replace(/\/$/, '');
     const action = url || `${publicBase}/${args.bucket}`;
     return { action, fields, url: action };
+}
+
+export async function presignPut(args: { bucket: string; key: string; contentType?: string; expiresSeconds?: number }) {
+    const input: PutObjectCommandInput = {
+        Bucket: args.bucket,
+        Key: args.key,
+        ContentType: args.contentType || "application/octet-stream",
+    };
+    const url = await getSignedUrl(s3Public as unknown as S3Client, new PutObjectCommand(input), { expiresIn: args.expiresSeconds ?? 3600 });
+    return { url, method: "PUT" as const, headers: { "Content-Type": input.ContentType! } };
+}
+
+export async function presignGet(args: { bucket: string; key: string; expiresSeconds?: number }) {
+    const url = await getSignedUrl(s3Internal as unknown as S3Client, new GetObjectCommand({ Bucket: args.bucket, Key: args.key }), { expiresIn: args.expiresSeconds ?? 3600 });
+    return { url, method: "GET" as const };
+}
+
+export async function deleteObject(args: { bucket: string; key: string }) {
+    const { DeleteObjectCommand } = await import("@aws-sdk/client-s3");
+    await s3Internal.send(new DeleteObjectCommand({ Bucket: args.bucket, Key: args.key }));
 }
 
 export async function downloadToFile(args: { bucket: string; key: string; filePath: string }) {

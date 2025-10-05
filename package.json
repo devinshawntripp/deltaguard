@@ -11,9 +11,11 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.894.0",
     "@aws-sdk/s3-presigned-post": "^3.894.0",
+    "@aws-sdk/s3-request-presigner": "^3.896.0",
     "@prisma/client": "^6.16.2",
     "next": "15.5.3",
     "prisma": "^6.16.2",
+    "pg": "^8.13.1",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "swr": "^2.2.5",

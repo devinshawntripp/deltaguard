@@ -15,15 +15,6 @@ spec:
         app: deltaguard-web
     spec:
       containers:
-        - env:
-          - name: HTTP_PROXY
-          - name: HTTPS_PROXY
-          - name: http_proxy
-          - name: https_proxy
-          - name: NO_PROXY
-            value: .svc,.svc.cluster.local,.cluster.local,10.96.0.0/12,10.0.0.0/8,192.168.0.0/16,172.16.0.0/12,s3.apps.onetripp.com,minio.apps.onetripp.com,10.101.41.11,10.10.10.241
-          - name: no_proxy
-            value: .svc,.svc.cluster.local,.cluster.local,10.96.0.0/12,10.0.0.0/8,192.168.0.0/16,172.16.0.0/12,s3.apps.onetripp.com,minio.apps.onetripp.com,10.101.41.11,10.10.10.241
         - name: web
           image: devintripp/deltaguard-ui:latest
           imagePullPolicy: Always
@@ -34,6 +25,14 @@ spec:
               value: /var/uploads
             - name: PROGRESS_DIR
               value: /var/uploads/progress
+            - name: HTTP_PROXY
+            - name: HTTPS_PROXY
+            - name: http_proxy
+            - name: https_proxy
+            - name: NO_PROXY
+              value: .svc,.svc.cluster.local,.cluster.local,10.96.0.0/12,10.0.0.0/8,192.168.0.0/16,172.16.0.0/12,s3.apps.onetripp.com,minio.apps.onetripp.com,10.101.41.11,10.10.10.241
+            - name: no_proxy
+              value: .svc,.svc.cluster.local,.cluster.local,10.96.0.0/12,10.0.0.0/8,192.168.0.0/16,172.16.0.0/12,s3.apps.onetripp.com,minio.apps.onetripp.com,10.101.41.11,10.10.10.241
           envFrom:
             - secretRef:
                 name: deltaguard-secrets

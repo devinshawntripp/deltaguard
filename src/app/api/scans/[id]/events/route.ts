@@ -27,6 +27,7 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
                 if (fs.existsSync(progressPath)) {
                     const text = fs.readFileSync(progressPath, "utf8");
                     const lines = text ? text.split(/\r?\n/).filter(Boolean) : [];
+                    try { console.log(`[sse] sending backlog lines for ${scanId}:`, lines.length); } catch { }
                     for (const line of lines.slice(-500)) {
                         controller.enqueue(encoder.encode(`data: ${line}\n\n`));
                     }
@@ -46,10 +47,15 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
                     if (!fs.existsSync(progressPath)) return;
                     const text = fs.readFileSync(progressPath, "utf8");
                     const lines = text ? text.split(/\r?\n/).filter(Boolean) : [];
+                    let sent = 0;
                     for (let i = lastSize; i < lines.length; i++) {
                         controller.enqueue(encoder.encode(`data: ${lines[i]}\n\n`));
+                        sent++;
                     }
                     lastSize = lines.length;
+                    if (sent > 0) {
+                        try { console.log(`[sse] pumped ${sent} new events for ${scanId} (total ${lastSize})`); } catch { }
+                    }
                 } catch { }
             };
 

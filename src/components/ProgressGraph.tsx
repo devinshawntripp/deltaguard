@@ -1,5 +1,6 @@
 "use client";
 import React from "react";
+import { openSse } from "@/lib/ssePool";
 
 type ProgressEvent = { stage: string; detail?: string; ts?: string };
 
@@ -15,7 +16,19 @@ function parse(lines: string[]): ProgressEvent[] {
                 seen.add(key);
                 out.push({ stage: String(j.stage), detail: j.detail ?? undefined, ts: j.ts ?? undefined });
             }
-        } catch { }
+        } catch {
+            // Fallback: support "stage: detail" plain-text lines
+            const m = String(l).match(/^\s*([^:]+?)\s*:\s*(.*)$/);
+            if (m) {
+                const stage = m[1].trim();
+                const detail = m[2].trim();
+                const key = `${stage}|${detail}`;
+                if (!seen.has(key)) {
+                    seen.add(key);
+                    out.push({ stage, detail });
+                }
+            }
+        }
     }
     return out;
 }
@@ -25,16 +38,19 @@ const BACKDROP = {
         "radial-gradient(circle at 20% 20%, rgba(99,102,241,0.20), transparent 35%), radial-gradient(circle at 80% 30%, rgba(236,72,153,0.15), transparent 40%), radial-gradient(circle at 30% 80%, rgba(16,185,129,0.15), transparent 35%)",
 };
 
-export default function ProgressGraph({ scanId }: { scanId: string }) {
+export default function ProgressGraph({ scanId, eventsPath }: { scanId: string; eventsPath?: string }) {
     const [lines, setLines] = React.useState<string[]>([]);
     const [active, setActive] = React.useState<string | null>(null);
 
     React.useEffect(() => {
-        const es = new EventSource(`/api/scans/${scanId}/events`);
-        es.onmessage = (ev) => setLines((prev) => [...prev, ev.data]);
-        es.onerror = () => es.close();
-        return () => es.close();
-    }, [scanId]);
+        const url = eventsPath || `/api/scans/${scanId}/events`;
+        let closeFn: (() => void) | null = null;
+        openSse(url, {
+            onMessage: (ev) => setLines((prev) => [...prev, ev.data]),
+            onError: () => { try { closeFn?.(); } catch { } },
+        }).then((c) => { closeFn = c; });
+        return () => { try { closeFn?.(); } catch { } };
+    }, [scanId, eventsPath]);
 
     const events = React.useMemo(() => parse(lines), [lines]);
 

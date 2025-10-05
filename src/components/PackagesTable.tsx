@@ -1,134 +1,98 @@
 "use client";
-import useSWR, { useSWRConfig } from "swr";
+import useSWR from "swr";
 import React from "react";
-import Link from "next/link";
 import ProgressGraph from "@/components/ProgressGraph";
 
-type Scan = {
+type Job = {
   id: string;
-  status: "PENDING" | "RUNNING" | "SUCCEEDED" | "FAILED";
-  scanType: "BIN" | "CONTAINER" | "LICENSE" | "VULN" | "REDHAT";
-  createdAt: string;
-  finishedAt?: string;
-  error?: string | null;
-  rawOutput?: string | null;
+  object_key?: string;
+  status: "queued" | "running" | "done" | "failed";
+  created_at: string;
+  started_at?: string | null;
+  finished_at?: string | null;
+  progress_pct: number;
+  progress_msg?: string | null;
 };
-
-type Package = {
-  id: string;
-  createdAt: string;
-  originalName: string;
-  sizeBytes: number;
-  packageType: "BINARY" | "CONTAINER";
-  status: "UPLOADED" | "SCANNING" | "COMPLETED" | "FAILED";
-  scans: Scan[];
-};
-
-const fetcher = (url: string) =>
-  fetch(url).then((r) => {
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    return r.json();
-  });
 
 export default function PackagesTable() {
-  const { mutate: globalMutate } = useSWRConfig();
-  const { data, error, isLoading, mutate } = useSWR<Package[]>("/api/packages", fetcher, {
-    refreshInterval: 0,
-  });
-
+  const [list, setList] = React.useState<Job[]>([]);
   React.useEffect(() => {
-    const es = new EventSource("/api/packages/events");
-    es.onmessage = () => {
-      const t = setTimeout(() => { mutate(); globalMutate("/api/packages"); }, 200);
-      return () => clearTimeout(t);
+    const es = new EventSource("/api/jobs/events");
+    es.onmessage = (ev) => {
+      try {
+        const msg = JSON.parse(ev.data);
+        if (msg.type === "snapshot" && Array.isArray(msg.items)) setList(msg.items);
+        if (msg.type === "changed" && msg.item) {
+          setList((prev) => {
+            const map = new Map<string, Job>();
+            for (const j of prev) map.set(j.id, j);
+            const cur = map.get(msg.item.id) || ({} as Job);
+            map.set(msg.item.id, { ...cur, ...msg.item });
+            const arr = Array.from(map.values());
+            arr.sort((a, b) => {
+              const rank = (s: string) => (s === 'running' ? 0 : s === 'queued' ? 1 : 2);
+              const r = rank(a.status) - rank(b.status);
+              return r !== 0 ? r : new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+            });
+            return arr.slice(0, 100);
+          });
+        }
+      } catch { }
     };
-    es.onerror = () => { es.close(); };
+    es.onerror = () => es.close();
     return () => es.close();
-  }, [mutate, globalMutate]);
-
-  const firstId = data?.[0]?.id;
-  const [openId, setOpenId] = React.useState<string | null>(null);
-  React.useEffect(() => { if (firstId) setOpenId(firstId); }, [firstId]);
-
-  if (error) return <div className="text-sm text-red-500">Failed to load</div>;
-  if (isLoading) return <div className="opacity-60">Loading…</div>;
-
-  const list = Array.isArray(data) ? data : [];
-
+  }, []);
   return (
     <div className="overflow-hidden rounded-xl border border-black/10 dark:border-white/10">
       <table className="w-full text-sm">
         <thead className="bg-black/[.04] dark:bg-white/[.04] text-left">
           <tr>
-            <th className="p-3">Name</th>
-            <th className="p-3">Type</th>
+            <th className="p-3">Job</th>
+            <th className="p-3">File</th>
             <th className="p-3">Status</th>
-            <th className="p-3">Last scan</th>
-            <th className="p-3 text-right">Size</th>
+            <th className="p-3">Progress</th>
+            <th className="p-3">Started</th>
+            <th className="p-3">Finished</th>
           </tr>
         </thead>
         <tbody>
-          {list.map((pkg) => {
-            const lastScan = pkg.scans[0];
-            const isOpen = pkg.id === openId;
-            const showError = isOpen && lastScan && lastScan.status === "FAILED";
+          {list.map((j) => {
+            const pct = j.status === "done" ? 100 : Math.min(100, j.progress_pct || 0);
             return (
-              <React.Fragment key={pkg.id}>
+              <React.Fragment key={j.id}>
                 <tr className="border-t border-black/5 dark:border-white/5">
-                  <td className="p-3 font-medium">
-                    <Link className="hover:underline" href={`/dashboard/${pkg.id}`}>{pkg.originalName}</Link>
-                  </td>
-                  <td className="p-3 opacity-80">{pkg.packageType}</td>
+                  <td className="p-3 font-mono text-xs">{j.id}</td>
+                  <td className="p-3 opacity-80 break-all text-xs">{j.object_key || ""}</td>
+                  <td className="p-3 opacity-80">{j.status}</td>
                   <td className="p-3">
-                    <StatusBadge status={pkg.status} />
+                    <div className="h-2 bg-black/10 dark:bg-white/10 rounded">
+                      <div className={`h-2 rounded ${j.status === "failed" ? "bg-red-600" : j.status === "done" ? "bg-green-600" : "bg-blue-600"}`} style={{ width: `${pct}%` }} />
+                    </div>
+                    <div className="text-xs opacity-70 mt-1">{j.progress_msg || ""}</div>
                   </td>
-                  <td className="p-3 opacity-80">{lastScan ? `${lastScan.scanType} • ${lastScan.status}` : "—"}</td>
-                  <td className="p-3 text-right tabular-nums">{formatBytes(pkg.sizeBytes)}</td>
+                  <td className="p-3 opacity-70 text-xs">{j.started_at ? new Date(j.started_at).toLocaleString() : ""}</td>
+                  <td className="p-3 opacity-70 text-xs">{j.finished_at ? new Date(j.finished_at).toLocaleString() : ""}</td>
+                  <td className="p-3 text-right">
+                    <button
+                      onClick={async () => {
+                        try {
+                          await fetch(`/api/jobs/${j.id}`, { method: "DELETE" });
+                          setList((prev) => prev.filter((x) => x.id !== j.id));
+                        } catch { }
+                      }}
+                      className="text-xs px-2 py-1 rounded-md bg-red-600 text-white hover:bg-red-700"
+                    >
+                      Delete
+                    </button>
+                  </td>
                 </tr>
-                {isOpen && (
-                  <tr key={`${pkg.id}-details`} className="border-t border-black/5 dark:border-white/5">
-                    <td className="p-3" colSpan={5}>
-                      {showError ? (
-                        <div className="grid gap-2">
-                          <div className="text-sm font-medium text-red-600">Scan failed</div>
-                          {lastScan?.error && (
-                            <div className="text-xs whitespace-pre-wrap break-words bg-red-50 dark:bg-red-950/30 border border-red-200/70 dark:border-red-900/40 rounded p-2">{lastScan.error}</div>
-                          )}
-                          {lastScan?.rawOutput && (
-                            <details>
-                              <summary className="text-xs underline cursor-pointer">Show raw output</summary>
-                              <pre className="mt-1 text-xs whitespace-pre-wrap bg-black/5 dark:bg-white/5 rounded p-2 max-h-60 overflow-auto">{lastScan.rawOutput.slice(0, 8000)}</pre>
-                            </details>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="grid gap-3">
-                          {lastScan?.id && (
-                            <>
-                              <div className="text-sm font-medium">Workflow</div>
-                              <ProgressGraph scanId={lastScan.id} />
-                              {pkg.status === "SCANNING" && (
-                                <div className="mt-2">
-                                  <button
-                                    onClick={async () => {
-                                      try {
-                                        await fetch(`/api/scans/${lastScan.id}/cancel`, { method: "POST" });
-                                        await mutate();
-                                      } catch { }
-                                    }}
-                                    className="text-xs px-2 py-1 rounded-md bg-red-600 text-white hover:bg-red-700"
-                                  >
-                                    Cancel scan
-                                  </button>
-                                </div>
-                              )}
-                            </>
-                          )}
-                          {!lastScan?.id && (
-                            <div className="text-xs opacity-70">No activity yet…</div>
-                          )}
-                        </div>
-                      )}
+                {(j.status === "running" || j.status === "queued") && (
+                  <tr className="border-t border-black/5 dark:border-white/5">
+                    <td className="p-3" colSpan={6}>
+                      <div className="grid gap-2">
+                        <div className="text-sm font-medium">Workflow</div>
+                        <ProgressGraph scanId={j.id} eventsPath={`/api/jobs/${j.id}/events`} />
+                      </div>
                     </td>
                   </tr>
                 )}
@@ -139,27 +103,6 @@ export default function PackagesTable() {
       </table>
     </div>
   );
-}
-
-function StatusBadge({ status }: { status: Package["status"] }) {
-  const colors: Record<Package["status"], string> = {
-    UPLOADED: "bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-100",
-    SCANNING: "bg-blue-200 text-blue-900 dark:bg-blue-700 dark:text-blue-100",
-    COMPLETED: "bg-green-200 text-green-900 dark:bg-green-700 dark:text-green-100",
-    FAILED: "bg-red-200 text-red-900 dark:bg-red-700 dark:text-red-100",
-  };
-  return <span className={`px-2 py-1 rounded-md text-xs font-medium ${colors[status]}`}>{status}</span>;
-}
-
-function formatBytes(bytes: number) {
-  const units = ["B", "KB", "MB", "GB", "TB"];
-  let i = 0;
-  let n = bytes;
-  while (n >= 1024 && i < units.length - 1) {
-    n /= 1024;
-    i++;
-  }
-  return `${n.toFixed(1)} ${units[i]}`;
 }
 
 
