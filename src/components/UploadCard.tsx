@@ -77,6 +77,7 @@ export default function UploadCard() {
       const d = await start.json();
       if (!start.ok) throw new Error(d.error || "Job create failed");
       setMessage("Job queued: " + d.id);
+      try { window.dispatchEvent(new CustomEvent('jobs-refresh')); } catch { }
     } catch (err: any) {
       setMessage(err.message || String(err));
     } finally {

@@ -38,21 +38,53 @@ const BACKDROP = {
         "radial-gradient(circle at 20% 20%, rgba(99,102,241,0.20), transparent 35%), radial-gradient(circle at 80% 30%, rgba(236,72,153,0.15), transparent 40%), radial-gradient(circle at 30% 80%, rgba(16,185,129,0.15), transparent 35%)",
 };
 
-export default function ProgressGraph({ scanId, eventsPath }: { scanId: string; eventsPath?: string }) {
+export default function ProgressGraph({ scanId, eventsPath, mode = "auto", onProgress }: { scanId: string; eventsPath?: string; mode?: "auto" | "stream" | "list"; onProgress?: (pct: number, msg?: string) => void }) {
     const [lines, setLines] = React.useState<string[]>([]);
     const [active, setActive] = React.useState<string | null>(null);
 
     React.useEffect(() => {
-        const url = eventsPath || `/api/scans/${scanId}/events`;
+        const streamUrl = eventsPath || `/api/scans/${scanId}/events`;
         let closeFn: (() => void) | null = null;
-        openSse(url, {
-            onMessage: (ev) => setLines((prev) => [...prev, ev.data]),
-            onError: () => { try { closeFn?.(); } catch { } },
-        }).then((c) => { closeFn = c; });
-        return () => { try { closeFn?.(); } catch { } };
-    }, [scanId, eventsPath]);
+        let cancelled = false;
+        async function run() {
+            if (mode === "list") {
+                const res = await fetch(`/api/jobs/${scanId}/events/list`, { cache: "no-store" });
+                if (res.ok) {
+                    const arr = await res.json();
+                    if (!cancelled) setLines(arr.map((x: any) => JSON.stringify(x)));
+                }
+                return;
+            }
+            if (mode === "stream" || mode === "auto") {
+                openSse(streamUrl, {
+                    onMessage: (ev) => setLines((prev) => [...prev, ev.data]),
+                    onError: () => { try { closeFn?.(); } catch { } },
+                }).then((c) => { closeFn = c; });
+            }
+        }
+        run();
+        return () => { cancelled = true; try { closeFn?.(); } catch { } };
+    }, [scanId, eventsPath, mode]);
 
     const events = React.useMemo(() => parse(lines), [lines]);
+
+    React.useEffect(() => {
+        if (!events.length) return;
+        let latestPct = -1;
+        let latestMsg: string | undefined = undefined;
+        for (let i = events.length - 1; i >= 0; i--) {
+            const e = events[i] as any;
+            if (typeof e?.detail === "string" && e.detail) latestMsg = e.detail;
+            const pctMatch = /\b(\d{1,3})%\b/.exec(String(e?.detail || ""));
+            const pctField = (e as any).pct;
+            const p = typeof pctField === "number" ? pctField : pctMatch ? Number(pctMatch[1]) : undefined;
+            if (typeof p === "number") { latestPct = Math.max(latestPct, Math.min(100, Math.max(0, p))); }
+            if (latestPct >= 0) break;
+        }
+        if (latestPct >= 0) {
+            try { onProgress?.(latestPct, latestMsg); } catch { }
+        }
+    }, [events, onProgress]);
 
     const stages = React.useMemo(() => {
         const group = (s: string) => {
