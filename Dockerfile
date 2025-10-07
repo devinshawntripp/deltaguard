@@ -101,3 +101,14 @@ ENTRYPOINT []
 
 # Run your script directly
 CMD ["/app/entrypoint.sh"]
+
+
+
+crictl run \
+    -e GITEA_INSTANCE_URL=https://gitea.apps.onetripp.com \
+    -e GITEA_RUNNER_REGISTRATION_TOKEN=xTItao9JN9qElomix65A8ARxZ7Rh4rXzZI4lLT34 \
+    -e GITEA_RUNNER_NAME=deltaguard-runner \
+    --name deltaguard-runner \
+    -d docker.io/gitea/act_runner:latest
+
+crictl run --entrypoint="" --rm -it docker.io/gitea/act_runner:latest act_runner generate-config > config.yaml
