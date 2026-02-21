@@ -35,7 +35,7 @@ export async function ensureJobsTable() {
         await prisma.$executeRawUnsafe(`
 CREATE OR REPLACE FUNCTION notify_job_event() RETURNS trigger AS $$
 BEGIN
-  PERFORM pg_notify('job_events', row_to_json(NEW)::text);
+  PERFORM pg_notify('job_events', NEW.id::text);
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;

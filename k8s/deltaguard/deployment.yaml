@@ -5,7 +5,7 @@ metadata:
   labels:
     app: deltaguard-web
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       app: deltaguard-web
@@ -14,10 +14,15 @@ spec:
       labels:
         app: deltaguard-web
     spec:
+      dnsConfig:
+        options:
+          - name: ndots
+            value: "1"
       containers:
         - name: web
           image: devintripp/deltaguard-ui:latest
           imagePullPolicy: Always
+          command: ["npm", "run", "start"]
           ports:
             - containerPort: 3000
           env:
@@ -26,13 +31,17 @@ spec:
             - name: PROGRESS_DIR
               value: /var/uploads/progress
             - name: HTTP_PROXY
+              value: http://10.10.10.2:3128
             - name: HTTPS_PROXY
+              value: http://10.10.10.2:3128
             - name: http_proxy
+              value: http://10.10.10.2:3128
             - name: https_proxy
+              value: http://10.10.10.2:3128
             - name: NO_PROXY
-              value: .svc,.svc.cluster.local,.cluster.local,10.96.0.0/12,10.0.0.0/8,192.168.0.0/16,172.16.0.0/12,s3.apps.onetripp.com,minio.apps.onetripp.com,10.101.41.11,10.10.10.241
+              value: .svc,.svc.cluster.local,.cluster.local,10.96.0.0/12,10.0.0.0/8,192.168.0.0/16,172.16.0.0/12,s3.apps.onetripp.com,minio.apps.onetripp.com,minio.storage.svc.cluster.local,minio.storage.svc.cluster.local.,10.101.41.11,10.10.10.241
             - name: no_proxy
-              value: .svc,.svc.cluster.local,.cluster.local,10.96.0.0/12,10.0.0.0/8,192.168.0.0/16,172.16.0.0/12,s3.apps.onetripp.com,minio.apps.onetripp.com,10.101.41.11,10.10.10.241
+              value: .svc,.svc.cluster.local,.cluster.local,10.96.0.0/12,10.0.0.0/8,192.168.0.0/16,172.16.0.0/12,s3.apps.onetripp.com,minio.apps.onetripp.com,minio.storage.svc.cluster.local,minio.storage.svc.cluster.local.,10.101.41.11,10.10.10.241
           envFrom:
             - secretRef:
                 name: deltaguard-secrets
@@ -71,5 +80,3 @@ spec:
         - name: uploads
           persistentVolumeClaim:
             claimName: uploads-pvc
-
-

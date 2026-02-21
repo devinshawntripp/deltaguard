@@ -3,11 +3,12 @@ import { useState } from "react";
 
 export default function UploadCard() {
   const [file, setFile] = useState<File | null>(null);
-  const [mode, setMode] = useState<"light" | "deep">("light");
+  const [mode, setMode] = useState<"light" | "deep">("deep");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [pct, setPct] = useState<number>(0);
   const [speed, setSpeed] = useState<string>("");
+  const [phase, setPhase] = useState<string>("");
   const [aborter, setAborter] = useState<() => void>(() => () => { });
 
   async function onSubmit(e: React.FormEvent) {
@@ -16,64 +17,100 @@ export default function UploadCard() {
     setLoading(true);
     setMessage(null);
     try {
-      // 1) Presign upload (choose POST for very large files)
-      const wantsPost = file.size >= 50 * 1024 * 1024; // 50MB threshold
-      const presign = await fetch("/api/uploads/presign", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ filename: file.name, contentType: file.type || "application/octet-stream", method: wantsPost ? "POST" : "PUT" }) });
-      const p = await presign.json();
-      if (!presign.ok) throw new Error(p.error || "Presign failed");
-      if (!p || !p.url || !p.key || !p.bucket) throw new Error("Presign response missing url/key/bucket");
-      // 2) Upload with progress
-      if (String(p.method || '').toUpperCase() === 'POST' && p.fields) {
+      const human = (n: number) => {
+        const u = ["B/s", "KB/s", "MB/s", "GB/s"];
+        let i = 0;
+        let x = n;
+        while (x >= 1024 && i < u.length - 1) { x /= 1024; i++; }
+        return `${x.toFixed(1)} ${u[i]}`;
+      };
+      const uploadViaXhr = async (p: any) => {
         await new Promise<void>((resolve, reject) => {
           try {
-            const form = new FormData();
-            Object.entries(p.fields || {}).forEach(([k, v]) => form.append(k, String(v)));
-            // Ensure Content-Type field exists if presigned policy expects it
-            if (!('Content-Type' in (p.fields || {}))) form.append('Content-Type', file.type || 'application/octet-stream');
-            form.append('file', file);
+            const method = String(p.method || "PUT").toUpperCase();
             const xhr = new XMLHttpRequest();
-            xhr.open('POST', String(p.url));
-            let lastLoaded = 0; let lastTs = Date.now();
+            xhr.open(method, String(p.url));
+            xhr.timeout = 60 * 60 * 1000; // 1h for large uploads over home links
+            if (method === "PUT") {
+              const headers = (p.headers || {}) as Record<string, string>;
+              Object.entries(headers).forEach(([k, v]) => xhr.setRequestHeader(k, String(v)));
+              if (!headers["Content-Type"]) xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
+            }
+            let lastLoaded = 0;
+            let lastTs = Date.now();
             xhr.upload.onprogress = (ev) => {
               if (!ev.lengthComputable) return;
-              const now = Date.now(); const loaded = ev.loaded; const total = ev.total || file.size;
-              const deltaBytes = loaded - lastLoaded; const deltaMs = Math.max(1, now - lastTs);
+              const now = Date.now();
+              const loaded = ev.loaded;
+              const total = ev.total || file.size;
+              const deltaBytes = loaded - lastLoaded;
+              const deltaMs = Math.max(1, now - lastTs);
               const bps = (deltaBytes * 1000) / deltaMs;
-              const human = (n: number) => { const u = ["B/s", "KB/s", "MB/s", "GB/s"]; let i = 0; let x = n; while (x >= 1024 && i < u.length - 1) { x /= 1024; i++; } return `${x.toFixed(1)} ${u[i]}`; };
-              setPct(Math.round((loaded / total) * 100)); setSpeed(human(bps)); lastLoaded = loaded; lastTs = now;
+              setPct(Math.round((loaded / total) * 100));
+              setSpeed(human(bps));
+              lastLoaded = loaded;
+              lastTs = now;
             };
-            xhr.onerror = () => reject(new Error('S3 upload failed'));
-            xhr.onload = () => { if (xhr.status >= 200 && xhr.status < 300) { setPct(100); resolve(); } else reject(new Error(`S3 upload failed (${xhr.status})`)); };
-            xhr.send(form);
-            setAborter(() => () => { try { xhr.abort(); } catch { } });
-          } catch (e) { reject(e as any); }
-        });
-      } else {
-        await new Promise<void>((resolve, reject) => {
-          try {
-            const xhr = new XMLHttpRequest();
-            xhr.open('PUT', String(p.url));
-            const headers = (p.headers || {}) as Record<string, string>;
-            Object.entries(headers).forEach(([k, v]) => xhr.setRequestHeader(k, String(v)));
-            if (!headers['Content-Type']) xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
-            let lastLoaded = 0; let lastTs = Date.now();
-            xhr.upload.onprogress = (ev) => {
-              if (!ev.lengthComputable) return;
-              const now = Date.now(); const loaded = ev.loaded; const total = ev.total || file.size;
-              const deltaBytes = loaded - lastLoaded; const deltaMs = Math.max(1, now - lastTs);
-              const bps = (deltaBytes * 1000) / deltaMs;
-              const human = (n: number) => { const u = ["B/s", "KB/s", "MB/s", "GB/s"]; let i = 0; let x = n; while (x >= 1024 && i < u.length - 1) { x /= 1024; i++; } return `${x.toFixed(1)} ${u[i]}`; };
-              setPct(Math.round((loaded / total) * 100)); setSpeed(human(bps)); lastLoaded = loaded; lastTs = now;
+            xhr.onerror = () => reject(new Error(`S3 upload failed${xhr.status ? ` (${xhr.status})` : ""}`));
+            xhr.onabort = () => reject(new Error("Upload canceled"));
+            xhr.ontimeout = () => reject(new Error("Upload timed out"));
+            xhr.onload = () => {
+              if (xhr.status >= 200 && xhr.status < 300) {
+                setPct(100);
+                resolve();
+                return;
+              }
+              const raw = String(xhr.responseText || "").trim();
+              const detail = raw ? `: ${raw.slice(0, 200)}` : "";
+              reject(new Error(`S3 upload failed (${xhr.status})${detail}`));
             };
-            xhr.onerror = () => reject(new Error('S3 upload failed'));
-            xhr.onload = () => { if (xhr.status >= 200 && xhr.status < 300) { setPct(100); resolve(); } else reject(new Error(`S3 upload failed (${xhr.status})`)); };
-            xhr.send(file);
             setAborter(() => () => { try { xhr.abort(); } catch { } });
-          } catch (e) { reject(e as any); }
+            if (method === "POST" && p.fields) {
+              const form = new FormData();
+              Object.entries(p.fields || {}).forEach(([k, v]) => form.append(k, String(v)));
+              if (!("Content-Type" in (p.fields || {}))) form.append("Content-Type", file.type || "application/octet-stream");
+              form.append("file", file);
+              xhr.send(form);
+            } else {
+              xhr.send(file);
+            }
+          } catch (e) {
+            reject(e as any);
+          }
         });
+      };
+
+      // 1) Prefer presigned PUT for robustness with large files.
+      setPhase("Requesting upload URL…");
+      const presignPut = await fetch("/api/uploads/presign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filename: file.name, contentType: file.type || "application/octet-stream", method: "PUT" }),
+      });
+      const putPayload = await presignPut.json();
+      if (!presignPut.ok) throw new Error(putPayload.error || "Presign failed");
+      if (!putPayload?.url || !putPayload?.key || !putPayload?.bucket) throw new Error("Presign response missing url/key/bucket");
+
+      // 2) Upload with fallback to POST if PUT fails.
+      setPhase("Uploading file…");
+      try {
+        await uploadViaXhr(putPayload);
+      } catch {
+        setPhase("Retrying upload with multipart fallback…");
+        const presignPost = await fetch("/api/uploads/presign", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ filename: file.name, contentType: file.type || "application/octet-stream", method: "POST" }),
+        });
+        const postPayload = await presignPost.json();
+        if (!presignPost.ok) throw new Error(postPayload.error || "Presign fallback failed");
+        await uploadViaXhr(postPayload);
+        putPayload.key = postPayload.key;
       }
+
       // 3) Create job
-      const start = await fetch("/api/jobs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ bucket: p.bucket, object_key: p.key, mode, format: "json", refs: false }) });
+      setPhase("Queueing scan job…");
+      const start = await fetch("/api/jobs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ bucket: putPayload.bucket, object_key: putPayload.key, mode, format: "json", refs: false }) });
       const d = await start.json();
       if (!start.ok) throw new Error(d.error || "Job create failed");
       setMessage("Job queued: " + d.id);
@@ -82,6 +119,7 @@ export default function UploadCard() {
       setMessage(err.message || String(err));
     } finally {
       setLoading(false);
+      setPhase("");
       setTimeout(() => { setPct(0); setSpeed(""); }, 1500);
     }
   }
@@ -122,12 +160,10 @@ export default function UploadCard() {
           <div className="h-2 bg-black/10 dark:bg-white/10 rounded">
             <div className="h-2 bg-blue-600 rounded" style={{ width: `${pct}%` }} />
           </div>
-          <div className="text-xs opacity-70">{pct}% • {speed}</div>
+          <div className="text-xs opacity-70">{pct}% • {speed}{phase ? ` • ${phase}` : ""}</div>
         </div>
       )}
       {message && <div className="text-sm opacity-80">{message}</div>}
     </form>
   );
 }
-
-

@@ -1,49 +1,9 @@
 # syntax=docker/dockerfile:1.6
 
 ########################
-# Build Rust scanner (external repo)
-########################
-FROM rust:1.83-slim AS scanner-build
-WORKDIR /src
-
-ARG http_proxy
-ARG https_proxy
-ENV http_proxy=${http_proxy}
-ENV https_proxy=${https_proxy}
-
-# Bring in the scanner repo via a separate build context
-COPY --from=scanner_src / /src
-
-# HARD FAIL if the external context didn't arrive
-RUN test -f Cargo.toml || (echo >&2 "ERROR: scanner_src context missing (no Cargo.toml). Did you pass --build-context scanner_src=?"; exit 1)
-
-# Build deps (+ file so we can validate the binary)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    pkg-config libssl-dev ca-certificates build-essential curl file \
-    && rm -rf /var/lib/apt/lists/*
-
-
-# (Safe) warm the Cargo index/deps without touching your sources
-RUN cargo fetch --locked
-
-# Build and install to /usr/local/bin/scanner
-RUN cargo install --path . --root /usr/local --locked
-
-# Sanity checks: exists, looks like amd64 ELF, and is > 500KB
-RUN set -e; \
-    test -x /usr/local/bin/scanner || { echo "scanner missing"; exit 1; }; \
-    file /usr/local/bin/scanner | grep -E 'ELF 64-bit.*x86-64' >/dev/null || { echo "scanner not amd64 ELF"; exit 1; }; \
-    BYTES=$(wc -c </usr/local/bin/scanner || echo 0); \
-    if [ "$BYTES" -lt 500000 ]; then echo "scanner too small ($BYTES bytes) — likely a stub"; exit 1; fi; \
-    # soft probe; don’t fail if it returns non-zero (clap can do that)
-    /usr/local/bin/scanner --help >/dev/null 2>&1 || echo "note: scanner ran (non-zero exit, ok)"
-
-
-
-########################
 # Build UI (this repo)
 ########################
-FROM --platform=linux/amd64 node:20-bookworm-slim AS ui-build
+FROM --platform=linux/amd64 node:22-bookworm-slim AS ui-build
 WORKDIR /app
 
 ARG http_proxy
@@ -65,16 +25,8 @@ RUN npx prisma generate --schema=prisma/schema.prisma
 ENV NODE_ENV=production
 RUN npm run build
 
-FROM node:20-bookworm-slim
+FROM --platform=linux/amd64 node:22-bookworm-slim
 WORKDIR /app
-
-# Minimal runtime deps for scanner
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates libssl3 rpm \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy scanner binary built from external repo
-COPY --from=scanner-build /usr/local/bin/scanner /usr/local/bin/scanner
 
 # Copy built UI app and any runtime files
 COPY --from=ui-build /app ./
@@ -104,11 +56,11 @@ CMD ["/app/entrypoint.sh"]
 
 
 
-crictl run \
-    -e GITEA_INSTANCE_URL=https://gitea.apps.onetripp.com \
-    -e GITEA_RUNNER_REGISTRATION_TOKEN=xTItao9JN9qElomix65A8ARxZ7Rh4rXzZI4lLT34 \
-    -e GITEA_RUNNER_NAME=deltaguard-runner \
-    --name deltaguard-runner \
-    -d docker.io/gitea/act_runner:latest
+# crictl run \
+#     -e GITEA_INSTANCE_URL=https://gitea.apps.onetripp.com \
+#     -e GITEA_RUNNER_REGISTRATION_TOKEN=xTItao9JN9qElomix65A8ARxZ7Rh4rXzZI4lLT34 \
+#     -e GITEA_RUNNER_NAME=deltaguard-runner \
+#     --name deltaguard-runner \
+#     -d docker.io/gitea/act_runner:latest
 
-crictl run --entrypoint="" --rm -it docker.io/gitea/act_runner:latest act_runner generate-config > config.yaml
+# crictl run --entrypoint="" --rm -it docker.io/gitea/act_runner:latest act_runner generate-config > config.yaml

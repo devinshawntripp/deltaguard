@@ -28,5 +28,3 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: String(e?.message || e) }, { status: 500 });
     }
 }
-
-

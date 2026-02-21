@@ -42,11 +42,15 @@ export async function uploadBufferToS3(args: {
     await s3.send(cmd);
 }
 
+const MAX_UPLOAD_BYTES = 10 * 1024 * 1024 * 1024; // 10 GiB
+
 export async function presignPost(args: { bucket: string; key: string; contentType?: string; expiresSeconds?: number }) {
+    const conditions: any[] = [["content-length-range", 0, MAX_UPLOAD_BYTES]];
+    if (args.contentType) conditions.push(["eq", "$Content-Type", args.contentType]);
     const { url, fields } = await createPresignedPost(s3Public as unknown as S3Client, {
         Bucket: args.bucket,
         Key: args.key,
-        Conditions: args.contentType ? [["eq", "$Content-Type", args.contentType]] : undefined,
+        Conditions: conditions,
         Expires: args.expiresSeconds ?? 3600,
     });
     // Some MinIO setups include url; otherwise synthesize from public base

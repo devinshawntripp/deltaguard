@@ -33,8 +33,8 @@ export async function createJob(params: { id?: string; bucket: string; object_ke
     await prisma.$executeRaw`INSERT INTO scan_jobs (id, status, bucket, object_key, mode, format, refs) VALUES (${id}::uuid,'queued',${params.bucket},${params.object_key},${mode},${format},${refs})`;
     const rows = await prisma.$queryRaw<any[]>`SELECT * FROM scan_jobs WHERE id=${id}::uuid`;
     const job = rows[0] as Job;
-    // Emit NOTIFY so SSE clients update immediately
-    try { await prisma.$executeRaw`SELECT pg_notify('job_events', ${JSON.stringify(job)})`; } catch { }
+    // Emit NOTIFY with just the job id (tiny payload, no 8000-byte limit risk)
+    try { await prisma.$executeRaw`SELECT pg_notify('job_events', ${id})`; } catch { }
     return job;
 }
 

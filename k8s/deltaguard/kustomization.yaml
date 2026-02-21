@@ -4,10 +4,10 @@ namespace: deltaguard
 resources:
   - namespace.yaml
   - deployment.yaml
+  - worker-deployment.yaml
   - service.yaml
   - ingress.yaml
   - pvc.yaml
   # - configmap.yaml
   # - secret.yaml
-
 

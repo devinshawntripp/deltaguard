@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { cancelScanById } from "@/lib/scanner";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -8,25 +7,26 @@ export const dynamic = "force-dynamic";
 export async function POST(_req: NextRequest, context: { params: Promise<{ id: string }> }) {
     const { id } = await context.params;
     try {
-        const scan = await prisma.scan.findUnique({ where: { id }, select: { id: true, packageId: true } });
-        if (!scan) return NextResponse.json({ ok: false, error: "Scan not found" }, { status: 404 });
+        // Use raw SQL against scan_jobs (the actual production table) instead of Prisma ORM models
+        const rows = await prisma.$queryRaw<{ id: string }[]>`
+            SELECT id FROM scan_jobs WHERE id = ${id}::uuid
+        `;
+        if (!rows || rows.length === 0) {
+            return NextResponse.json({ ok: false, error: "Job not found" }, { status: 404 });
+        }
 
-        const cancelled = cancelScanById(id);
+        await prisma.$executeRaw`
+            UPDATE scan_jobs
+            SET status = 'failed',
+                error_msg = 'Cancelled by user',
+                finished_at = now()
+            WHERE id = ${id}::uuid
+              AND status IN ('queued', 'running')
+        `;
 
-        await prisma.scan.update({ where: { id }, data: { status: "FAILED", error: "Cancelled by user", finishedAt: new Date() } });
-        await prisma.package.update({ where: { id: scan.packageId }, data: { status: "FAILED" } });
-
-        try {
-            const fs = await import("node:fs/promises");
-            const progressFilePath = `/tmp/deltaguard/${id}.ndjson`;
-            await fs.appendFile(progressFilePath, JSON.stringify({ stage: "scan.summary", detail: JSON.stringify({ error: "Cancelled by user" }), ts: new Date().toISOString() }) + "\n");
-        } catch { }
-
-        return NextResponse.json({ ok: true, cancelled });
+        return NextResponse.json({ ok: true });
     } catch (e: any) {
         console.error("[cancel] failed", e);
         return NextResponse.json({ ok: false, error: String(e?.message || e) }, { status: 500 });
     }
 }
-
-

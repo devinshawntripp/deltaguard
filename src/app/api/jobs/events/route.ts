@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server";
-import { listJobs } from "@/lib/jobs";
+import { listJobs, getJob } from "@/lib/jobs";
 import { jobsBus } from "@/lib/jobsBus";
 
 export const runtime = "nodejs";
@@ -35,7 +35,19 @@ export async function GET(_req: NextRequest) {
 
             // Reuse a singleton jobs bus to avoid multiple listeners accumulating
             await jobsBus.start();
-            const unsub = jobsBus.subscribe((payload) => { if (!closed) send(payload); });
+            const unsub = jobsBus.subscribe(async (payload) => {
+                if (closed) return;
+                // Notifications now carry only the job id; fetch the full row so the
+                // client receives a complete item (backward-compatible with existing UI).
+                if (payload.type === "changed" && payload.id) {
+                    try {
+                        const job = await getJob(payload.id);
+                        if (job) send({ type: "changed", item: job });
+                    } catch { send(payload); }
+                } else {
+                    send(payload);
+                }
+            });
             (controller as any).onCancel = () => { closed = true; unsub(); };
         },
     });
