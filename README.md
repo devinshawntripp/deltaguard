@@ -1,38 +1,70 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ScanRook Platform (Web)
 
-## Getting Started
+Web dashboard and API for ScanRook.
 
-First, run the development server:
+Core model:
+- Local-first scanner CLI.
+- Cloud enrichment and org workflows in the platform.
+
+## User-facing URLs
+
+- Marketing + install entrypoint: [https://scanrook.sh](https://scanrook.sh)
+- Dashboard/API: [https://scanrook.io](https://scanrook.io)
+- Installer script endpoint: [https://scanrook.sh/install](https://scanrook.sh/install)
+- Installer script alias: [https://scanrook.sh/install.sh](https://scanrook.sh/install.sh)
+
+## Local Development
 
 ```bash
+npm ci
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-test
+Open [http://localhost:3000](http://localhost:3000).
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Build and Quality
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run test:quality
+npm run build
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Key Features in This App
 
-## Learn More
+- Auth (credentials + Google provider wiring).
+- Org-scoped roles and API keys.
+- Invite flows (`/api/org/invites*`).
+- Admin override controls.
+- Scan job history, findings, files, package explorer.
+- OpenAPI JSON and Swagger UI.
 
-To learn more about Next.js, take a look at the following resources:
+## Installer Endpoint Behavior
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+`GET /install` and `GET /install.sh` return shell script content (`text/x-shellscript`) for:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+curl -fsSL https://scanrook.sh/install | bash
+```
 
-## Deploy on Vercel
+## SEO and Link Preview Notes
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+`src/app/layout.tsx` sets:
+- canonical metadata
+- Open Graph metadata
+- Twitter card metadata
+- robots index/follow
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+If previews still look stale, purge CDN cache for `/` and re-share.
+
+## Deploy Notes (Kubernetes)
+
+- Image: `devintripp/deltaguard-ui:latest`
+- Namespace: `deltaguard`
+- Deployment: `deltaguard-web`
+
+Typical rollout:
+
+```bash
+kubectl -n deltaguard rollout restart deployment/deltaguard-web
+kubectl -n deltaguard rollout status deployment/deltaguard-web --timeout=300s
+```

@@ -1,92 +1,129 @@
 "use client";
+
 import React from "react";
 import { openSse } from "@/lib/ssePool";
+import {
+    isErrorStage,
+    isTerminalStage,
+    mapEventToWorkflowStage,
+    WORKFLOW_STAGE_LABELS,
+    WORKFLOW_STAGE_ORDER,
+    type WorkflowStageId,
+} from "@/lib/workflowStages";
 
-type ProgressEvent = { stage: string; detail?: string; ts?: string; pct?: number };
-type FlowStatus = "pending" | "active" | "done" | "error";
+type ProgressEvent = {
+    id?: number;
+    stage: string;
+    detail?: string;
+    ts?: string;
+    pct?: number;
+};
 
-function parse(lines: string[]): ProgressEvent[] {
-    const out: ProgressEvent[] = [];
-    const seen = new Set<string>();
-    for (const l of lines) {
-        try {
-            const j = JSON.parse(l);
-            if (j?.stage) {
-                const key = `${j.stage}|${j.detail ?? ""}|${j.ts ?? ""}|${typeof j.pct === "number" ? j.pct : ""}`;
-                if (seen.has(key)) continue;
-                seen.add(key);
-                out.push({
-                    stage: String(j.stage),
-                    detail: j.detail ?? undefined,
-                    ts: j.ts ?? undefined,
-                    pct: typeof j.pct === "number" ? j.pct : undefined,
-                });
-            }
-        } catch {
-            const m = String(l).match(/^\s*([^:]+?)\s*:\s*(.*)$/);
-            if (m) {
-                const stage = m[1].trim();
-                const detail = m[2].trim();
-                const key = `${stage}|${detail}`;
-                if (!seen.has(key)) {
-                    seen.add(key);
-                    out.push({ stage, detail, pct: undefined });
-                }
-            }
-        }
-    }
-    return out;
-}
+type EventsListPayload = {
+    items?: ProgressEvent[];
+    total?: number;
+    next_cursor?: number | null;
+    has_more?: boolean;
+    page_size?: number;
+    order?: "asc" | "desc";
+};
 
-function groupStage(stage: string): string {
-    const normalized = stage.toLowerCase();
-    if (normalized === "scan.done" || normalized === "scan.summary" || normalized === "scan.err" || normalized === "scan.error") return "summary";
-    const raw = stage.replace(/\.(start|done|ok|err|error|skip)$/i, "");
-    if (/(^|\.)osv(\.|$)/i.test(raw)) return "osv";
-    if (/(^|\.)nvd(\.|$)/i.test(raw)) return "nvd";
-    if (raw.startsWith("container.packages")) return "packages";
-    if (raw.startsWith("container.extract") || raw.startsWith("container.layers")) return "extract";
-    if (raw === "scan" || raw.startsWith("scan.")) return "scan";
-    if (raw.startsWith("binary")) return "binary";
-    return raw;
-}
-
-function isTerminalStage(stage: string): boolean {
-    const s = stage.toLowerCase();
-    return s === "scan.done" || s.endsWith(".done") || s.endsWith(".ok") || s.endsWith(".skip");
-}
-
-function isErrorEvent(e: ProgressEvent): boolean {
-    const s = (e.stage || "").toLowerCase();
-    const d = (e.detail || "").toLowerCase();
-    return s.endsWith(".err") || s.endsWith(".error") || d.includes("error") || d.includes("failed");
-}
+type FlowStatus = "pending" | "active" | "done" | "error" | "skipped";
 
 const BACKDROP = {
     background:
         "radial-gradient(circle at 12% 18%, rgba(14,165,233,0.22), transparent 36%), radial-gradient(circle at 82% 16%, rgba(244,114,182,0.18), transparent 40%), radial-gradient(circle at 30% 88%, rgba(34,197,94,0.16), transparent 34%)",
 };
 
-const LABELS: Record<string, string> = {
-    scan: "Scan start",
-    extract: "Extract image",
-    packages: "Detect packages",
-    osv: "Query/Enrich OSV",
-    nvd: "NVD cache/Enrichment",
-    binary: "Binary analysis",
-    summary: "Scan end",
-};
+const INITIAL_PAGE_SIZE = 1000;
 
-const STAGE_ORDER = ["scan", "extract", "packages", "osv", "nvd", "binary", "summary"];
-const STREAM_SEED_LIMIT = 1200;
-const LIST_LIMIT = 2500;
-const MAX_EVENTS_IN_MEMORY = 4000;
-const MAX_TABLE_ROWS = 800;
+function normalizeEvent(raw: unknown): ProgressEvent | null {
+    if (!raw || typeof raw !== "object") return null;
+    const row = raw as Record<string, unknown>;
+    const stage = typeof row.stage === "string" ? row.stage : "";
+    if (!stage) return null;
+
+    const idRaw = row.id;
+    const id = typeof idRaw === "number" ? idRaw : Number(idRaw);
+    const pctRaw = row.pct;
+    const pct = typeof pctRaw === "number" ? pctRaw : Number(pctRaw);
+
+    return {
+        id: Number.isFinite(id) && id > 0 ? Math.trunc(id) : undefined,
+        stage,
+        detail: typeof row.detail === "string" ? row.detail : undefined,
+        ts: typeof row.ts === "string" ? row.ts : undefined,
+        pct: Number.isFinite(pct) ? pct : undefined,
+    };
+}
+
+function isErrorEvent(e: ProgressEvent): boolean {
+    const d = String(e.detail || "").toLowerCase();
+    return isErrorStage(e.stage) || d.includes("error") || d.includes("failed");
+}
+
+function percentFromDetail(detail?: string): number | undefined {
+    if (!detail) return undefined;
+    const m = /\b(\d{1,3})%\b/.exec(detail);
+    if (!m) return undefined;
+    const n = Number(m[1]);
+    if (!Number.isFinite(n)) return undefined;
+    return Math.max(0, Math.min(100, n));
+}
+
+function withUniqueById(existingDesc: ProgressEvent[], incomingDesc: ProgressEvent[]): ProgressEvent[] {
+    const seen = new Set<number>();
+    const out: ProgressEvent[] = [];
+
+    for (const item of existingDesc) {
+        const id = item.id;
+        if (typeof id === "number" && Number.isFinite(id)) {
+            if (seen.has(id)) continue;
+            seen.add(id);
+        }
+        out.push(item);
+    }
+
+    for (const item of incomingDesc) {
+        const id = item.id;
+        if (typeof id === "number" && Number.isFinite(id)) {
+            if (seen.has(id)) continue;
+            seen.add(id);
+        }
+        out.push(item);
+    }
+
+    out.sort((a, b) => (b.id || 0) - (a.id || 0));
+    return out;
+}
 
 function StageIcon({ stage, className = "h-4 w-4" }: { stage: string; className?: string }) {
     const cls = `${className} shrink-0`;
     switch (stage) {
-        case "scan":
+        case "queued":
+            return (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={cls} aria-hidden="true">
+                    <rect x="5" y="6" width="14" height="12" rx="2" />
+                    <path d="M8 10h8M8 14h5" />
+                </svg>
+            );
+        case "claimed":
+            return (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={cls} aria-hidden="true">
+                    <circle cx="8" cy="12" r="3" />
+                    <circle cx="16" cy="12" r="3" />
+                    <path d="M11 12h2" />
+                </svg>
+            );
+        case "s3_download":
+            return (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={cls} aria-hidden="true">
+                    <path d="M12 3v12" />
+                    <path d="m8 11 4 4 4-4" />
+                    <rect x="4" y="17" width="16" height="4" rx="1" />
+                </svg>
+            );
+        case "scanner_start":
             return (
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={cls} aria-hidden="true">
                     <path d="M7 5v14l11-7z" />
@@ -99,7 +136,7 @@ function StageIcon({ stage, className = "h-4 w-4" }: { stage: string; className?
                     <path d="M3 7.5V16.5L12 21l9-4.5V7.5" />
                 </svg>
             );
-        case "packages":
+        case "inventory":
             return (
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={cls} aria-hidden="true">
                     <path d="M4 6h16M4 12h16M4 18h10" />
@@ -109,7 +146,7 @@ function StageIcon({ stage, className = "h-4 w-4" }: { stage: string; className?
             return (
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={cls} aria-hidden="true">
                     <circle cx="12" cy="12" r="9" />
-                    <path d="M3 12h18M12 3c2.2 2.4 3.4 5.5 3.4 9S14.2 18.6 12 21M12 3C9.8 5.4 8.6 8.5 8.6 12S9.8 18.6 12 21" />
+                    <path d="M3 12h18" />
                 </svg>
             );
         case "nvd":
@@ -119,20 +156,37 @@ function StageIcon({ stage, className = "h-4 w-4" }: { stage: string; className?
                     <path d="m9.5 12 2 2 3-3" />
                 </svg>
             );
-        case "binary":
+        case "redhat":
             return (
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={cls} aria-hidden="true">
-                    <rect x="7" y="7" width="10" height="10" rx="1.5" />
-                    <path d="M9 3v3M12 3v3M15 3v3M9 18v3M12 18v3M15 18v3M3 9h3M3 12h3M3 15h3M18 9h3M18 12h3M18 15h3" />
+                    <path d="M6 8c0-2.2 1.8-4 4-4h4c2.2 0 4 1.8 4 4v8H6z" />
+                    <path d="M6 12h12" />
                 </svg>
             );
-        case "summary":
+        case "ingest":
+            return (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={cls} aria-hidden="true">
+                    <path d="M12 21V9" />
+                    <path d="m16 13-4-4-4 4" />
+                    <rect x="4" y="3" width="16" height="4" rx="1" />
+                </svg>
+            );
+        case "report_upload":
+            return (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={cls} aria-hidden="true">
+                    <path d="M12 3v12" />
+                    <path d="m8 7 4-4 4 4" />
+                    <rect x="4" y="17" width="16" height="4" rx="1" />
+                </svg>
+            );
+        case "complete":
             return (
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={cls} aria-hidden="true">
                     <circle cx="12" cy="12" r="9" />
                     <path d="m8 12 2.6 2.6L16.5 9" />
                 </svg>
             );
+        case "failed":
         case "errors":
             return (
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={cls} aria-hidden="true">
@@ -158,99 +212,109 @@ function StageIcon({ stage, className = "h-4 w-4" }: { stage: string; className?
     }
 }
 
-export default function ProgressGraph({ scanId, eventsPath, mode = "auto", onProgress }: { scanId: string; eventsPath?: string; mode?: "auto" | "stream" | "list"; onProgress?: (pct: number, msg?: string) => void }) {
-    const [lines, setLines] = React.useState<string[]>([]);
+export default function ProgressGraph({
+    scanId,
+    eventsPath,
+    mode = "auto",
+    onProgress,
+}: {
+    scanId: string;
+    eventsPath?: string;
+    mode?: "auto" | "stream" | "list";
+    onProgress?: (pct: number, msg?: string) => void;
+}) {
+    const [eventsDesc, setEventsDesc] = React.useState<ProgressEvent[]>([]);
     const [totalEvents, setTotalEvents] = React.useState<number | null>(null);
+    const [nextCursor, setNextCursor] = React.useState<number | null>(null);
+    const [hasMore, setHasMore] = React.useState(false);
     const [selectedTab, setSelectedTab] = React.useState<string>("all");
     const [loading, setLoading] = React.useState(true);
+    const [loadingMore, setLoadingMore] = React.useState(false);
     const [error, setError] = React.useState<string | null>(null);
     const [nowMs, setNowMs] = React.useState<number>(() => Date.now());
 
+    const fetchPage = React.useCallback(async (cursor?: number | null) => {
+        const params = new URLSearchParams();
+        params.set("order", "desc");
+        params.set("page_size", String(INITIAL_PAGE_SIZE));
+        if (cursor && cursor > 0) params.set("cursor", String(cursor));
+
+        const res = await fetch(`/api/jobs/${scanId}/events/list?${params.toString()}`, {
+            cache: "no-store",
+        });
+        if (!res.ok) {
+            let msg = `HTTP ${res.status}`;
+            try {
+                const json = await res.json();
+                msg = json?.error || msg;
+            } catch {
+                // noop
+            }
+            throw new Error(msg);
+        }
+
+        const body = (await res.json()) as EventsListPayload | ProgressEvent[];
+        if (Array.isArray(body)) {
+            const legacyItems = body.map(normalizeEvent).filter((x): x is ProgressEvent => Boolean(x));
+            return {
+                items: legacyItems.sort((a, b) => (b.id || 0) - (a.id || 0)),
+                total: legacyItems.length,
+                next_cursor: null,
+                has_more: false,
+            };
+        }
+
+        const items = Array.isArray(body.items)
+            ? body.items.map(normalizeEvent).filter((x): x is ProgressEvent => Boolean(x))
+            : [];
+
+        return {
+            items,
+            total: typeof body.total === "number" ? body.total : items.length,
+            next_cursor: typeof body.next_cursor === "number" ? body.next_cursor : null,
+            has_more: body.has_more === true,
+        };
+    }, [scanId]);
+
     React.useEffect(() => {
-        const streamUrl = eventsPath || `/api/scans/${scanId}/events`;
-        const listLimit = mode === "list" ? LIST_LIMIT : STREAM_SEED_LIMIT;
-        const listUrl = `/api/jobs/${scanId}/events/list?limit=${listLimit}`;
-        let closeFn: (() => void) | null = null;
         let cancelled = false;
+        let closeFn: (() => void) | null = null;
 
         async function run() {
             setLoading(true);
             setError(null);
+            setEventsDesc([]);
+            setTotalEvents(null);
+            setNextCursor(null);
+            setHasMore(false);
 
-            if (mode === "list") {
-                try {
-                    const res = await fetch(listUrl, { cache: "no-store" });
-                    let arr: ProgressEvent[] = [];
-                    if (res.ok) arr = await res.json();
-                    const totalHeader = Number(res.headers.get("x-events-total") || "");
-                    if (Number.isFinite(totalHeader) && totalHeader >= 0 && !cancelled) {
-                        setTotalEvents(totalHeader);
-                    }
+            try {
+                const first = await fetchPage(null);
+                if (cancelled) return;
 
-                    const hasSummary = Array.isArray(arr) && arr.some((e) => String(e?.stage || "").toLowerCase().includes("scan.summary"));
-                    if (!hasSummary) {
-                        try {
-                            const presigned = await fetch(`/api/jobs/${scanId}/report`, { cache: "no-store" });
-                            if (presigned.ok) {
-                                const p = await presigned.json();
-                                if (p?.url) {
-                                    const rep = await fetch(String(p.url));
-                                    if (rep.ok) {
-                                        const json = await rep.json().catch(() => null);
-                                        if (json) {
-                                            const summary = (json.summary) ? json.summary : json;
-                                            arr.push({ ts: new Date().toISOString(), stage: "scan.summary", detail: JSON.stringify(summary), pct: 100 });
-                                        }
-                                    }
-                                }
-                            }
-                        } catch { }
-                    }
+                setEventsDesc(first.items);
+                setTotalEvents(Number.isFinite(first.total) ? first.total : first.items.length);
+                setNextCursor(first.next_cursor);
+                setHasMore(first.has_more);
+                setLoading(false);
 
-                    if (!cancelled) {
-                        const seeded = (Array.isArray(arr) ? arr : [])
-                            .slice(-MAX_EVENTS_IN_MEMORY)
-                            .map((x) => JSON.stringify(x));
-                        setLines(seeded);
-                    }
-                } catch (e: unknown) {
-                    if (!cancelled) setError(String(e instanceof Error ? e.message : e));
-                } finally {
-                    if (!cancelled) setLoading(false);
-                }
-                return;
-            }
+                if (mode === "list") return;
+                const highestId = first.items.reduce((max, e) => Math.max(max, e.id || 0), 0);
+                const streamBase = eventsPath || `/api/jobs/${scanId}/events`;
+                const streamUrl = `${streamBase}${streamBase.includes("?") ? "&" : "?"}since_id=${highestId}`;
 
-            if (mode === "stream" || mode === "auto") {
-                try {
-                    const seed = await fetch(listUrl, { cache: "no-store" });
-                    if (seed.ok) {
-                        const arr = await seed.json() as ProgressEvent[];
-                        const totalHeader = Number(seed.headers.get("x-events-total") || "");
-                        if (!cancelled && Number.isFinite(totalHeader) && totalHeader >= 0) {
-                            setTotalEvents(totalHeader);
-                        }
-                        if (!cancelled && Array.isArray(arr)) {
-                            const seeded = arr
-                                .slice(-MAX_EVENTS_IN_MEMORY)
-                                .map((x) => JSON.stringify(x));
-                            setLines(seeded);
-                        }
-                    }
-                } catch (e: unknown) {
-                    if (!cancelled) setError(String(e instanceof Error ? e.message : e));
-                } finally {
-                    if (!cancelled) setLoading(false);
-                }
-
-                openSse(streamUrl, {
+                closeFn = await openSse(streamUrl, {
                     onMessage: (ev) => {
-                        setLines((prev) => {
-                            const next = [...prev, ev.data];
-                            if (next.length > MAX_EVENTS_IN_MEMORY) {
-                                return next.slice(next.length - MAX_EVENTS_IN_MEMORY);
-                            }
-                            return next;
+                        let parsed: ProgressEvent | null = null;
+                        try {
+                            parsed = normalizeEvent(JSON.parse(ev.data));
+                        } catch {
+                            parsed = null;
+                        }
+                        if (!parsed) return;
+
+                        setEventsDesc((prev) => {
+                            return withUniqueById(prev, [parsed]);
                         });
                         setTotalEvents((prev) => {
                             if (prev == null) return prev;
@@ -258,22 +322,56 @@ export default function ProgressGraph({ scanId, eventsPath, mode = "auto", onPro
                         });
                         setLoading(false);
                     },
-                    onError: () => { try { closeFn?.(); } catch { } },
-                }).then((c) => { closeFn = c; });
+                    onError: () => {
+                        try {
+                            closeFn?.();
+                        } catch {
+                            // noop
+                        }
+                    },
+                });
+            } catch (e: unknown) {
+                if (!cancelled) {
+                    setError(e instanceof Error ? e.message : String(e));
+                    setLoading(false);
+                }
             }
         }
 
         run();
+
         return () => {
             cancelled = true;
-            try { closeFn?.(); } catch { }
+            try {
+                closeFn?.();
+            } catch {
+                // noop
+            }
         };
-    }, [scanId, eventsPath, mode]);
+    }, [scanId, eventsPath, mode, fetchPage]);
 
-    const events = React.useMemo(() => parse(lines), [lines]);
+    const loadOlder = React.useCallback(async () => {
+        if (!hasMore || !nextCursor || loadingMore) return;
+        setLoadingMore(true);
+        try {
+            const page = await fetchPage(nextCursor);
+            setEventsDesc((prev) => withUniqueById(prev, page.items));
+            setNextCursor(page.next_cursor);
+            setHasMore(page.has_more);
+            setTotalEvents((prev) => (prev == null ? page.total : Math.max(prev, page.total)));
+        } catch (e: unknown) {
+            setError(e instanceof Error ? e.message : String(e));
+        } finally {
+            setLoadingMore(false);
+        }
+    }, [fetchPage, hasMore, nextCursor, loadingMore]);
+
+    const eventsChrono = React.useMemo(() => [...eventsDesc].reverse(), [eventsDesc]);
 
     const progressCbRef = React.useRef<typeof onProgress | undefined>(undefined);
-    React.useEffect(() => { progressCbRef.current = onProgress; }, [onProgress]);
+    React.useEffect(() => {
+        progressCbRef.current = onProgress;
+    }, [onProgress]);
 
     const lastSentRef = React.useRef<{ pct: number; msg?: string }>({ pct: 0, msg: undefined });
     React.useEffect(() => {
@@ -282,20 +380,24 @@ export default function ProgressGraph({ scanId, eventsPath, mode = "auto", onPro
     }, [scanId]);
 
     React.useEffect(() => {
-        if (!events.length) return;
+        if (!eventsChrono.length) return;
+
         let latestPct = -1;
         let latestMsg: string | undefined = undefined;
 
-        for (let i = events.length - 1; i >= 0; i--) {
-            const e = events[i];
-            if (!latestMsg && typeof e.detail === "string" && e.detail) latestMsg = e.detail;
-            const pctMatch = /\b(\d{1,3})%\b/.exec(String(e.detail || ""));
-            let p = typeof e.pct === "number" ? e.pct : (pctMatch ? Number(pctMatch[1]) : undefined);
-            if (p === undefined && isTerminalStage(e.stage)) p = 100;
-            if (typeof p === "number") {
-                latestPct = Math.max(latestPct, Math.min(100, Math.max(0, p)));
+        for (let i = eventsChrono.length - 1; i >= 0; i--) {
+            const e = eventsChrono[i];
+            if (!latestMsg && e.detail) latestMsg = e.detail;
+
+            let p = typeof e.pct === "number" ? e.pct : percentFromDetail(e.detail);
+            if (p === undefined && isTerminalStage(e.stage)) {
+                p = 100;
             }
-            if (latestPct >= 0) break;
+
+            if (typeof p === "number") {
+                latestPct = Math.max(latestPct, Math.max(0, Math.min(100, p)));
+                break;
+            }
         }
 
         if (latestPct >= 0) {
@@ -303,119 +405,166 @@ export default function ProgressGraph({ scanId, eventsPath, mode = "auto", onPro
             latestPct = Math.max(prev.pct, latestPct);
             if (prev.pct !== latestPct || prev.msg !== latestMsg) {
                 lastSentRef.current = { pct: latestPct, msg: latestMsg };
-                try { progressCbRef.current?.(latestPct, latestMsg); } catch { }
+                try {
+                    progressCbRef.current?.(latestPct, latestMsg);
+                } catch {
+                    // noop
+                }
             }
         }
-    }, [events]);
+    }, [eventsChrono]);
 
-    React.useEffect(() => {
-        setTotalEvents(null);
-    }, [scanId]);
-
-    const stages = React.useMemo(() => {
-        const acc: Record<string, ProgressEvent[]> = {};
-        for (const e of events) {
-            const key = groupStage(e.stage);
-            (acc[key] ||= []).push(e);
+    const grouped = React.useMemo(() => {
+        const out: Record<string, ProgressEvent[]> = {};
+        for (const e of eventsChrono) {
+            const stage = mapEventToWorkflowStage(e.stage);
+            if (!stage) continue;
+            (out[stage] ||= []).push(e);
         }
-        return acc;
-    }, [events]);
+        return out;
+    }, [eventsChrono]);
 
-    const rank = (k: string) => {
-        const i = STAGE_ORDER.indexOf(k);
-        return i === -1 ? 999 : i;
-    };
+    const errorCount = React.useMemo(() => eventsChrono.filter(isErrorEvent).length, [eventsChrono]);
 
-    const ordered = Object.keys(stages).sort((a, b) => {
-        const r = rank(a) - rank(b);
-        return r !== 0 ? r : a.localeCompare(b);
-    });
+    const terminal = React.useMemo(() => {
+        return [...eventsChrono].reverse().find((e) => isTerminalStage(e.stage));
+    }, [eventsChrono]);
 
-    const errorCount = events.filter(isErrorEvent).length;
-    const firstEvent = events[0];
-    const lastEvent = events.length ? events[events.length - 1] : undefined;
+    const terminalStage = String(terminal?.stage || "").toLowerCase();
+    const isFailed = terminalStage === "scan.err" || terminalStage === "scan.error" || terminalStage === "worker.stale.fail";
+    const isFinished = terminalStage === "scan.done" || terminalStage === "scan.summary";
+
+    const firstEvent = eventsChrono[0];
+    const lastEvent = eventsChrono.length ? eventsChrono[eventsChrono.length - 1] : undefined;
     const firstTs = firstEvent?.ts ? new Date(firstEvent.ts).getTime() : 0;
     const lastTs = lastEvent?.ts ? new Date(lastEvent.ts).getTime() : 0;
-    const hasTerminalScan = events.some((e) => {
-        const s = String(e.stage || "").toLowerCase();
-        return s === "scan.done" || s === "scan.summary" || s === "scan.err" || s === "scan.error";
-    });
-    const effectiveLastTs = hasTerminalScan ? lastTs : Math.max(lastTs, nowMs);
+    const effectiveLastTs = terminal ? lastTs : Math.max(lastTs, nowMs);
     const durationSec = firstTs && effectiveLastTs >= firstTs ? Math.round((effectiveLastTs - firstTs) / 1000) : 0;
 
     React.useEffect(() => {
-        if (!events.length || hasTerminalScan) return;
+        if (!eventsChrono.length || terminal) return;
         const timer = setInterval(() => setNowMs(Date.now()), 1000);
         return () => clearInterval(timer);
-    }, [events.length, hasTerminalScan]);
-
-    const tabs = React.useMemo(() => {
-        const t: Array<{ id: string; label: string; count: number }> = [{ id: "all", label: "All", count: events.length }];
-        for (const id of ordered) {
-            t.push({ id, label: LABELS[id] || id, count: (stages[id] || []).length });
-        }
-        if (errorCount > 0) t.push({ id: "errors", label: "Errors", count: errorCount });
-        return t;
-    }, [events.length, ordered, stages, errorCount]);
-
-    const selectedEvents = React.useMemo(() => {
-        if (selectedTab === "all") return events;
-        if (selectedTab === "errors") return events.filter(isErrorEvent);
-        return stages[selectedTab] || [];
-    }, [events, selectedTab, stages]);
-    const renderedEvents = React.useMemo(() => {
-        if (selectedEvents.length <= MAX_TABLE_ROWS) return selectedEvents;
-        return selectedEvents.slice(selectedEvents.length - MAX_TABLE_ROWS);
-    }, [selectedEvents]);
+    }, [eventsChrono.length, terminal]);
 
     const flow = React.useMemo(() => {
-        const seen = new Set<string>();
-        let lastSeenIndex = -1;
-        for (const e of events) {
-            const g = groupStage(e.stage);
-            const idx = STAGE_ORDER.indexOf(g);
-            if (idx !== -1) {
-                seen.add(g);
-                if (idx > lastSeenIndex) lastSeenIndex = idx;
+        const stageStatus = {} as Record<WorkflowStageId, FlowStatus>;
+        const completeIdx = WORKFLOW_STAGE_ORDER.indexOf("complete");
+        const failedIdx = WORKFLOW_STAGE_ORDER.indexOf("failed");
+        const stageMeta = {} as Record<WorkflowStageId, { hasEvents: boolean; hasErr: boolean; hasExplicitSkip: boolean }>;
+
+        const seenIndexes: number[] = [];
+        for (const e of eventsChrono) {
+            const stage = mapEventToWorkflowStage(e.stage);
+            if (!stage) continue;
+            const idx = WORKFLOW_STAGE_ORDER.indexOf(stage);
+            if (idx >= 0) seenIndexes.push(idx);
+        }
+        const firstSeenIndex = seenIndexes.length ? Math.min(...seenIndexes) : -1;
+        const lastSeenIndex = seenIndexes.length ? Math.max(...seenIndexes) : -1;
+
+        for (let i = 0; i < WORKFLOW_STAGE_ORDER.length; i++) {
+            const id = WORKFLOW_STAGE_ORDER[i];
+            const eventsForStage = grouped[id] || [];
+            const hasEvents = eventsForStage.length > 0;
+            const hasErr = eventsForStage.some(isErrorEvent);
+            const hasExplicitSkip = eventsForStage.some((e) => {
+                const stage = String(e.stage || "").toLowerCase();
+                return stage.endsWith(".skip") || stage.endsWith(".skipped") || stage.includes(".skip.");
+            });
+            stageMeta[id] = { hasEvents, hasErr, hasExplicitSkip };
+
+            let status: FlowStatus = "pending";
+            if (id === "failed") {
+                status = isFailed ? "error" : hasEvents ? "done" : "pending";
+            } else if (id === "complete") {
+                status = isFinished ? "done" : hasEvents ? "active" : "pending";
+            } else if (hasErr) {
+                status = "error";
+            } else if (hasExplicitSkip) {
+                status = "skipped";
+            } else if (hasEvents) {
+                status = terminal || i < lastSeenIndex ? "done" : "active";
+            } else if (!terminal && i === lastSeenIndex + 1 && lastSeenIndex >= 0) {
+                status = "active";
+            }
+
+            stageStatus[id] = status;
+        }
+
+        let visibleIds: WorkflowStageId[] = [];
+        if (terminal) {
+            visibleIds = WORKFLOW_STAGE_ORDER.filter((id) => {
+                if (id === "complete") return isFinished;
+                if (id === "failed") return isFailed;
+                if (!stageMeta[id].hasEvents) return false;
+                return stageStatus[id] !== "skipped";
+            });
+            if (isFinished && !visibleIds.includes("complete")) visibleIds.push("complete");
+            if (isFailed && !visibleIds.includes("failed")) visibleIds.push("failed");
+        } else {
+            const visibleStart = firstSeenIndex >= 0 ? firstSeenIndex : 0;
+            let visibleEnd = lastSeenIndex >= 0 ? lastSeenIndex : visibleStart;
+
+            if (isFinished) {
+                visibleEnd = completeIdx;
+            } else if (isFailed) {
+                visibleEnd = failedIdx;
+            } else if (lastSeenIndex >= 0) {
+                visibleEnd = Math.min(WORKFLOW_STAGE_ORDER.length - 1, lastSeenIndex + 1);
+            }
+
+            if (visibleEnd < visibleStart) {
+                visibleEnd = visibleStart;
+            }
+
+            visibleIds = WORKFLOW_STAGE_ORDER.slice(visibleStart, visibleEnd + 1);
+            if (isFailed) {
+                visibleIds = visibleIds.filter((id) => id !== "complete");
+                if (!visibleIds.includes("failed")) visibleIds.push("failed");
+            } else {
+                visibleIds = visibleIds.filter((id) => id !== "failed");
+                if (!visibleIds.includes("complete")) visibleIds.push("complete");
             }
         }
 
-        const terminalEvent = [...events].reverse().find((e) => {
-            const s = String(e.stage || "").toLowerCase();
-            return s === "scan.done" || s === "scan.summary" || s === "scan.err" || s === "scan.error";
-        });
-        const terminalStage = String(terminalEvent?.stage || "").toLowerCase();
-        const isFailed = terminalStage === "scan.err" || terminalStage === "scan.error";
-        const isFinished = terminalStage === "scan.done" || terminalStage === "scan.summary";
-
-        const statuses = STAGE_ORDER.map((id, idx) => {
-            const subs = stages[id] || [];
-            const hasEvents = subs.length > 0;
-            const hasErr = subs.some(isErrorEvent);
-            const hasDone = subs.some((e) => isTerminalStage(e.stage));
-
-            let status: FlowStatus = "pending";
-            if (hasErr || (id === "summary" && isFailed)) {
-                status = "error";
-            } else if ((id === "summary" && isFinished) || hasDone || idx < lastSeenIndex) {
-                status = "done";
-            } else if (hasEvents || idx === lastSeenIndex) {
-                status = "active";
-            }
-            return { id, status };
-        });
-
         return {
-            statuses,
-            isFinished,
+            stageStatus,
+            visibleIds,
             isFailed,
-            finishedTs: terminalEvent?.ts,
+            isFinished,
+            finishedTs: terminal?.ts,
         };
-    }, [events, stages]);
+    }, [eventsChrono, grouped, terminal, isFailed, isFinished]);
+
+    const tabs = React.useMemo(() => {
+        const out: Array<{ id: string; label: string; count: number }> = [
+            { id: "all", label: "All", count: eventsChrono.length },
+        ];
+
+        for (const id of WORKFLOW_STAGE_ORDER) {
+            const count = (grouped[id] || []).length;
+            if (count > 0 || id === "complete" || id === "failed") {
+                out.push({ id, label: WORKFLOW_STAGE_LABELS[id], count });
+            }
+        }
+
+        if (errorCount > 0) {
+            out.push({ id: "errors", label: "Errors", count: errorCount });
+        }
+
+        return out;
+    }, [eventsChrono.length, grouped, errorCount]);
 
     React.useEffect(() => {
         if (!tabs.find((t) => t.id === selectedTab)) setSelectedTab("all");
     }, [tabs, selectedTab]);
+
+    const selectedEvents = React.useMemo(() => {
+        if (selectedTab === "all") return eventsChrono;
+        if (selectedTab === "errors") return eventsChrono.filter(isErrorEvent);
+        return grouped[selectedTab] || [];
+    }, [eventsChrono, selectedTab, grouped]);
 
     if (loading) {
         return (
@@ -431,7 +580,7 @@ export default function ProgressGraph({ scanId, eventsPath, mode = "auto", onPro
             </div>
         );
     }
-    if (!events.length) {
+    if (!eventsChrono.length) {
         return (
             <div className="rounded-xl border border-black/10 dark:border-white/10 p-3 text-sm opacity-75">
                 No workflow events yet.
@@ -439,14 +588,11 @@ export default function ProgressGraph({ scanId, eventsPath, mode = "auto", onPro
         );
     }
 
-    function safeSummary(text: string) {
-        try { const j = JSON.parse(text); return JSON.stringify(j, null, 2); } catch { return text; }
-    }
-
     const flowLabel = (status: FlowStatus) => {
         if (status === "done") return "Done";
         if (status === "active") return "Running";
         if (status === "error") return "Error";
+        if (status === "skipped") return "Skipped";
         return "Pending";
     };
 
@@ -454,121 +600,128 @@ export default function ProgressGraph({ scanId, eventsPath, mode = "auto", onPro
         if (status === "done") return "bg-emerald-600 text-white border-emerald-700";
         if (status === "active") return "bg-cyan-600 text-white border-cyan-700";
         if (status === "error") return "bg-red-600 text-white border-red-700";
+        if (status === "skipped") return "bg-amber-500/80 text-amber-950 border-amber-700/70";
         return "bg-white/80 dark:bg-black/45 text-black/80 dark:text-white/80 border-black/10 dark:border-white/10";
     };
 
-    const workflowStateLabel = flow.isFailed ? "Scan failed" : (flow.isFinished ? "Scan finished" : "Scan running");
+    const workflowStateLabel = isFailed ? "Scan failed" : (isFinished ? "Scan finished" : "Scan running");
 
     const stageTone = (id: string) => {
         if (id === "errors") return "bg-red-600/90 text-white";
         if (id === "all") return "bg-slate-800/90 text-white";
-        const subs = stages[id] || [];
+        const subs = grouped[id] || [];
         if (!subs.length) return "bg-gray-500/80 text-white";
         const hasStart = subs.some((e) => /\.start$/i.test(e.stage) || e.stage === "scan.start");
         const done = subs.some((e) => isTerminalStage(e.stage));
         if (hasStart && !done) return "bg-cyan-600 text-white";
-        if (done) return "bg-emerald-600 text-white";
+        if (done || subs.length > 0) return "bg-emerald-600 text-white";
         return "bg-gray-500 text-white";
     };
+
+    const loadedEvents = eventsDesc.length;
+    const total = totalEvents ?? loadedEvents;
 
     return (
         <div className="relative rounded-2xl border border-black/10 dark:border-white/10 overflow-hidden" style={BACKDROP}>
             <div className="relative grid gap-3 p-4">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
-                    <div className="rounded-lg border border-black/10 dark:border-white/10 bg-white/75 dark:bg-black/45 px-3 py-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-4 gap-2">
+                    <div className="rounded-lg border border-black/10 dark:border-white/10 bg-white/75 dark:bg-black/45 px-3 py-2 min-w-0">
                         <div className="text-[11px] uppercase tracking-wide opacity-70">Events</div>
-                        <div className="text-xl font-semibold">{totalEvents ?? events.length}</div>
-                        {totalEvents !== null && totalEvents > events.length ? (
-                            <div className="text-[11px] opacity-70">window: latest {events.length}</div>
-                        ) : null}
+                        <div className="text-xl font-semibold">{total}</div>
+                        <div className="text-[11px] opacity-70">loaded {loadedEvents} of {total}</div>
                     </div>
-                    <div className="rounded-lg border border-black/10 dark:border-white/10 bg-white/75 dark:bg-black/45 px-3 py-2">
+                    <div className="rounded-lg border border-black/10 dark:border-white/10 bg-white/75 dark:bg-black/45 px-3 py-2 min-w-0">
                         <div className="text-[11px] uppercase tracking-wide opacity-70">Duration</div>
                         <div className="text-xl font-semibold">{durationSec > 0 ? `${durationSec}s` : "n/a"}</div>
                     </div>
-                    <div className="rounded-lg border border-black/10 dark:border-white/10 bg-white/75 dark:bg-black/45 px-3 py-2">
+                    <div className="rounded-lg border border-black/10 dark:border-white/10 bg-white/75 dark:bg-black/45 px-3 py-2 min-w-0">
                         <div className="text-[11px] uppercase tracking-wide opacity-70">Errors</div>
                         <div className="text-xl font-semibold">{errorCount}</div>
                     </div>
-                    <div className="rounded-lg border border-black/10 dark:border-white/10 bg-white/75 dark:bg-black/45 px-3 py-2">
+                    <div className="rounded-lg border border-black/10 dark:border-white/10 bg-white/75 dark:bg-black/45 px-3 py-2 min-w-0">
                         <div className="text-[11px] uppercase tracking-wide opacity-70">Status</div>
-                        <div className="flex items-center gap-1.5 text-base font-semibold">
-                            <StageIcon stage={flow.isFailed ? "errors" : "summary"} className="h-4 w-4" />
-                            <span>{workflowStateLabel}</span>
+                        <div className="flex items-center gap-1.5 text-base font-semibold min-w-0">
+                            <StageIcon stage={isFailed ? "failed" : "complete"} className="h-4 w-4" />
+                            <span className="truncate">{workflowStateLabel}</span>
                         </div>
-                        <div className="text-[11px] opacity-70">
+                        <div className="text-[11px] opacity-70 truncate">
                             {flow.finishedTs ? `Updated ${new Date(flow.finishedTs).toLocaleTimeString()}` : "Awaiting completion event"}
                         </div>
                     </div>
                 </div>
 
-                <div className="rounded-xl border border-black/10 dark:border-white/10 bg-white/75 dark:bg-black/45 p-3">
-                    <div className="flex items-center justify-between gap-2 mb-3">
+                <div className="rounded-xl border border-black/10 dark:border-white/10 bg-white/75 dark:bg-black/45 p-3 min-w-0">
+                    <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
                         <span className="text-[11px] uppercase tracking-wide opacity-70">Workflow Flow</span>
-                        <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold border ${
-                            flow.isFailed
+                        <span className={`inline-flex max-w-full items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold border whitespace-nowrap min-w-0 ${
+                            isFailed
                                 ? "bg-red-600 text-white border-red-700"
-                                : flow.isFinished
+                                : isFinished
                                     ? "bg-emerald-600 text-white border-emerald-700"
                                     : "bg-cyan-600 text-white border-cyan-700"
                         }`}>
-                            <StageIcon stage={flow.isFailed ? "errors" : "summary"} className="h-3.5 w-3.5" />
-                            <span>{workflowStateLabel}</span>
-                            {flow.finishedTs ? <span className="opacity-85">{new Date(flow.finishedTs).toLocaleTimeString()}</span> : null}
+                            <StageIcon stage={isFailed ? "failed" : "complete"} className="h-3.5 w-3.5" />
+                            <span className="truncate">{workflowStateLabel}</span>
+                            {flow.finishedTs ? <span className="opacity-85 truncate">{new Date(flow.finishedTs).toLocaleTimeString()}</span> : null}
                         </span>
                     </div>
-                    <div className="overflow-x-auto">
-                        <div className="min-w-[760px] flex items-center gap-2">
-                            {STAGE_ORDER.map((id, idx) => {
-                                const state = flow.statuses[idx]?.status || "pending";
-                                const connectClass =
-                                    state === "error"
-                                        ? "bg-red-500/80"
-                                        : (state === "done" || state === "active")
-                                            ? "bg-cyan-500/80"
-                                            : "bg-black/10 dark:bg-white/10";
+                    <div className="w-full min-w-0 overflow-hidden pb-1">
+                        <div
+                            className="grid w-full min-w-0 items-start gap-2"
+                            style={{ gridTemplateColumns: `repeat(${Math.max(flow.visibleIds.length, 1)}, minmax(0, 1fr))` }}
+                        >
+                            {flow.visibleIds.map((id, idx) => {
+                                const state = flow.stageStatus[id] || "pending";
                                 return (
-                                    <React.Fragment key={id}>
-                                        <div className="w-28 shrink-0 text-center">
-                                            <div className={`mx-auto h-9 w-9 rounded-full border flex items-center justify-center ${flowTone(state)}`}>
-                                                <StageIcon stage={id} className="h-4 w-4" />
-                                            </div>
-                                            <div className="mt-1 text-[11px] font-semibold leading-tight">{LABELS[id] || id}</div>
-                                            <div className="text-[10px] opacity-70">{flowLabel(state)}</div>
+                                    <div key={id} className="min-w-0 text-center">
+                                        <div className={`mx-auto h-8 w-8 rounded-full border flex items-center justify-center ${flowTone(state)}`}>
+                                            <StageIcon stage={id} className="h-4 w-4" />
                                         </div>
-                                        {idx < STAGE_ORDER.length - 1 ? <div className={`h-1 flex-1 rounded ${connectClass}`} /> : null}
-                                    </React.Fragment>
+                                        <div className="text-[9px] uppercase opacity-60 mt-1">Step {idx + 1}</div>
+                                        <div className="mt-1 text-[10px] font-semibold leading-tight break-words px-1">{WORKFLOW_STAGE_LABELS[id]}</div>
+                                        <div className="text-[9px] opacity-70 truncate px-1">{flowLabel(state)}</div>
+                                    </div>
                                 );
                             })}
                         </div>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2 overflow-x-auto pb-1">
-                    {tabs.map((t) => (
+                <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                        {tabs.map((t) => (
+                            <button
+                                key={t.id}
+                                onClick={() => setSelectedTab(t.id)}
+                                className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap border border-black/10 dark:border-white/10 transition ${selectedTab === t.id ? stageTone(t.id) : "bg-white/80 dark:bg-black/45 hover:bg-white dark:hover:bg-black/55"}`}
+                            >
+                                <StageIcon stage={t.id} className="h-3.5 w-3.5" />
+                                <span>{t.label}</span>
+                                <span className={`px-1.5 py-0.5 rounded-full ${selectedTab === t.id ? "bg-white/20" : "bg-black/10 dark:bg-white/10"}`}>{t.count}</span>
+                            </button>
+                        ))}
+                    </div>
+                    {hasMore ? (
                         <button
-                            key={t.id}
-                            onClick={() => setSelectedTab(t.id)}
-                            className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap border border-black/10 dark:border-white/10 transition ${selectedTab === t.id ? stageTone(t.id) : "bg-white/80 dark:bg-black/45 hover:bg-white dark:hover:bg-black/55"}`}
+                            onClick={loadOlder}
+                            disabled={loadingMore}
+                            className="shrink-0 rounded-md border border-black/20 dark:border-white/20 px-3 py-1.5 text-xs font-semibold bg-white/80 dark:bg-black/45 hover:bg-white dark:hover:bg-black/55 disabled:opacity-60"
                         >
-                            <StageIcon stage={t.id} className="h-3.5 w-3.5" />
-                            <span>{t.label}</span>
-                            <span className={`px-1.5 py-0.5 rounded-full ${selectedTab === t.id ? "bg-white/20" : "bg-black/10 dark:bg-white/10"}`}>{t.count}</span>
+                            {loadingMore ? "Loading…" : "Load older"}
                         </button>
-                    ))}
+                    ) : null}
                 </div>
 
                 <div className="rounded-xl border border-black/10 dark:border-white/10 bg-white/75 dark:bg-black/45 overflow-hidden">
                     <div className="px-3 py-2 text-xs font-semibold border-b border-black/10 dark:border-white/10 flex items-center justify-between">
                         <span>{tabs.find((t) => t.id === selectedTab)?.label || "Events"}</span>
-                        <span className="opacity-70">
-                            {renderedEvents.length} shown{selectedEvents.length > renderedEvents.length ? ` (latest of ${selectedEvents.length})` : ""}
-                        </span>
+                        <span className="opacity-70">{selectedEvents.length} loaded rows</span>
                     </div>
-                    <div className="max-h-72 overflow-auto">
+                    <div className="max-h-80 overflow-auto">
                         <table className="w-full text-xs">
                             <thead className="sticky top-0 bg-black/[.06] dark:bg-white/[.06] backdrop-blur">
                                 <tr>
+                                    <th className="p-2 text-left w-[90px]">ID</th>
                                     <th className="p-2 text-left w-[125px]">Time</th>
                                     <th className="p-2 text-left w-[280px]">Stage</th>
                                     <th className="p-2 text-left w-[70px]">Pct</th>
@@ -576,31 +729,27 @@ export default function ProgressGraph({ scanId, eventsPath, mode = "auto", onPro
                                 </tr>
                             </thead>
                             <tbody>
-                                {renderedEvents.map((e, idx) => {
+                                {selectedEvents.map((e, idx) => {
                                     const errRow = isErrorEvent(e);
-                                    const detail = selectedTab === "summary" && e.detail ? safeSummary(e.detail) : (e.detail || "");
-                                    const eventStageGroup = groupStage(e.stage);
+                                    const mappedStage = mapEventToWorkflowStage(e.stage) || "all";
                                     return (
-                                        <tr key={`${e.stage}-${e.ts || idx}-${idx}`} className={`border-t border-black/5 dark:border-white/5 ${errRow ? "bg-red-500/10" : ""}`}>
+                                        <tr key={`${e.id || 0}-${e.ts || idx}-${idx}`} className={`border-t border-black/5 dark:border-white/5 ${errRow ? "bg-red-500/10" : ""}`}>
+                                            <td className="p-2 font-mono text-[11px] opacity-75">{e.id || ""}</td>
                                             <td className="p-2 whitespace-nowrap opacity-75">{e.ts ? new Date(e.ts).toLocaleTimeString() : ""}</td>
                                             <td className="p-2 font-medium">
                                                 <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md border border-black/10 dark:border-white/10 ${errRow ? "bg-red-600/20" : "bg-black/5 dark:bg-white/10"}`}>
-                                                    <StageIcon stage={errRow ? "errors" : eventStageGroup} className="h-3.5 w-3.5" />
+                                                    <StageIcon stage={mappedStage} className="h-3.5 w-3.5" />
                                                     {e.stage}
                                                 </span>
                                             </td>
                                             <td className="p-2 opacity-80">{typeof e.pct === "number" ? `${e.pct}%` : ""}</td>
-                                            <td className="p-2 opacity-90 break-words">
-                                                {selectedTab === "summary" && detail ? (
-                                                    <pre className="whitespace-pre-wrap text-[11px]">{detail}</pre>
-                                                ) : detail}
-                                            </td>
+                                            <td className="p-2 opacity-90 break-words">{e.detail || ""}</td>
                                         </tr>
                                     );
                                 })}
                             </tbody>
                         </table>
-                        {renderedEvents.length === 0 && (
+                        {selectedEvents.length === 0 && (
                             <div className="px-3 py-6 text-sm opacity-70">No events in this tab.</div>
                         )}
                     </div>

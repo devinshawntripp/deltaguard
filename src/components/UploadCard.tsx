@@ -125,10 +125,10 @@ export default function UploadCard() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="rounded-xl border border-black/10 dark:border-white/10 p-6 bg-white/60 dark:bg-black/30 backdrop-blur grid gap-4">
+    <form onSubmit={onSubmit} className="surface-card p-6 backdrop-blur grid gap-4">
       <div className="flex items-center justify-between">
-        <div className="font-medium">Upload file</div>
-        <div className="flex items-center gap-2 text-xs opacity-80">
+        <div className="font-semibold tracking-tight">Upload artifact</div>
+        <div className="flex items-center gap-2 text-xs muted">
           <label>
             <input type="radio" name="mode" value="light" checked={mode === "light"} onChange={() => setMode("light")} /> Light
           </label>
@@ -141,14 +141,11 @@ export default function UploadCard() {
         <input
           type="file"
           onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-          className="block w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-black/80 file:text-white hover:file:bg-black"
+          className="block w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-md file:border file:border-transparent file:text-sm file:font-semibold file:bg-teal-700 file:text-white hover:file:bg-teal-800"
         />
       </label>
       <div className="flex items-center gap-3">
-        <button
-          disabled={!file || loading}
-          className="inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium bg-black text-white hover:bg-black/90 disabled:opacity-50 disabled:pointer-events-none"
-        >
+        <button disabled={!file || loading} className="btn-primary inline-flex items-center justify-center gap-2 disabled:pointer-events-none">
           {loading ? "Uploading…" : "Upload & Scan"}
         </button>
         {loading && (
@@ -157,13 +154,13 @@ export default function UploadCard() {
       </div>
       {loading && (
         <div className="grid gap-1">
-          <div className="h-2 bg-black/10 dark:bg-white/10 rounded">
+          <div className="h-2 rounded bg-black/10 dark:bg-white/15">
             <div className="h-2 bg-blue-600 rounded" style={{ width: `${pct}%` }} />
           </div>
-          <div className="text-xs opacity-70">{pct}% • {speed}{phase ? ` • ${phase}` : ""}</div>
+          <div className="text-xs muted">{pct}% • {speed}{phase ? ` • ${phase}` : ""}</div>
         </div>
       )}
-      {message && <div className="text-sm opacity-80">{message}</div>}
+      {message && <div className="text-sm muted">{message}</div>}
     </form>
   );
 }

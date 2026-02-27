@@ -1,18 +1,26 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import ProgressGraph from "@/components/ProgressGraph";
+import JobLiveStatus from "@/components/JobLiveStatus";
+import { getJob } from "@/lib/jobs";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/authOptions";
 
-async function getData(id: string) {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL ?? ""}/api/jobs/${id}`, { cache: "no-store" });
-    if (!res.ok) return null; return res.json();
-}
+export const dynamic = "force-dynamic";
 
 export default async function PackageDetails({ params }: { params: Promise<{ id: string }> }) {
+    const session = await getServerSession(authOptions);
+    const orgId = session?.org_id || session?.user?.org_id;
+    if (!session?.user?.id || !orgId) {
+        notFound();
+    }
+
     const { id } = await params;
-    const data = await getData(id);
+    const data = await getJob(id, orgId);
     if (!data) {
         return (
             <div className="grid gap-4">
-                <div className="opacity-80">Job not found.</div>
+                <div className="muted">Job not found.</div>
                 <Link href="/dashboard" className="text-sm underline">Back to dashboard</Link>
             </div>
         );
@@ -23,26 +31,34 @@ export default async function PackageDetails({ params }: { params: Promise<{ id:
                 <div className="font-medium">Workflow</div>
                 <ProgressGraph scanId={id} eventsPath={`/api/jobs/${id}/events`} />
             </div>
-            <div>
+            <div className="flex items-center justify-between">
                 <Link href="/dashboard" className="text-sm underline">← Back</Link>
+                <div className="flex items-center gap-3 text-sm">
+                    <Link href={`/dashboard/${id}/findings`} className="underline">Findings</Link>
+                    <Link href={`/dashboard/${id}/files`} className="underline">File tree</Link>
+                </div>
             </div>
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-semibold tracking-tight">Job {data.id}</h1>
-                <span className="text-sm opacity-70">{data.status} • {data.progress_pct}%</span>
+                <span className="text-sm muted">Live status</span>
             </div>
-            <div className="grid gap-2 text-sm">
-                <div>Created: {data.created_at ? new Date(data.created_at).toLocaleString() : ""}</div>
-                {data.started_at && <div>Started: {new Date(data.started_at).toLocaleString()}</div>}
-                {data.finished_at && <div>Finished: {new Date(data.finished_at).toLocaleString()}</div>}
-                {data.progress_msg && <div className="opacity-80">{data.progress_msg}</div>}
-            </div>
+            <JobLiveStatus
+                initial={{
+                    id: data.id,
+                    status: data.status,
+                    progress_pct: data.progress_pct,
+                    progress_msg: data.progress_msg,
+                    created_at: data.created_at,
+                    started_at: data.started_at,
+                    finished_at: data.finished_at,
+                    scan_status: data.scan_status,
+                    inventory_status: data.inventory_status,
+                    inventory_reason: data.inventory_reason,
+                }}
+            />
             {data.summary_json && (
-                <pre className="rounded-md border border-black/10 dark:border-white/10 p-3 text-sm whitespace-pre-wrap">{JSON.stringify(data.summary_json, null, 2)}</pre>
+                <pre className="surface-card p-3 text-sm whitespace-pre-wrap">{JSON.stringify(data.summary_json, null, 2)}</pre>
             )}
         </div>
     );
 }
-
-
-
-

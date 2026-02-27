@@ -7,8 +7,12 @@ const PUBLIC_PATHS = [
     "/docs",
     "/install",
     "/install.sh",
+    "/sitemap.xml",
+    "/robots.txt",
     "/signin",
     "/register",
+    "/icon.svg",
+    "/brand",
     "/api/auth",
     "/favicon.ico",
 ];

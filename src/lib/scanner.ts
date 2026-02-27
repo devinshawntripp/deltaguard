@@ -20,7 +20,7 @@ const SCANNER_MODE = (process.env.SCANNER_MODE ?? "system") as
   | "docker"
   | "mock"
   | "system";
-const SCANNER_IMAGE = process.env.SCANNER_IMAGE ?? "devintripp/deltaguard:1.0.2";
+const SCANNER_IMAGE = process.env.SCANNER_IMAGE ?? "devintripp/rust-scanner:latest";
 const SCANNER_USE_PROGRESS = (process.env.SCANNER_USE_PROGRESS ?? "true").toLowerCase() === "true";
 // Progress files directory can be overridden by PROGRESS_DIR
 const PROGRESS_DIR = process.env.PROGRESS_DIR || "/tmp/deltaguard";
@@ -241,5 +241,4 @@ function buildMockOutput(command: ScanCommand): string {
   }
   return `No issues found.`;
 }
-
 

@@ -1,4 +1,6 @@
 import { NextRequest } from "next/server";
+import { JOB_READ_ROLES, requireRequestActor } from "@/lib/authz";
+import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,8 +14,32 @@ function sseHeaders() {
     });
 }
 
-export async function GET(_req: NextRequest, context: { params: Promise<{ id: string }> }) {
+export async function GET(req: NextRequest, context: { params: Promise<{ id: string }> }) {
+    const guard = await requireRequestActor(req, {
+        requiredKinds: ["user", "api_key"],
+        requiredRoles: JOB_READ_ROLES,
+        feature: "stream scan events",
+    });
+    if ("response" in guard) return guard.response;
+    const actor = guard.actor;
+
     const { id: scanId } = await context.params;
+
+    // Enforce org ownership before tailing the on-disk progress stream.
+    const rows = await prisma.$queryRaw<Array<{ id: string }>>`
+SELECT id::text AS id
+FROM scan_jobs
+WHERE id=${scanId}::uuid
+  AND org_id=${actor.orgId}::uuid
+LIMIT 1
+    `;
+    if (!rows[0]) {
+        return new Response(JSON.stringify({ error: "scan not found", code: "not_found" }), {
+            status: 404,
+            headers: { "content-type": "application/json" },
+        });
+    }
+
     const encoder = new TextEncoder();
     let closed = false;
 
@@ -70,5 +96,4 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
 
     return new Response(stream, { headers: sseHeaders() });
 }
-
 

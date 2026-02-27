@@ -1,0 +1,90 @@
+# MinIO lifecycle rules configuration (Phase 5.7)
+# Weekly CronJob that ensures lifecycle (expiration) rules are set on buckets.
+# - uploads bucket: 90-day expiration
+# - reports bucket: 180-day expiration
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: minio-lifecycle
+  labels:
+    app: minio-lifecycle
+spec:
+  schedule: "0 3 * * 0"  # Weekly, Sunday at 3:00 AM UTC
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 300  # 5 min max
+      template:
+        metadata:
+          labels:
+            app: minio-lifecycle
+        spec:
+          restartPolicy: OnFailure
+          dnsConfig:
+            options:
+              - name: ndots
+                value: "1"
+          containers:
+            - name: mc
+              image: minio/mc:latest
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -e
+                  echo "Configuring MinIO client..."
+                  mc alias set minio \
+                    "http://${MINIO_ENDPOINT}" \
+                    "${MINIO_ACCESS_KEY}" \
+                    "${MINIO_SECRET_KEY}"
+
+                  echo "Setting lifecycle rule on uploads bucket (90-day expiration)..."
+                  mc ilm rule add minio/uploads \
+                    --expire-days 90 \
+                    --noncurrent-expire-days 90 \
+                    --tags "managed-by=lifecycle-job" \
+                    2>/dev/null || \
+                  mc ilm rule add minio/uploads \
+                    --expire-days 90
+
+                  echo "Setting lifecycle rule on reports bucket (180-day expiration)..."
+                  mc ilm rule add minio/reports \
+                    --expire-days 180 \
+                    --noncurrent-expire-days 180 \
+                    --tags "managed-by=lifecycle-job" \
+                    2>/dev/null || \
+                  mc ilm rule add minio/reports \
+                    --expire-days 180
+
+                  echo "Current lifecycle rules:"
+                  echo "--- uploads ---"
+                  mc ilm rule ls minio/uploads || true
+                  echo "--- reports ---"
+                  mc ilm rule ls minio/reports || true
+                  echo "Lifecycle configuration complete at $(date)"
+              env:
+                - name: MINIO_ENDPOINT
+                  valueFrom:
+                    secretKeyRef:
+                      name: pg-backup-secrets
+                      key: MINIO_ENDPOINT
+                - name: MINIO_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: pg-backup-secrets
+                      key: MINIO_ACCESS_KEY
+                - name: MINIO_SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: pg-backup-secrets
+                      key: MINIO_SECRET_KEY
+              resources:
+                limits:
+                  cpu: 100m
+                  memory: 128Mi
+                requests:
+                  cpu: 50m
+                  memory: 64Mi

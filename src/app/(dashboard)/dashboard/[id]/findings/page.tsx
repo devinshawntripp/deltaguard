@@ -8,7 +8,10 @@ export default async function JobFindingsPage({ params }: { params: Promise<{ id
         <div className="grid gap-4">
             <div className="flex items-center justify-between">
                 <h1 className="text-xl font-semibold">Findings for {id}</h1>
-                <Link href="/dashboard" className="text-sm underline">Back to dashboard</Link>
+                <div className="flex items-center gap-3 text-sm">
+                    <Link href={`/dashboard/${id}/files`} className="underline">File tree</Link>
+                    <Link href="/dashboard" className="underline">Back to dashboard</Link>
+                </div>
             </div>
             <div className="grid gap-2">
                 <div className="text-sm font-medium">Workflow</div>
@@ -18,5 +21,4 @@ export default async function JobFindingsPage({ params }: { params: Promise<{ id
         </div>
     );
 }
-
 

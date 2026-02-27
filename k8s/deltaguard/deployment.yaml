@@ -5,7 +5,7 @@ metadata:
   labels:
     app: deltaguard-web
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       app: deltaguard-web
@@ -14,15 +14,24 @@ spec:
       labels:
         app: deltaguard-web
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
       dnsConfig:
         options:
           - name: ndots
             value: "1"
       containers:
         - name: web
-          image: devintripp/deltaguard-ui:latest
+          image: devintripp/deltaguard-ui:latest  # TODO: pin to a versioned tag (e.g. :v1.2.3)
           imagePullPolicy: Always
           command: ["npm", "run", "start"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            readOnlyRootFilesystem: false  # Next.js needs writable /tmp
           ports:
             - containerPort: 3000
           env:
@@ -42,6 +51,10 @@ spec:
               value: .svc,.svc.cluster.local,.cluster.local,10.96.0.0/12,10.0.0.0/8,192.168.0.0/16,172.16.0.0/12,s3.apps.onetripp.com,minio.apps.onetripp.com,minio.storage.svc.cluster.local,minio.storage.svc.cluster.local.,10.101.41.11,10.10.10.241
             - name: no_proxy
               value: .svc,.svc.cluster.local,.cluster.local,10.96.0.0/12,10.0.0.0/8,192.168.0.0/16,172.16.0.0/12,s3.apps.onetripp.com,minio.apps.onetripp.com,minio.storage.svc.cluster.local,minio.storage.svc.cluster.local.,10.101.41.11,10.10.10.241
+            - name: NEXT_PUBLIC_APP_URL
+              value: https://scanrook.io
+            - name: NEXT_PUBLIC_APP_NAME
+              value: ScanRook
           envFrom:
             - secretRef:
                 name: deltaguard-secrets
@@ -67,16 +80,8 @@ spec:
               cpu: 200m
               memory: 256Mi
           volumeMounts:
-            - name: ssh-key
-              mountPath: /etc/ssh/keys
-              readOnly: true
             - name: uploads
               mountPath: /var/uploads
       volumes:
-        - name: ssh-key
-          secret:
-            secretName: scanner-ssh-key
-            defaultMode: 0600
         - name: uploads
-          persistentVolumeClaim:
-            claimName: uploads-pvc
+          emptyDir: {}

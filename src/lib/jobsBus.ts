@@ -2,6 +2,24 @@ import { listJobs } from "@/lib/jobs";
 
 type Handler = (payload: any) => void;
 
+function parseJobEventPayload(raw: string): { type: "changed"; id?: string; deleted?: boolean } | null {
+    const payload = String(raw || "").trim();
+    if (!payload) return null;
+    if (payload.startsWith("{")) {
+        try {
+            const j = JSON.parse(payload);
+            if (j && typeof j === "object") {
+                const id = typeof (j as any).id === "string" ? (j as any).id : undefined;
+                const deleted = (j as any).deleted === true;
+                if (id) return { type: "changed", id, deleted };
+            }
+        } catch {
+            return null;
+        }
+    }
+    return { type: "changed", id: payload };
+}
+
 class JobsBus {
     private started = false;
     private handlers = new Set<Handler>();
@@ -31,8 +49,8 @@ class JobsBus {
             newClient.on("notification", (msg: any) => {
                 try {
                     if (msg.channel === "job_events" && msg.payload) {
-                        // Payload is just the job id (a UUID string)
-                        this.emit({ type: "changed", id: msg.payload });
+                        const parsed = parseJobEventPayload(msg.payload);
+                        if (parsed) this.emit(parsed);
                     }
                 } catch { }
             });

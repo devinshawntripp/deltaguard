@@ -1,14 +1,22 @@
-import { prisma, ensureJobsTable } from "@/lib/prisma";
+import { prisma, ensurePlatformSchema } from "@/lib/prisma";
 import crypto from "node:crypto";
+import type { ScannerSettings } from "@/lib/scannerSettings";
 
 export type Job = {
     id: string;
-    status: "queued" | "running" | "done" | "failed";
+    status: "queued" | "running" | "done" | "failed" | "deleting";
     bucket: string;
     object_key: string;
     mode: string;
     format: string;
     refs: boolean;
+    org_id: string;
+    created_by_user_id?: string | null;
+    created_by_api_key_id?: string | null;
+    settings_snapshot?: ScannerSettings | null;
+    scan_status?: string | null;
+    inventory_status?: string | null;
+    inventory_reason?: string | null;
     created_at: string;
     started_at?: string | null;
     finished_at?: string | null;
@@ -21,16 +29,56 @@ export type Job = {
 };
 
 async function init() {
-    await ensureJobsTable();
+    await ensurePlatformSchema();
 }
 
-export async function createJob(params: { id?: string; bucket: string; object_key: string; mode?: string; format?: string; refs?: boolean }): Promise<Job> {
+export async function createJob(params: {
+    id?: string;
+    bucket: string;
+    object_key: string;
+    mode?: string;
+    format?: string;
+    refs?: boolean;
+    org_id: string;
+    created_by_user_id?: string | null;
+    created_by_api_key_id?: string | null;
+    settings_snapshot?: ScannerSettings | null;
+}): Promise<Job> {
     await init();
     const id = params.id || crypto.randomUUID();
     const mode = params.mode || "light";
     const format = params.format || "json";
     const refs = params.refs ?? false;
-    await prisma.$executeRaw`INSERT INTO scan_jobs (id, status, bucket, object_key, mode, format, refs) VALUES (${id}::uuid,'queued',${params.bucket},${params.object_key},${mode},${format},${refs})`;
+    const settingsSnapshot =
+        params.settings_snapshot == null ? null : JSON.stringify(params.settings_snapshot);
+    await prisma.$executeRaw`
+INSERT INTO scan_jobs (
+  id,
+  status,
+  bucket,
+  object_key,
+  mode,
+  format,
+  refs,
+  org_id,
+  created_by_user_id,
+  created_by_api_key_id,
+  settings_snapshot
+)
+VALUES (
+  ${id}::uuid,
+  'queued',
+  ${params.bucket},
+  ${params.object_key},
+  ${mode},
+  ${format},
+  ${refs},
+  ${params.org_id}::uuid,
+  ${params.created_by_user_id || null}::uuid,
+  ${params.created_by_api_key_id || null}::uuid,
+  ${settingsSnapshot || null}::jsonb
+)
+    `;
     const rows = await prisma.$queryRaw<any[]>`SELECT * FROM scan_jobs WHERE id=${id}::uuid`;
     const job = rows[0] as Job;
     // Emit NOTIFY with just the job id (tiny payload, no 8000-byte limit risk)
@@ -38,15 +86,18 @@ export async function createJob(params: { id?: string; bucket: string; object_ke
     return job;
 }
 
-export async function getJob(id: string): Promise<Job | null> {
+export async function getJob(id: string, orgId?: string): Promise<Job | null> {
     await init();
-    const rows = await prisma.$queryRaw<any[]>`SELECT * FROM scan_jobs WHERE id=${id}::uuid`;
+    const rows = orgId
+        ? await prisma.$queryRaw<any[]>`SELECT * FROM scan_jobs WHERE id=${id}::uuid AND org_id=${orgId}::uuid`
+        : await prisma.$queryRaw<any[]>`SELECT * FROM scan_jobs WHERE id=${id}::uuid`;
     return rows[0] || null;
 }
 
-export async function listJobs(limit = 100): Promise<Job[]> {
+export async function listJobs(limit = 100, orgId?: string): Promise<Job[]> {
     await init();
-    const rows = await prisma.$queryRaw<any[]>`SELECT * FROM scan_jobs ORDER BY created_at DESC LIMIT ${limit}`;
+    const rows = orgId
+        ? await prisma.$queryRaw<any[]>`SELECT * FROM scan_jobs WHERE org_id=${orgId}::uuid ORDER BY created_at DESC LIMIT ${limit}`
+        : await prisma.$queryRaw<any[]>`SELECT * FROM scan_jobs ORDER BY created_at DESC LIMIT ${limit}`;
     return rows as Job[];
 }
-

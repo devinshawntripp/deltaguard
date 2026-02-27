@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { listJobs, getJob } from "@/lib/jobs";
 import { jobsBus } from "@/lib/jobsBus";
+import { actorHasAnyRole, forbiddenByRoleResponse, JOB_READ_ROLES, resolveRequestActor } from "@/lib/authz";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,7 +15,13 @@ function sseHeaders() {
     });
 }
 
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
+    const actor = await resolveRequestActor(req);
+    if (!actor) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+    if (!actorHasAnyRole(actor, JOB_READ_ROLES)) {
+        return forbiddenByRoleResponse(actor, JOB_READ_ROLES, "stream jobs");
+    }
+
     const encoder = new TextEncoder();
     const stream = new ReadableStream<Uint8Array>({
         start: async (controller) => {
@@ -24,7 +31,7 @@ export async function GET(_req: NextRequest) {
 
             // initial snapshot direct from DB (limit to recent and surface running first)
             try {
-                const items = await listJobs(100);
+                const items = await listJobs(100, actor.orgId);
                 items.sort((a: any, b: any) => {
                     const rank = (s: string) => (s === 'running' ? 0 : s === 'queued' ? 1 : 2);
                     const r = rank(a.status) - rank(b.status);
@@ -41,8 +48,14 @@ export async function GET(_req: NextRequest) {
                 // client receives a complete item (backward-compatible with existing UI).
                 if (payload.type === "changed" && payload.id) {
                     try {
-                        const job = await getJob(payload.id);
-                        if (job) send({ type: "changed", item: job });
+                        const job = await getJob(payload.id, actor.orgId);
+                        if (job) {
+                            send({ type: "changed", item: job });
+                            return;
+                        }
+                        if (payload.deleted === true) {
+                            send({ type: "changed", item: { id: payload.id, deleted: true } });
+                        }
                     } catch { send(payload); }
                 } else {
                     send(payload);
@@ -53,5 +66,3 @@ export async function GET(_req: NextRequest) {
     });
     return new Response(stream, { headers: sseHeaders() });
 }
-
-

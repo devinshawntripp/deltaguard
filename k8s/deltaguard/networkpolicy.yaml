@@ -1,0 +1,202 @@
+# NetworkPolicy for deltaguard namespace
+# Restricts traffic to only known required flows.
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: deltaguard-web
+  labels:
+    app: deltaguard-web
+spec:
+  podSelector:
+    matchLabels:
+      app: deltaguard-web
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow traffic from ingress-nginx controller
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 3000
+  egress:
+    # DNS (kube-dns, TCP + UDP)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # PostgreSQL (pg-shared-rw.db.svc)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: db
+      ports:
+        - protocol: TCP
+          port: 5432
+    # MinIO (minio.storage.svc)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: storage
+      ports:
+        - protocol: TCP
+          port: 9000
+    # Redis (in-namespace)
+    - to:
+        - podSelector:
+            matchLabels:
+              app: deltaguard-redis
+      ports:
+        - protocol: TCP
+          port: 6379
+    # Internet egress (OAuth providers, etc.)
+    # Allow all external IPs not in cluster/private ranges
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    # Allow traffic to home-proxy (Squid) for outbound HTTP/HTTPS
+    - to:
+        - ipBlock:
+            cidr: 10.10.10.2/32
+      ports:
+        - protocol: TCP
+          port: 3128
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: deltaguard-worker
+  labels:
+    app: deltaguard-worker
+spec:
+  podSelector:
+    matchLabels:
+      app: deltaguard-worker
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Health check endpoint only
+    - from: []
+      ports:
+        - protocol: TCP
+          port: 8080
+  egress:
+    # DNS (kube-dns, TCP + UDP)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # PostgreSQL (pg-shared-rw.db.svc)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: db
+      ports:
+        - protocol: TCP
+          port: 5432
+    # MinIO (minio.storage.svc)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: storage
+      ports:
+        - protocol: TCP
+          port: 9000
+    # Redis (in-namespace)
+    - to:
+        - podSelector:
+            matchLabels:
+              app: deltaguard-redis
+      ports:
+        - protocol: TCP
+          port: 6379
+    # Internet egress (OSV, NVD, Red Hat APIs)
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    # Allow traffic to home-proxy (Squid) for outbound HTTP/HTTPS
+    - to:
+        - ipBlock:
+            cidr: 10.10.10.2/32
+      ports:
+        - protocol: TCP
+          port: 3128
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: deltaguard-redis
+  labels:
+    app: deltaguard-redis
+spec:
+  podSelector:
+    matchLabels:
+      app: deltaguard-redis
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Only web and worker pods can reach Redis
+    - from:
+        - podSelector:
+            matchLabels:
+              app: deltaguard-web
+        - podSelector:
+            matchLabels:
+              app: deltaguard-worker
+      ports:
+        - protocol: TCP
+          port: 6379
+  egress:
+    # DNS only (for readiness probes, etc.)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53

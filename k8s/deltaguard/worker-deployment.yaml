@@ -23,14 +23,23 @@ spec:
                     operator: NotIn
                     values:
                       - node-3vm1c
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
       dnsConfig:
         options:
           - name: ndots
             value: "1"
       containers:
         - name: worker
-          image: devintripp/rust-scanner-worker:latest
+          image: devintripp/rust-scanner-worker:latest  # TODO: pin to a versioned tag (e.g. :v1.2.3)
           imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            readOnlyRootFilesystem: false  # Scanner writes to scratch dir
           ports:
             - containerPort: 8080
               name: http

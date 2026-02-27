@@ -1,5 +1,4 @@
 "use client";
-import useSWR from "swr";
 import React from "react";
 import ProgressGraph from "@/components/ProgressGraph";
 import Link from "next/link";
@@ -14,6 +13,32 @@ type Job = {
   progress_pct: number;
   progress_msg?: string | null;
 };
+
+const STATUS_RANK: Record<Job["status"], number> = {
+  queued: 0,
+  running: 1,
+  done: 2,
+  failed: 2,
+};
+
+function mergeMonotonicJob(cur: Job | undefined, incoming: Partial<Job> & { id: string }): Job {
+  const base = (cur || {
+    id: incoming.id,
+    status: "queued",
+    created_at: new Date().toISOString(),
+    progress_pct: 0,
+  }) as Job;
+  const merged = { ...base, ...incoming } as Job;
+
+  const curRank = STATUS_RANK[base.status];
+  const nextRank = STATUS_RANK[merged.status];
+  if (nextRank < curRank) {
+    merged.status = base.status;
+  }
+  merged.progress_pct = Math.max(base.progress_pct || 0, merged.progress_pct || 0);
+  if (!merged.progress_msg) merged.progress_msg = base.progress_msg;
+  return merged;
+}
 
 export default function PackagesTable() {
   const [list, setList] = React.useState<Job[]>([]);
@@ -55,8 +80,8 @@ export default function PackagesTable() {
               // Ignore partial notifications for unknown jobs to avoid blank/ghost rows.
               return prev;
             }
-            const cur = map.get(msg.item.id) || ({} as Job);
-            map.set(msg.item.id, { ...cur, ...msg.item });
+            const cur = map.get(msg.item.id);
+            map.set(msg.item.id, mergeMonotonicJob(cur, msg.item));
             return sortJobs(Array.from(map.values()));
           });
         }
@@ -70,41 +95,71 @@ export default function PackagesTable() {
   }, [sortJobs]);
   // Also allow local refresh events (after create/delete)
   React.useEffect(() => {
-    const handler = () => {
+    const handler: EventListener = () => {
       fetch('/api/jobs', { cache: 'no-store' }).then(r => r.ok ? r.json() : []).then((items) => {
         if (!Array.isArray(items)) return;
-        const next = sortJobs(items as Job[]);
-        setList(next);
-        setOpenIds((prev) => {
-          const ids = new Set(next.map((j) => j.id));
-          const n = new Set<string>();
-          for (const id of prev) {
-            if (ids.has(id)) n.add(id);
+        setList((prev) => {
+          const map = new Map<string, Job>();
+          for (const j of prev) map.set(j.id, j);
+          for (const row of items as Job[]) {
+            const cur = map.get(row.id);
+            map.set(row.id, mergeMonotonicJob(cur, row));
           }
-          return n;
+          const next = sortJobs(Array.from(map.values()));
+          setOpenIds((open) => {
+            const ids = new Set(next.map((j) => j.id));
+            const n = new Set<string>();
+            for (const id of open) {
+              if (ids.has(id)) n.add(id);
+            }
+            return n;
+          });
+          return next;
         });
       }).catch(() => { });
     };
-    window.addEventListener('jobs-refresh', handler as any);
-    return () => window.removeEventListener('jobs-refresh', handler as any);
+    window.addEventListener('jobs-refresh', handler);
+    return () => window.removeEventListener('jobs-refresh', handler);
   }, [sortJobs]);
+  React.useEffect(() => {
+    const hasActive = list.some((j) => j.status === "queued" || j.status === "running");
+    if (!hasActive) return;
+    const timer = setInterval(() => {
+      fetch("/api/jobs", { cache: "no-store" })
+        .then((r) => (r.ok ? r.json() : []))
+        .then((items) => {
+          if (!Array.isArray(items)) return;
+          setList((prev) => {
+            const map = new Map<string, Job>();
+            for (const j of prev) map.set(j.id, j);
+            for (const row of items as Job[]) {
+              const cur = map.get(row.id);
+              map.set(row.id, mergeMonotonicJob(cur, row));
+            }
+            return sortJobs(Array.from(map.values()));
+          });
+        })
+        .catch(() => { });
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [list, sortJobs]);
   React.useEffect(() => {
     if (list.length === 0) return;
     if (openIds.size === 0) setOpenIds(new Set([list[0].id]));
   }, [list, openIds.size]);
   return (
     <div className="overflow-auto rounded-xl border border-black/10 dark:border-white/10">
-      <table className="w-full min-w-[1100px] text-sm">
+      <table className="w-full table-fixed text-sm">
         <thead className="bg-black/[.04] dark:bg-white/[.04] text-left">
           <tr>
             <th className="p-3 w-8"></th>
-            <th className="p-3">Job</th>
-            <th className="p-3">File</th>
-            <th className="p-3">Status</th>
-            <th className="p-3">Progress</th>
-            <th className="p-3">Started</th>
-            <th className="p-3">Finished</th>
-            <th className="p-3 text-right">Actions</th>
+            <th className="p-3 w-[18%]">Job</th>
+            <th className="p-3 w-[24%]">File</th>
+            <th className="p-3 w-[8%]">Status</th>
+            <th className="p-3 w-[24%]">Progress</th>
+            <th className="p-3 w-[12%]">Started</th>
+            <th className="p-3 w-[12%]">Finished</th>
+            <th className="p-3 w-[12%] text-right">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -130,22 +185,31 @@ export default function PackagesTable() {
                       <svg viewBox="0 0 24 24" width="16" height="16" className="opacity-70"><path d="M8 5l8 7-8 7" fill="none" stroke="currentColor" strokeWidth="2" /></svg>
                     </button>
                   </td>
-                  <td className="p-3 font-mono text-xs">{j.id}</td>
-                  <td className="p-3 opacity-80 break-all text-xs">{j.object_key || ""}</td>
+                  <td className="p-3 font-mono text-xs min-w-0">
+                    <span className="block truncate" title={j.id}>{j.id}</span>
+                  </td>
+                  <td className="p-3 opacity-80 text-xs min-w-0">
+                    <span className="block truncate" title={j.object_key || ""}>{j.object_key || ""}</span>
+                  </td>
                   <td className="p-3 opacity-80">{j.status}</td>
-                  <td className="p-3">
-                    <div className="h-2 bg-black/10 dark:bg-white/10 rounded">
+                  <td className="p-3 min-w-0">
+                    <div className="h-2 w-full min-w-full max-w-full bg-black/10 dark:bg-white/10 rounded">
                       <div className={`h-2 rounded ${j.status === "failed" ? "bg-red-600" : j.status === "done" ? "bg-green-600" : "bg-blue-600"}`} style={{ width: `${pct}%` }} />
                     </div>
                     <div className="text-xs opacity-70 mt-1">
-                      <span className="inline-block max-w-[560px] truncate align-middle" title={j.progress_msg || ""}>{j.progress_msg || ""}</span>
+                      <span className="inline-block w-full min-w-full max-w-full truncate align-middle" title={j.progress_msg || ""}>{j.progress_msg || ""}</span>
                     </div>
                   </td>
-                  <td className="p-3 opacity-70 text-xs">{j.started_at ? new Date(j.started_at).toLocaleString() : ""}</td>
-                  <td className="p-3 opacity-70 text-xs">{j.finished_at ? new Date(j.finished_at).toLocaleString() : ""}</td>
-                  <td className="p-3 text-right">
+                  <td className="p-3 opacity-70 text-xs min-w-0">
+                    <span className="block truncate" title={j.started_at ? new Date(j.started_at).toLocaleString() : ""}>{j.started_at ? new Date(j.started_at).toLocaleString() : ""}</span>
+                  </td>
+                  <td className="p-3 opacity-70 text-xs min-w-0">
+                    <span className="block truncate" title={j.finished_at ? new Date(j.finished_at).toLocaleString() : ""}>{j.finished_at ? new Date(j.finished_at).toLocaleString() : ""}</span>
+                  </td>
+                  <td className="p-3 text-right min-w-0">
                     <div className="inline-flex items-center gap-2 whitespace-nowrap">
                       <Link href={`/dashboard/${j.id}/findings`} className="text-xs px-2 py-1 rounded-md bg-blue-600 text-white hover:bg-blue-700">Findings</Link>
+                      <Link href={`/dashboard/${j.id}/files`} className="text-xs px-2 py-1 rounded-md bg-slate-700 text-white hover:bg-slate-800">Files</Link>
                       <button
                         onClick={async () => {
                           try {
@@ -177,7 +241,7 @@ export default function PackagesTable() {
                           eventsPath={`/api/jobs/${j.id}/events`}
                           mode={isActive ? "stream" : "list"}
                           onProgress={(p, m) => {
-                            setList((prev) => prev.map((x) => x.id === j.id ? { ...x, progress_pct: p, progress_msg: m || x.progress_msg } : x));
+                            setList((prev) => prev.map((x) => x.id === j.id ? { ...x, progress_pct: Math.max(x.progress_pct || 0, p), progress_msg: m || x.progress_msg } : x));
                           }}
                         />
                       </div>

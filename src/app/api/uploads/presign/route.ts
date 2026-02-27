@@ -1,10 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { presignPut, presignPost } from "@/lib/s3";
+import { actorHasAnyRole, forbiddenByRole, JOB_WRITE_ROLES, resolveRequestActor } from "@/lib/authz";
+import { withRateLimit } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function POST(req: NextRequest) {
+export const POST = withRateLimit(async function POST(req: NextRequest) {
+    const actor = await resolveRequestActor(req);
+    if (!actor) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!actorHasAnyRole(actor, JOB_WRITE_ROLES)) {
+        return forbiddenByRole(actor, JOB_WRITE_ROLES, "upload presign");
+    }
+
     try {
         const { filename, contentType, method } = await req.json();
         if (!filename) return NextResponse.json({ error: "filename required" }, { status: 400 });
@@ -21,6 +29,4 @@ export async function POST(req: NextRequest) {
     } catch (e: any) {
         return NextResponse.json({ error: String(e?.message || e) }, { status: 500 });
     }
-}
-
-
+}, { maxRequests: 30, windowSeconds: 60 });

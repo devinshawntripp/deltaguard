@@ -7,7 +7,12 @@ resources:
   - worker-deployment.yaml
   - service.yaml
   - ingress.yaml
-  - pvc.yaml
+  - redis.yaml
+  - networkpolicy.yaml
+  - pdb.yaml
+  - resourcequota.yaml
+  - pg-backup-cronjob.yaml
+  - hpa.yaml
+  - minio-lifecycle-job.yaml
   # - configmap.yaml
   # - secret.yaml
-

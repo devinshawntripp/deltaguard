@@ -1,0 +1,14 @@
+<svg width="460" height="120" viewBox="0 0 460 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="scanrookLockupBg" x1="8" y1="8" x2="112" y2="112" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0ea5e9"/>
+      <stop offset="60%" stop-color="#14b8a6"/>
+      <stop offset="100%" stop-color="#22c55e"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="104" height="104" rx="28" fill="url(#scanrookLockupBg)"/>
+  <rect x="9.5" y="9.5" width="101" height="101" rx="26.5" stroke="#d6fbff" stroke-opacity="0.28" stroke-width="3"/>
+  <path d="M42 32h10v8h4v-8h8v8h4v-8h10v18h-3v30a7 7 0 0 1-7 7H49a7 7 0 0 1-7-7V50h-3V32Z" fill="#f8fbff"/>
+  <rect x="54" y="58" width="12" height="5" rx="2" fill="#0e7490" opacity="0.88"/>
+  <text x="136" y="76" fill="#11253a" font-size="48" font-family="Inter, Segoe UI, Arial, sans-serif" font-weight="700" letter-spacing="-1.2">ScanRook</text>
+</svg>

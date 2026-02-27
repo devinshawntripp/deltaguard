@@ -1,0 +1,38 @@
+# PodDisruptionBudgets for deltaguard namespace
+# Ensures minimum availability during voluntary disruptions (node drains, upgrades).
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: deltaguard-web-pdb
+  labels:
+    app: deltaguard-web
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: deltaguard-web
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: deltaguard-worker-pdb
+  labels:
+    app: deltaguard-worker
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: deltaguard-worker
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: deltaguard-redis-pdb
+  labels:
+    app: deltaguard-redis
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: deltaguard-redis

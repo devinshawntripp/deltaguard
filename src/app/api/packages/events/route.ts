@@ -1,3 +1,6 @@
+import { NextRequest } from "next/server";
+import { ADMIN_OVERRIDE } from "@/lib/roles";
+import { requireRequestActor } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
@@ -12,7 +15,14 @@ function sseHeaders() {
     });
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+    const guard = await requireRequestActor(req, {
+        requiredKinds: ["user"],
+        requiredRoles: [ADMIN_OVERRIDE],
+        feature: "stream legacy package events",
+    });
+    if ("response" in guard) return guard.response;
+
     const encoder = new TextEncoder();
     let closed = false;
     let lastUpdatedAt: Date | null = null;
@@ -75,5 +85,4 @@ export async function GET() {
 
     return new Response(stream, { headers: sseHeaders() });
 }
-
 

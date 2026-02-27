@@ -1,5 +1,40 @@
 "use client";
+
 import React from "react";
+
+type FindingApi = {
+    id?: string;
+    severity?: string;
+    confidence_tier?: string;
+    evidence_source?: string;
+    accuracy_note?: string;
+    fixed?: boolean;
+    fixed_in?: string;
+    recommendation?: string;
+    cvss?: { base?: number; vector?: string } | null;
+    description?: string;
+    package?: { name?: string; ecosystem?: string; version?: string } | null;
+    source_ids?: string[];
+    references?: Array<{ type?: string; url?: string }>;
+};
+
+type FindingsResponse = {
+    items: FindingApi[];
+    summary?: Record<string, number>;
+    page?: number;
+    page_size?: number;
+    total?: number;
+    scan_status?: string | null;
+    inventory_status?: string | null;
+    inventory_reason?: string | null;
+    error?: string;
+};
+
+type TierFilter = "confirmed" | "heuristic" | "all";
+
+type SeverityFilter = "ALL" | "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
+
+type SortKey = "severity" | "id" | "tier" | "fixed" | "package" | "cvss";
 
 function normalizeFindingId(idRaw: string): string {
     let id = (idRaw || "").trim();
@@ -7,7 +42,7 @@ function normalizeFindingId(idRaw: string): string {
     try {
         id = decodeURIComponent(id);
     } catch {
-        // Keep original value if it's not valid URI-encoded text.
+        // noop
     }
     return id.trim().toUpperCase();
 }
@@ -15,271 +50,344 @@ function normalizeFindingId(idRaw: string): string {
 function findingExternalUrl(idRaw: string): string | null {
     const id = normalizeFindingId(idRaw);
     if (!id) return null;
-    if (/^CVE-\d{4}-\d+$/i.test(id)) {
-        return `https://nvd.nist.gov/vuln/detail/${id}`;
-    }
-    if (/^(RHSA|RHBA|RHEA)-\d{4}:\d+$/i.test(id)) {
-        return `https://access.redhat.com/errata/${id}`;
-    }
-    if (/^GHSA-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/i.test(id)) {
-        return `https://github.com/advisories/${id}`;
-    }
-    if (/^(DLA|DSA)-\d{4,5}-\d+$/i.test(id)) {
-        return `https://security-tracker.debian.org/tracker/${id}`;
-    }
+    if (/^CVE-\d{4}-\d+$/i.test(id)) return `https://nvd.nist.gov/vuln/detail/${id}`;
+    if (/^(RHSA|RHBA|RHEA)-\d{4}:\d+$/i.test(id)) return `https://access.redhat.com/errata/${id}`;
+    if (/^GHSA-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/i.test(id)) return `https://github.com/advisories/${id}`;
+    if (/^(DLA|DSA)-\d{4,5}-\d+$/i.test(id)) return `https://security-tracker.debian.org/tracker/${id}`;
     return null;
 }
 
+function severityBadge(severity: string): string {
+    const s = severity.toUpperCase();
+    if (s === "CRITICAL") return "bg-red-700 text-white";
+    if (s === "HIGH") return "bg-orange-600 text-white";
+    if (s === "MEDIUM") return "bg-yellow-500 text-black";
+    if (s === "LOW") return "bg-sky-700 text-white";
+    return "bg-black/20 text-black dark:text-white";
+}
+
+function parseSummary(summary: Record<string, number> | undefined | null) {
+    return {
+        total: Number(summary?.total_findings || 0),
+        confirmed: Number(summary?.confirmed_total_findings || 0),
+        heuristic: Number(summary?.heuristic_total_findings || 0),
+        critical: Number(summary?.critical || 0),
+        high: Number(summary?.high || 0),
+        medium: Number(summary?.medium || 0),
+        low: Number(summary?.low || 0),
+        confirmedCritical: Number(summary?.confirmed_critical || 0),
+        confirmedHigh: Number(summary?.confirmed_high || 0),
+        confirmedMedium: Number(summary?.confirmed_medium || 0),
+        confirmedLow: Number(summary?.confirmed_low || 0),
+        heuristicCritical: Number(summary?.heuristic_critical || 0),
+        heuristicHigh: Number(summary?.heuristic_high || 0),
+        heuristicMedium: Number(summary?.heuristic_medium || 0),
+        heuristicLow: Number(summary?.heuristic_low || 0),
+    };
+}
+
 export default function JobFindings({ jobId }: { jobId: string }) {
-    const [items, setItems] = React.useState<any[]>([]);
+    const [items, setItems] = React.useState<FindingApi[]>([]);
+    const [summary, setSummary] = React.useState<Record<string, number> | null>(null);
+    const [scanStatus, setScanStatus] = React.useState<string | null>(null);
+    const [inventoryStatus, setInventoryStatus] = React.useState<string | null>(null);
+    const [inventoryReason, setInventoryReason] = React.useState<string | null>(null);
     const [loading, setLoading] = React.useState(true);
     const [error, setError] = React.useState<string | null>(null);
+
     const [search, setSearch] = React.useState("");
+    const [tier, setTier] = React.useState<TierFilter>("confirmed");
+    const [severity, setSeverity] = React.useState<SeverityFilter>("ALL");
+    const [fixedOnly, setFixedOnly] = React.useState<"all" | "fixed" | "unfixed">("all");
+    const [sortKey, setSortKey] = React.useState<SortKey>("severity");
+    const [sortDir, setSortDir] = React.useState<"asc" | "desc">("desc");
     const [page, setPage] = React.useState(1);
     const [pageSize, setPageSize] = React.useState(50);
-    const [sortKey, setSortKey] = React.useState<"id" | "severity" | "confidence" | "fixed" | "fixedIn" | "cvssBase" | "cvssVector" | "description" | "recommendation" | "evidence" | "source">("severity");
-    const [sortDir, setSortDir] = React.useState<"asc" | "desc">("desc");
+    const [total, setTotal] = React.useState(0);
+
+    React.useEffect(() => {
+        setPage(1);
+    }, [search, tier, severity, fixedOnly, sortKey, sortDir, pageSize]);
 
     React.useEffect(() => {
         let cancelled = false;
-        let retryTimer: ReturnType<typeof setTimeout> | null = null;
-        let retryCount = 0;
-        const MAX_RETRIES = 18; // poll up to 3 minutes (every 10s)
-
-        async function fetchFindings() {
-            const ctrl = new AbortController();
-            setLoading(true); setError(null);
+        const timer = setTimeout(async () => {
+            setLoading(true);
+            setError(null);
             try {
-                const res = await fetch(`/api/jobs/${jobId}/findings`, { cache: "no-store", signal: ctrl.signal });
-                const j = await res.json();
-                const found = Array.isArray(j.items) ? j.items : [];
-                if (!cancelled) {
-                    setItems(found);
-                    setLoading(false);
-                    // If we got nothing and haven't exhausted retries, poll again in 10s.
-                    // This handles the case where the user visits before the scan completes.
-                    if (found.length === 0 && !j.error && retryCount < MAX_RETRIES) {
-                        retryCount++;
-                        retryTimer = setTimeout(fetchFindings, 10_000);
-                    }
+                const params = new URLSearchParams();
+                params.set("page", String(page));
+                params.set("page_size", String(pageSize));
+                params.set("tier", tier);
+                if (severity !== "ALL") params.set("severity", severity);
+                if (fixedOnly === "fixed") params.set("fixed", "true");
+                if (fixedOnly === "unfixed") params.set("fixed", "false");
+                if (search.trim()) params.set("search", search.trim());
+                params.set("sort", sortKey);
+                params.set("order", sortDir);
+
+                const res = await fetch(`/api/jobs/${jobId}/findings?${params.toString()}`, { cache: "no-store" });
+                const text = await res.text();
+                const json = text.trim() ? (JSON.parse(text) as FindingsResponse) : { items: [] };
+
+                if (!res.ok) {
+                    throw new Error(json.error || `Findings API failed (HTTP ${res.status})`);
                 }
-            } catch (e: any) {
-                if (!cancelled && e?.name !== 'AbortError') {
-                    setError(String(e?.message || e));
+                if (json.error) throw new Error(json.error);
+
+                if (!cancelled) {
+                    setItems(Array.isArray(json.items) ? json.items : []);
+                    setSummary(json.summary || null);
+                    setTotal(Number(json.total || 0));
+                    setScanStatus(typeof json.scan_status === "string" ? json.scan_status : null);
+                    setInventoryStatus(typeof json.inventory_status === "string" ? json.inventory_status : null);
+                    setInventoryReason(typeof json.inventory_reason === "string" ? json.inventory_reason : null);
+                    setLoading(false);
+                }
+            } catch (e: unknown) {
+                if (!cancelled) {
+                    setError(e instanceof Error ? e.message : String(e));
                     setLoading(false);
                 }
             }
-        }
+        }, 220);
 
-        fetchFindings();
         return () => {
             cancelled = true;
-            if (retryTimer) clearTimeout(retryTimer);
+            clearTimeout(timer);
         };
-    }, [jobId]);
-
-    const normalized = React.useMemo(() => items.map((f) => ({
-        id: normalizeFindingId(String(f.id || "")),
-        severity: (f.severity || f.impact || "").toString(),
-        confidence: (f.confidence || "").toString(),
-        fixed: typeof f.fixed === "boolean" ? f.fixed : undefined,
-        fixedIn: (f.fixed_in || "").toString(),
-        cvssBase: (f.cvss && typeof f.cvss.base === 'number') ? f.cvss.base : undefined,
-        cvssVector: (f.cvss && f.cvss.vector) || "",
-        description: f.title || f.description || "",
-        recommendation: (f.recommendation || "").toString(),
-        package: f.package || "",
-        evidence: Array.isArray(f.evidence) ? f.evidence : [],
-        source: (Array.isArray(f.source_ids) && f.source_ids[0]) || f.source || "",
-    })), [items]);
-
-    const filtered = React.useMemo(() => {
-        const q = search.trim().toLowerCase();
-        if (!q) return normalized;
-        return normalized.filter((f) =>
-            f.id.toLowerCase().includes(q) ||
-            f.severity.toLowerCase().includes(q) ||
-            f.confidence.toLowerCase().includes(q) ||
-            String(f.fixed ?? "").toLowerCase().includes(q) ||
-            f.fixedIn.toLowerCase().includes(q) ||
-            f.cvssVector.toLowerCase().includes(q) ||
-            f.description.toLowerCase().includes(q) ||
-            f.recommendation.toLowerCase().includes(q) ||
-            (f.package || "").toString().toLowerCase().includes(q) ||
-            f.source.toLowerCase().includes(q) ||
-            f.evidence.some((e: any) =>
-                String(e?.detail || "").toLowerCase().includes(q) ||
-                String(e?.path || "").toLowerCase().includes(q) ||
-                String(e?.type || "").toLowerCase().includes(q)
-            )
-        );
-    }, [normalized, search]);
-
-    const counts = React.useMemo(() => {
-        const out = { total: normalized.length, critical: 0, high: 0, medium: 0, low: 0, other: 0 } as Record<string, number>;
-        for (const f of normalized) {
-            const s = (f.severity || "").toLowerCase();
-            if (s.startsWith("crit")) out.critical++;
-            else if (s.startsWith("high")) out.high++;
-            else if (s.startsWith("med")) out.medium++;
-            else if (s.startsWith("low")) out.low++;
-            else out.other++;
-        }
-        return out;
-    }, [normalized]);
-
-    const total = filtered.length;
-    const sorted = React.useMemo(() => {
-        const rankSeverity = (s: string) => {
-            const x = s.toLowerCase();
-            if (x.startsWith("crit")) return 4;
-            if (x.startsWith("high")) return 3;
-            if (x.startsWith("med")) return 2;
-            if (x.startsWith("low")) return 1;
-            return 0;
-        };
-        const arr = filtered.slice();
-        arr.sort((a: any, b: any) => {
-            let av: any; let bv: any;
-            switch (sortKey) {
-                case "severity": av = rankSeverity(a.severity); bv = rankSeverity(b.severity); break;
-                case "cvssBase": av = Number(a.cvssBase || 0); bv = Number(b.cvssBase || 0); break;
-                case "evidence": av = (Array.isArray(a.evidence) ? a.evidence.length : 0); bv = (Array.isArray(b.evidence) ? b.evidence.length : 0); break;
-                case "id": av = String(a.id || ""); bv = String(b.id || ""); break;
-                case "confidence": av = String(a.confidence || ""); bv = String(b.confidence || ""); break;
-                case "fixed": av = (a.fixed === undefined ? -1 : (a.fixed ? 1 : 0)); bv = (b.fixed === undefined ? -1 : (b.fixed ? 1 : 0)); break;
-                case "fixedIn": av = String(a.fixedIn || ""); bv = String(b.fixedIn || ""); break;
-                case "cvssVector": av = String(a.cvssVector || ""); bv = String(b.cvssVector || ""); break;
-                case "description": av = String(a.description || ""); bv = String(b.description || ""); break;
-                case "recommendation": av = String(a.recommendation || ""); bv = String(b.recommendation || ""); break;
-                case "source": av = String(a.source || ""); bv = String(b.source || ""); break;
-            }
-            let cmp = 0;
-            if (typeof av === "number" && typeof bv === "number") cmp = av - bv; else cmp = String(av).localeCompare(String(bv));
-            return sortDir === "asc" ? cmp : -cmp;
-        });
-        return arr;
-    }, [filtered, sortKey, sortDir]);
+    }, [jobId, page, pageSize, tier, severity, fixedOnly, search, sortKey, sortDir]);
 
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
-    const currentPage = Math.min(page, totalPages);
-    const startIdx = (currentPage - 1) * pageSize;
-    const endIdx = Math.min(total, startIdx + pageSize);
-    const pageItems = sorted.slice(startIdx, endIdx);
+    const safePage = Math.min(page, totalPages);
+    const showPartialBanner = scanStatus === "partial_failed" || scanStatus === "unsupported";
+    const s = parseSummary(summary);
 
     return (
         <div className="rounded-md border border-black/10 dark:border-white/10 overflow-hidden">
-            <div className="flex flex-wrap items-center gap-3 px-3 py-3 border-b border-black/10 dark:border-white/10 bg-gradient-to-r from-black/[.03] to-transparent dark:from-white/[.03]">
-                <div className="text-xs font-semibold px-2 py-1 rounded bg-black/80 text-white">Total {counts.total}</div>
-                <div className="text-xs font-semibold px-2 py-1 rounded bg-red-700 text-white">Critical {counts.critical}</div>
-                <div className="text-xs font-semibold px-2 py-1 rounded bg-red-500 text-white">High {counts.high}</div>
-                <div className="text-xs font-semibold px-2 py-1 rounded bg-yellow-400 text-black">Medium {counts.medium}</div>
-                <div className="text-xs font-semibold px-2 py-1 rounded bg-green-500 text-white">Low {counts.low}</div>
-                {counts.other > 0 && <div className="text-xs font-semibold px-2 py-1 rounded bg-gray-400 text-white">Other {counts.other}</div>}
+            {showPartialBanner && (
+                <div className="px-3 py-2 text-xs bg-amber-100 text-amber-900 border-b border-amber-300">
+                    <span className="font-semibold">Partial scan:</span>{" "}
+                    Installed package inventory was not fully proven.
+                    {inventoryStatus ? ` inventory_status=${inventoryStatus}.` : ""}
+                    {inventoryReason ? ` reason=${inventoryReason}.` : ""}
+                </div>
+            )}
+
+            <div className="flex flex-wrap items-center gap-2 px-3 py-3 border-b border-black/10 dark:border-white/10 bg-gradient-to-r from-black/[.03] to-transparent dark:from-white/[.03]">
+                <div className="text-xs font-semibold px-2 py-1 rounded bg-black/80 text-white">Total {s.total}</div>
+                <div className="text-xs font-semibold px-2 py-1 rounded bg-sky-700 text-white">Confirmed {s.confirmed}</div>
+                <div className="text-xs font-semibold px-2 py-1 rounded bg-orange-600 text-white">Heuristic {s.heuristic}</div>
+                <div className="text-xs font-semibold px-2 py-1 rounded bg-red-700 text-white">Critical {s.critical}</div>
+                <div className="text-xs font-semibold px-2 py-1 rounded bg-orange-600 text-white">High {s.high}</div>
+                <div className="text-xs font-semibold px-2 py-1 rounded bg-yellow-500 text-black">Medium {s.medium}</div>
+                <div className="text-xs font-semibold px-2 py-1 rounded bg-sky-700 text-white">Low {s.low}</div>
+                <div className="text-xs font-semibold px-2 py-1 rounded bg-slate-600 text-white">C C/H/M/L {s.confirmedCritical}/{s.confirmedHigh}/{s.confirmedMedium}/{s.confirmedLow}</div>
+                <div className="text-xs font-semibold px-2 py-1 rounded bg-stone-600 text-white">H C/H/M/L {s.heuristicCritical}/{s.heuristicHigh}/{s.heuristicMedium}/{s.heuristicLow}</div>
             </div>
-            {loading && <div className="text-xs opacity-70 p-2">Loading…</div>}
-            {(!loading && error) && <div className="text-xs text-red-600 p-2">{error}</div>}
-            {(!loading && !error) && (
-                <div className="flex flex-wrap items-center gap-2 px-2 py-2 text-xs bg-black/[.04] dark:bg-white/[.04]">
+
+            <div className="px-3 py-3 border-b border-black/10 dark:border-white/10 grid gap-3">
+                <div className="grid md:grid-cols-6 gap-2 text-sm">
                     <input
                         value={search}
-                        onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                        placeholder="Search ID, description, severity, evidence…"
-                        className="px-2 py-1 rounded border border-black/10 dark:border-white/10 bg-white dark:bg-black min-w-[260px]"
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Search CVE/package/description"
+                        className="rounded-md border border-black/15 dark:border-white/20 bg-transparent px-2 py-2 md:col-span-2"
                     />
-                    <div className="ml-auto flex items-center gap-2">
-                        <span className="opacity-70">Rows per page</span>
-                        <select value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }} className="px-1 py-0.5 rounded border border-black/10 dark:border-white/10 bg-white dark:bg-black">
-                            {[25, 50, 100, 200, 500].map(n => <option key={n} value={n}>{n}</option>)}
+
+                    <select
+                        value={tier}
+                        onChange={(e) => setTier(e.target.value as TierFilter)}
+                        className="rounded-md border border-black/15 dark:border-white/20 bg-transparent px-2 py-2"
+                    >
+                        <option value="confirmed">Confirmed</option>
+                        <option value="heuristic">Heuristic</option>
+                        <option value="all">All tiers</option>
+                    </select>
+
+                    <select
+                        value={severity}
+                        onChange={(e) => setSeverity(e.target.value as SeverityFilter)}
+                        className="rounded-md border border-black/15 dark:border-white/20 bg-transparent px-2 py-2"
+                    >
+                        <option value="ALL">All severities</option>
+                        <option value="CRITICAL">Critical</option>
+                        <option value="HIGH">High</option>
+                        <option value="MEDIUM">Medium</option>
+                        <option value="LOW">Low</option>
+                    </select>
+
+                    <select
+                        value={fixedOnly}
+                        onChange={(e) => setFixedOnly(e.target.value as "all" | "fixed" | "unfixed")}
+                        className="rounded-md border border-black/15 dark:border-white/20 bg-transparent px-2 py-2"
+                    >
+                        <option value="all">All fixed states</option>
+                        <option value="fixed">Fixed only</option>
+                        <option value="unfixed">Unfixed only</option>
+                    </select>
+
+                    <div className="grid grid-cols-2 gap-2">
+                        <select
+                            value={sortKey}
+                            onChange={(e) => setSortKey(e.target.value as SortKey)}
+                            className="rounded-md border border-black/15 dark:border-white/20 bg-transparent px-2 py-2"
+                        >
+                            <option value="severity">Sort: Severity</option>
+                            <option value="id">Sort: ID</option>
+                            <option value="tier">Sort: Tier</option>
+                            <option value="fixed">Sort: Fixed</option>
+                            <option value="package">Sort: Package</option>
+                            <option value="cvss">Sort: CVSS</option>
                         </select>
-                        <span className="opacity-70">{startIdx + 1}–{endIdx} of {total}</span>
-                        <button disabled={currentPage <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))} className="px-2 py-0.5 rounded border border-black/10 disabled:opacity-50">Prev</button>
-                        <button disabled={currentPage >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))} className="px-2 py-0.5 rounded border border-black/10 disabled:opacity-50">Next</button>
+                        <select
+                            value={sortDir}
+                            onChange={(e) => setSortDir(e.target.value as "asc" | "desc")}
+                            className="rounded-md border border-black/15 dark:border-white/20 bg-transparent px-2 py-2"
+                        >
+                            <option value="desc">Desc</option>
+                            <option value="asc">Asc</option>
+                        </select>
                     </div>
-                </div>)}
+                </div>
+
+                <div className="flex items-center gap-2 text-sm">
+                    <span className="opacity-70">Page size:</span>
+                    <select
+                        value={pageSize}
+                        onChange={(e) => setPageSize(Number(e.target.value))}
+                        className="rounded-md border border-black/15 dark:border-white/20 bg-transparent px-2 py-1"
+                    >
+                        <option value={25}>25</option>
+                        <option value={50}>50</option>
+                        <option value={100}>100</option>
+                        <option value={200}>200</option>
+                    </select>
+                </div>
+            </div>
+
+            {error && (
+                <div className="px-3 py-2 text-sm bg-red-100 text-red-900 border-b border-red-300">
+                    {error}
+                </div>
+            )}
+
             <div className="overflow-auto">
-                {(!loading && !error && total === 0) ? (
-                    <div className="text-xs opacity-70 p-2">No findings.</div>
-                ) : (
-                    <table className="w-full min-w-[1500px] text-xs">
-                        <thead className="bg-black/[.04] dark:bg-white/[.04]">
+                <table className="w-full min-w-[1200px] text-sm">
+                    <thead className="bg-black/[.04] dark:bg-white/[.04] text-left sticky top-0">
+                        <tr>
+                            <th className="p-3">ID</th>
+                            <th className="p-3">Severity</th>
+                            <th className="p-3">Tier</th>
+                            <th className="p-3">Evidence</th>
+                            <th className="p-3">Package</th>
+                            <th className="p-3">Version</th>
+                            <th className="p-3">Fixed</th>
+                            <th className="p-3">Fixed In</th>
+                            <th className="p-3">CVSS</th>
+                            <th className="p-3">Description</th>
+                            <th className="p-3">Recommendation</th>
+                            <th className="p-3">Source</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {loading ? (
                             <tr>
-                                {([
-                                    ["ID", "id"],
-                                    ["Severity", "severity"],
-                                    ["Confidence", "confidence"],
-                                    ["Fixed", "fixed"],
-                                    ["Fixed In", "fixedIn"],
-                                    ["CVSS", "cvssBase"],
-                                    ["Vector", "cvssVector"],
-                                    ["Description", "description"],
-                                    ["Recommendation", "recommendation"],
-                                    ["Evidence", "evidence"],
-                                    ["Source", "source"],
-                                ] as [string, typeof sortKey][]).map(([label, key]) => (
-                                    <th key={key} className="p-2 text-left select-none">
-                                        <button
-                                            className={`inline-flex items-center gap-1 hover:underline ${sortKey === key ? "font-semibold" : ""}`}
-                                            onClick={() => {
-                                                setPage(1);
-                                                if (sortKey === key) setSortDir(d => d === "asc" ? "desc" : "asc");
-                                                else { setSortKey(key); setSortDir(key === "severity" || key === "cvssBase" ? "desc" : "asc"); }
-                                            }}
-                                        >
-                                            <span>{label}</span>
-                                            <span className="text-[10px] opacity-70">{sortKey === key ? (sortDir === "asc" ? "▲" : "▼") : ""}</span>
-                                        </button>
-                                    </th>
-                                ))}
+                                <td className="p-3 opacity-70" colSpan={12}>Loading findings...</td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            {pageItems.map((f, idx) => {
-                                const key = `${f.id || 'unknown'}-${startIdx + idx}-${f.source || ''}`;
-                                const ev = Array.isArray(f.evidence) ? f.evidence : [];
-                                const evFirst = ev[0] || {} as any;
-                                const sevColor = String(f.severity || '').toLowerCase().startsWith('crit') ? 'bg-red-700 text-white' :
-                                    String(f.severity || '').toLowerCase().startsWith('high') ? 'bg-red-500 text-white' :
-                                        String(f.severity || '').toLowerCase().startsWith('med') ? 'bg-yellow-400 text-black' :
-                                            String(f.severity || '').toLowerCase().startsWith('low') ? 'bg-green-500 text-white' : 'bg-gray-400 text-white';
-                                return (
-                                    <tr key={key} className="border-t border-black/5 dark:border-white/5 align-top">
-                                        <td className="p-2 font-mono whitespace-nowrap">
-                                            {f.id ? (
-                                                (() => {
-                                                    const href = findingExternalUrl(String(f.id));
-                                                    return href
-                                                        ? <a className="underline" href={href} target="_blank" rel="noreferrer">{f.id}</a>
-                                                        : <span>{f.id}</span>;
-                                                })()
-                                            ) : ""}
-                                        </td>
-                                        <td className="p-2 whitespace-nowrap">
-                                            <span className={`px-2 py-0.5 rounded text-[11px] ${sevColor}`}>{(f.severity || "").toString()}</span>
-                                        </td>
-                                        <td className="p-2 whitespace-nowrap">{(f.confidence || '').toString()}</td>
-                                        <td className="p-2 whitespace-nowrap">
-                                            {f.fixed === true ? <span className="px-2 py-0.5 rounded text-[11px] bg-emerald-600 text-white">Yes</span> :
-                                                f.fixed === false ? <span className="px-2 py-0.5 rounded text-[11px] bg-orange-500 text-white">No</span> :
-                                                    <span className="px-2 py-0.5 rounded text-[11px] bg-gray-400 text-white">Unknown</span>}
-                                        </td>
-                                        <td className="p-2 whitespace-nowrap font-mono">{(f as any).fixedIn || ''}</td>
-                                        <td className="p-2 whitespace-nowrap">{(f as any).cvssBase ?? ''}</td>
-                                        <td className="p-2 whitespace-nowrap" title={(f as any).cvssVector || ''}><span className="inline-block max-w-[220px] truncate">{(f as any).cvssVector || ''}</span></td>
-                                        <td className="p-2" title={f.description || ''}><span className="inline-block max-w-[520px] truncate align-top">{f.description || ''}</span></td>
-                                        <td className="p-2" title={(f as any).recommendation || ''}><span className="inline-block max-w-[420px] truncate align-top">{(f as any).recommendation || ''}</span></td>
-                                        <td className="p-2" title={`${evFirst?.type || ''} ${evFirst?.detail || ''} ${evFirst?.path || ''}`}>
-                                            <div className="text-xs opacity-80"><span className="inline-block max-w-[260px] truncate">{evFirst?.type || ''} {evFirst?.detail || ''}</span></div>
-                                            <div className="text-[10px] opacity-60"><span className="inline-block max-w-[260px] truncate">{evFirst?.path || ''}</span></div>
-                                            {ev.length > 1 && <div className="text-[10px] opacity-60">+{ev.length - 1} more</div>}
-                                        </td>
-                                        <td className="p-2 whitespace-nowrap">{f.source || ''}</td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
-                )}
+                        ) : items.length === 0 ? (
+                            <tr>
+                                <td className="p-3 opacity-70" colSpan={12}>No findings for current filters.</td>
+                            </tr>
+                        ) : items.map((f, idx) => {
+                            const id = normalizeFindingId(String(f.id || ""));
+                            const ext = findingExternalUrl(id);
+                            const tierLabel = f.confidence_tier === "heuristic_unverified" ? "Heuristic" : "Confirmed";
+                            const pkg = f.package || null;
+                            const source = (Array.isArray(f.source_ids) && f.source_ids[0]) ? String(f.source_ids[0]) : "";
+
+                            return (
+                                <tr key={`${id}-${idx}`} className="border-t border-black/5 dark:border-white/5 align-top">
+                                    <td className="p-3 font-mono text-xs whitespace-nowrap">
+                                        {ext ? (
+                                            <a href={ext} target="_blank" rel="noreferrer" className="text-blue-700 dark:text-blue-400 underline underline-offset-2">
+                                                {id || "-"}
+                                            </a>
+                                        ) : (id || "-")}
+                                    </td>
+                                    <td className="p-3">
+                                        <span className={`text-xs px-2 py-1 rounded font-semibold ${severityBadge(String(f.severity || ""))}`}>
+                                            {String(f.severity || "UNKNOWN")}
+                                        </span>
+                                    </td>
+                                    <td className="p-3">
+                                        <span className={`text-xs px-2 py-1 rounded font-semibold ${tierLabel === "Heuristic" ? "bg-orange-600 text-white" : "bg-sky-700 text-white"}`}>
+                                            {tierLabel}
+                                        </span>
+                                        {f.accuracy_note && <div className="text-xs opacity-70 mt-1 max-w-[220px]">{f.accuracy_note}</div>}
+                                    </td>
+                                    <td className="p-3 text-xs whitespace-nowrap">{String(f.evidence_source || "")}</td>
+                                    <td className="p-3 text-xs">{pkg?.name || "-"}</td>
+                                    <td className="p-3 text-xs">{pkg?.version || "-"}</td>
+                                    <td className="p-3 text-xs">{typeof f.fixed === "boolean" ? (f.fixed ? "Yes" : "No") : "-"}</td>
+                                    <td className="p-3 text-xs">{f.fixed_in || "-"}</td>
+                                    <td className="p-3 text-xs">
+                                        {f.cvss?.base != null ? Number(f.cvss.base).toFixed(1) : "-"}
+                                        {f.cvss?.vector ? <div className="opacity-60 mt-1 max-w-[220px] truncate" title={f.cvss.vector}>{f.cvss.vector}</div> : null}
+                                    </td>
+                                    <td className="p-3 text-xs max-w-[340px]">
+                                        <div className="line-clamp-3" title={f.description || ""}>{f.description || "-"}</div>
+                                    </td>
+                                    <td className="p-3 text-xs max-w-[340px]">
+                                        <div className="line-clamp-3" title={f.recommendation || ""}>{f.recommendation || "-"}</div>
+                                    </td>
+                                    <td className="p-3 text-xs">
+                                        {source || "-"}
+                                        {Array.isArray(f.references) && f.references.length > 0 && (
+                                            <div className="mt-1 grid gap-1">
+                                                {f.references.slice(0, 2).map((r, i) => (
+                                                    <a
+                                                        key={`${id}-ref-${i}`}
+                                                        href={String(r.url || "#")}
+                                                        target="_blank"
+                                                        rel="noreferrer"
+                                                        className="text-blue-700 dark:text-blue-400 underline underline-offset-2 truncate max-w-[280px]"
+                                                        title={String(r.url || "")}
+                                                    >
+                                                        {String(r.type || "ref")}
+                                                    </a>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </td>
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
+            </div>
+
+            <div className="px-3 py-3 border-t border-black/10 dark:border-white/10 flex items-center justify-between gap-3 text-sm">
+                <div className="opacity-75">
+                    Showing {items.length === 0 ? 0 : (safePage - 1) * pageSize + 1}-{Math.min(total, safePage * pageSize)} of {total}
+                </div>
+                <div className="flex items-center gap-2">
+                    <button
+                        disabled={safePage <= 1}
+                        onClick={() => setPage((p) => Math.max(1, p - 1))}
+                        className="rounded-md border border-black/20 dark:border-white/20 px-3 py-1 disabled:opacity-50"
+                    >
+                        Prev
+                    </button>
+                    <span className="min-w-[84px] text-center">Page {safePage}/{totalPages}</span>
+                    <button
+                        disabled={safePage >= totalPages}
+                        onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                        className="rounded-md border border-black/20 dark:border-white/20 px-3 py-1 disabled:opacity-50"
+                    >
+                        Next
+                    </button>
+                </div>
             </div>
         </div>
     );
