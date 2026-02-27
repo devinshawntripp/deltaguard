@@ -24,7 +24,7 @@ spec:
             value: "1"
       containers:
         - name: web
-          image: devintripp/deltaguard-ui:latest  # TODO: pin to a versioned tag (e.g. :v1.2.3)
+          image: devintripp/deltaguard-ui:v1.4.0
           imagePullPolicy: Always
           command: ["npm", "run", "start"]
           securityContext:

@@ -33,7 +33,7 @@ spec:
             value: "1"
       containers:
         - name: worker
-          image: devintripp/rust-scanner-worker:latest  # TODO: pin to a versioned tag (e.g. :v1.2.3)
+          image: devintripp/rust-scanner-worker:v1.4.0
           imagePullPolicy: Always
           securityContext:
             allowPrivilegeEscalation: false
