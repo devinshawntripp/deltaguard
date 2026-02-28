@@ -47,7 +47,13 @@ export default function SignInForm() {
       setError("Invalid credentials");
       return;
     }
-    router.push(res.url || next);
+    // res.url from NextAuth is absolute; extract pathname for client-side navigation
+    let target = next;
+    try {
+      const u = new URL(res.url || next, window.location.origin);
+      target = u.pathname + u.search;
+    } catch { /* fallback to next */ }
+    router.push(target);
     router.refresh();
   }
 

@@ -55,7 +55,7 @@ export function mapEventToWorkflowStage(stage: string): WorkflowStageId | null {
     if (s === "queued" || s === "job.queued" || s === "scan.queued") return "queued";
     if (s.startsWith("worker.claim") || s === "worker.start" || s === "worker.heartbeat") return "claimed";
     if (s.startsWith("s3.download")) return "s3_download";
-    if (s === "scanner.start" || s.startsWith("scanner.start")) return "scanner_start";
+    if (s === "scanner.start" || s.startsWith("scanner.start") || s === "scanner.init") return "scanner_start";
 
     if (
         s.startsWith("container.extract") ||
@@ -69,8 +69,10 @@ export function mapEventToWorkflowStage(stage: string): WorkflowStageId | null {
 
     if (
         s.startsWith("container.packages") ||
+        s.startsWith("container.go.") ||
         s.startsWith("iso.inventory") ||
         s.startsWith("iso.repodata") ||
+        s.startsWith("iso.packages") ||
         s.startsWith("inventory.") ||
         s.startsWith("binary.") ||
         s.includes("rpmdb")
@@ -78,10 +80,10 @@ export function mapEventToWorkflowStage(stage: string): WorkflowStageId | null {
         return "inventory";
     }
 
-    if (s.startsWith("osv.")) return "osv";
+    if (s.startsWith("container.osv.") || s.startsWith("container.enrich.osv") || s.startsWith("osv.")) return "osv";
     if (s.startsWith("container.enrich.debian_tracker") || s.startsWith("debian_tracker.") || s.startsWith("debian.tracker")) return "debian_tracker";
-    if (s.startsWith("nvd.")) return "nvd";
-    if (s.startsWith("redhat.") || s.startsWith("rh.")) return "redhat";
+    if (s.startsWith("container.enrich.nvd") || s.startsWith("nvd.")) return "nvd";
+    if (s.startsWith("container.enrich.redhat") || s.startsWith("redhat.") || s.startsWith("rh.")) return "redhat";
     if (s.startsWith("epss.")) return "epss";
     if (s.startsWith("kev.") || s.startsWith("cisa.kev")) return "kev";
 

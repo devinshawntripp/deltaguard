@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import SignOutButton from "@/components/SignOutButton";
@@ -13,7 +14,9 @@ import UploadIndicator from "@/components/UploadIndicator";
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id || session.revoked) {
-    redirect("/signin");
+    const hdrs = await headers();
+    const pathname = hdrs.get("x-invoke-path") || hdrs.get("x-next-url") || "/dashboard";
+    redirect(`/signin?next=${encodeURIComponent(pathname)}`);
   }
 
   const email = session.user.email || "unknown";

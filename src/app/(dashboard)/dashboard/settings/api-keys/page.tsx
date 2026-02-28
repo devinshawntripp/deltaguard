@@ -13,6 +13,31 @@ type ApiKey = {
   expires_at: string | null;
 };
 
+const ROLE_PRESETS = [
+  { label: "Viewer", value: "1", description: "Read-only access" },
+  { label: "Operator", value: "4", description: "Upload & scan" },
+  { label: "Scan Admin", value: "8", description: "Full scan management" },
+  { label: "Org Owner", value: "128", description: "Full access" },
+] as const;
+
+const ROLE_BITS: Array<{ mask: number; label: string }> = [
+  { mask: 1, label: "viewer" },
+  { mask: 2, label: "analyst" },
+  { mask: 4, label: "operator" },
+  { mask: 8, label: "scan_admin" },
+  { mask: 16, label: "policy_admin" },
+  { mask: 32, label: "billing_admin" },
+  { mask: 64, label: "api_key_admin" },
+  { mask: 128, label: "org_owner" },
+];
+
+function decodeRoles(mask: string): string {
+  const n = parseInt(mask, 10);
+  if (!n || isNaN(n)) return "none";
+  const labels = ROLE_BITS.filter((r) => (n & r.mask) !== 0).map((r) => r.label);
+  return labels.length > 0 ? labels.join(", ") : `mask:${mask}`;
+}
+
 function CodeExample({
   title,
   language,
@@ -46,6 +71,7 @@ function CodeExample({
 export default function ApiKeysPage() {
   const [items, setItems] = useState<ApiKey[]>([]);
   const [name, setName] = useState("");
+  const [selectedRole, setSelectedRole] = useState("8");
   const [createdToken, setCreatedToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [msg, setMsg] = useState<string | null>(null);
@@ -98,7 +124,7 @@ export default function ApiKeysPage() {
       const res = await fetch("/api/org/api-keys", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, roles_mask: "8" }),
+        body: JSON.stringify({ name, roles_mask: selectedRole }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json?.error || `HTTP ${res.status}`);
@@ -251,13 +277,22 @@ curl -sS -X POST '${origin}/api/cli/auth/device/complete' \\
       </div>
 
       <div className="rounded-xl border border-black/10 dark:border-white/10 p-5 grid gap-4">
-        <div className="grid sm:grid-cols-[1fr_auto] gap-3">
+        <div className="grid sm:grid-cols-[1fr_auto_auto] gap-3">
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Key name"
             className="rounded-md border border-black/15 dark:border-white/20 bg-transparent px-3 py-2"
           />
+          <select
+            value={selectedRole}
+            onChange={(e) => setSelectedRole(e.target.value)}
+            className="rounded-md border border-black/15 dark:border-white/20 bg-transparent px-3 py-2 text-sm"
+          >
+            {ROLE_PRESETS.map((r) => (
+              <option key={r.value} value={r.value}>{r.label} — {r.description}</option>
+            ))}
+          </select>
           <button
             onClick={createKey}
             disabled={!name.trim()}
@@ -331,7 +366,7 @@ curl -sS -X POST '${origin}/api/cli/auth/device/complete' \\
                 <tr key={item.id} className="border-t border-black/5 dark:border-white/5">
                   <td className="p-3">{item.name}</td>
                   <td className="p-3 font-mono">{item.prefix}</td>
-                  <td className="p-3">{item.roles_mask}</td>
+                  <td className="p-3">{decodeRoles(item.roles_mask)}</td>
                   <td className="p-3">{item.status}</td>
                   <td className="p-3 opacity-70">{item.last_used_at ? new Date(item.last_used_at).toLocaleString() : "never"}</td>
                   <td className="p-3 text-right">
