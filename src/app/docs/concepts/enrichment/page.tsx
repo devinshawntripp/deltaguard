@@ -47,13 +47,13 @@ const sources: Source[] = [
   },
   {
     name: "Distro security feeds",
-    provider: "ubuntu, debian, alpine",
+    provider: "ubuntu, debian, alpine, amazon, oracle, wolfi, chainguard",
     description:
       "Distribution-specific security trackers that provide precise fix status for packages in their repositories.",
     what:
       "Maps CVEs to distro package versions with fix status (fixed, not-affected, needs-triage). Provides distro-specific severity and urgency ratings.",
     when:
-      "Activated based on detected OS in container scans. Ubuntu CVE Tracker for Ubuntu/DPKG, Debian Security Tracker for Debian/DPKG, Alpine SecDB for Alpine/APK.",
+      "Activated based on detected OS in container scans. Ubuntu CVE Tracker for Ubuntu/DPKG, Debian Security Tracker for Debian/DPKG, Alpine SecDB for Alpine/APK, Amazon Linux for AL2/AL2023, Oracle Linux, Wolfi SecDB, and Chainguard advisories.",
   },
   {
     name: "EPSS (Exploit Prediction Scoring System)",
@@ -61,9 +61,9 @@ const sources: Source[] = [
     description:
       "FIRST's model that predicts the probability a CVE will be exploited in the next 30 days.",
     what:
-      "Returns a probability score (0.0-1.0) and percentile for each CVE, indicating real-world exploit likelihood.",
+      "Returns a probability score (0.0-1.0) and percentile for each CVE, indicating real-world exploit likelihood. Results are cached for 24 hours.",
     when:
-      "Planned. Will be used to prioritize findings by exploit probability alongside CVSS severity.",
+      "Always active. Applied to all findings after vulnerability matching. Batch queries api.first.org for all CVE IDs in the report.",
   },
   {
     name: "CISA KEV (Known Exploited Vulnerabilities)",
@@ -73,7 +73,7 @@ const sources: Source[] = [
     what:
       "Boolean flag: is this CVE in the KEV catalog? Also provides the date added, required remediation date, and ransomware campaign association.",
     when:
-      "Planned. Will be used to flag findings that are actively exploited and may require urgent remediation.",
+      "Always active. Downloads the full KEV catalog (cached as a HashSet), then flags any finding whose CVE ID appears in the catalog.",
   },
 ];
 
@@ -122,7 +122,7 @@ export default function EnrichmentPage() {
           blurb="The order in which ScanRook queries vulnerability data sources."
         />
         <div className="overflow-x-auto">
-          <div className="inline-flex items-center gap-2 text-xs font-mono p-4 rounded-lg border border-black/10 dark:border-white/10 bg-black/[.04] dark:bg-white/[.04] min-w-[800px]">
+          <div className="inline-flex items-center gap-2 text-xs font-mono p-4 rounded-lg border border-black/10 dark:border-white/10 bg-black/[.04] dark:bg-white/[.04] min-w-[1100px]">
             <PipelineStep label="Package Inventory" sub="container.rs / sbom.rs" />
             <Arrow />
             <PipelineStep label="OSV Batch Query" sub="vuln.rs" active />
@@ -132,6 +132,10 @@ export default function EnrichmentPage() {
             <PipelineStep label="Distro Feed" sub="vuln.rs" active />
             <Arrow />
             <PipelineStep label="Red Hat CSAF" sub="redhat.rs" active />
+            <Arrow />
+            <PipelineStep label="EPSS Enrich" sub="vuln.rs" active />
+            <Arrow />
+            <PipelineStep label="CISA KEV" sub="vuln.rs" active />
             <Arrow />
             <PipelineStep label="Deduplicate + Merge" sub="vuln.rs" />
             <Arrow />
