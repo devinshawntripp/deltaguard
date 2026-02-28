@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/authOptions";
 import { APP_DESCRIPTION } from "@/lib/brand";
 import BrandLogo from "@/components/BrandLogo";
 import PublicSiteShell from "@/components/PublicSiteShell";
+import CodeCopyBlock from "@/components/CodeCopyBlock";
 
 export const dynamic = "force-dynamic";
 
@@ -41,9 +42,9 @@ export default async function Home() {
           <h2 className="text-2xl font-semibold tracking-tight">Install Free Scanner</h2>
           <p className="text-sm muted">Run locally with no login required. Authenticate only for cloud enrichment and org workflows.</p>
           <div className="grid gap-3">
-            <CommandBlock label="Install">{installCmd}</CommandBlock>
-            <CommandBlock label="Run a scan">{scanCmd}</CommandBlock>
-            <CommandBlock label="Optional auth for cloud features">{authCmd}</CommandBlock>
+            <CodeCopyBlock label="Install" code={installCmd} />
+            <CodeCopyBlock label="Run a scan" code={scanCmd} />
+            <CodeCopyBlock label="Optional auth for cloud features" code={authCmd} />
           </div>
         </section>
 
@@ -73,13 +74,3 @@ export default async function Home() {
   );
 }
 
-function CommandBlock({ label, children }: { label: string; children: string }) {
-  return (
-    <div className="grid gap-1.5">
-      <div className="text-xs font-semibold uppercase tracking-wide muted">{label}</div>
-      <pre className="rounded-lg border border-black/10 dark:border-white/10 bg-black/[.04] dark:bg-white/[.04] p-3 text-xs overflow-x-auto">
-        <code>{children}</code>
-      </pre>
-    </div>
-  );
-}

@@ -16,6 +16,14 @@ const navItems: NavItem[] = [
   { href: "/docs/quickstart", label: "Quickstart" },
   { href: "/docs/cli-reference", label: "CLI Reference" },
   {
+    href: "/docs/dashboard",
+    label: "Dashboard",
+    children: [
+      { href: "/docs/dashboard/jobs-and-progress", label: "Jobs & Progress" },
+      { href: "/docs/dashboard/findings-and-reports", label: "Findings & Reports" },
+    ],
+  },
+  {
     href: "/docs/concepts",
     label: "Concepts",
     children: [
@@ -26,6 +34,7 @@ const navItems: NavItem[] = [
       { href: "/docs/concepts/supply-chain-security", label: "Supply Chain Security" },
     ],
   },
+  { href: "/docs/benchmarks", label: "Benchmarks" },
   { href: "/docs/self-hosted", label: "Self-Hosted" },
   { href: "/docs/data-sources", label: "Data Sources" },
   {
@@ -42,12 +51,16 @@ const breadcrumbLabels: Record<string, string> = {
   docs: "Docs",
   quickstart: "Quickstart",
   "cli-reference": "CLI Reference",
+  dashboard: "Dashboard",
+  "jobs-and-progress": "Jobs & Progress",
+  "findings-and-reports": "Findings & Reports",
   concepts: "Concepts",
   enrichment: "Enrichment",
   "confidence-tiers": "Confidence Tiers",
   "deep-scanning": "Deep Scanning",
   compliance: "Compliance",
   "supply-chain-security": "Supply Chain Security",
+  benchmarks: "Benchmarks",
   "self-hosted": "Self-Hosted",
   "data-sources": "Data Sources",
   integrations: "Integrations",

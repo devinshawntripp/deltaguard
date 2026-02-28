@@ -207,7 +207,7 @@ export default function PackagesTable() {
                     <span className="block truncate" title={j.finished_at ? new Date(j.finished_at).toLocaleString() : ""}>{j.finished_at ? new Date(j.finished_at).toLocaleString() : ""}</span>
                   </td>
                   <td className="p-3 text-right min-w-0">
-                    <div className="inline-flex items-center gap-2 whitespace-nowrap">
+                    <div className="flex items-center gap-1.5 flex-wrap justify-end">
                       <Link href={`/dashboard/${j.id}/findings`} className="text-xs px-2 py-1 rounded-md bg-blue-600 text-white hover:bg-blue-700">Findings</Link>
                       <Link href={`/dashboard/${j.id}/files`} className="text-xs px-2 py-1 rounded-md bg-slate-700 text-white hover:bg-slate-800">Files</Link>
                       <button

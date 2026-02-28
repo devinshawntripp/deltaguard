@@ -8,6 +8,7 @@ import AuthExpiredOverlay from "@/components/AuthExpiredOverlay";
 import ThemeToggle from "@/components/ThemeToggle";
 import BrandLogo from "@/components/BrandLogo";
 import { APP_NAME } from "@/lib/brand";
+import UploadIndicator from "@/components/UploadIndicator";
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
   const session = await getServerSession(authOptions);
@@ -43,6 +44,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         </div>
       </header>
       <main className="app-main">{children}</main>
+      <UploadIndicator />
       <footer className="app-footer">
         <div className="inline-flex items-center gap-2">
           <BrandLogo compact />
