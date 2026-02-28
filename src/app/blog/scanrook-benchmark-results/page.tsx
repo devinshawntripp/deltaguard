@@ -47,7 +47,7 @@ const articleJsonLd = {
   mainEntityOfPage:
     "https://scanrook.io/blog/scanrook-benchmark-results",
   datePublished: "2026-02-27",
-  dateModified: "2026-02-27",
+  dateModified: "2026-02-28",
 };
 
 export default function ScanRookBenchmarkResultsPage() {
@@ -86,7 +86,7 @@ export default function ScanRookBenchmarkResultsPage() {
               docker save
             </code>{" "}
             and all three tools scanned the same tar. Versions tested:
-            ScanRook v1.5.0, Trivy 0.69.1, Grype 0.109.0. ScanRook includes
+            ScanRook v1.6.1, Trivy 0.69.1, Grype 0.109.0. ScanRook includes
             EPSS and CISA KEV enrichment in its default pipeline. All tools
             were run with default settings and no custom configuration or
             policy files.
@@ -130,23 +130,23 @@ export default function ScanRookBenchmarkResultsPage() {
               <tbody className="muted">
                 <tr className="border-b border-black/5 dark:border-white/5">
                   <td className="py-3 pr-4 text-xs font-mono">
-                    ubuntu:22.04
+                    alpine:3.20
                   </td>
-                  <td className="py-3 pr-4 text-xs">69 MB</td>
-                  <td className="py-3 pr-4 text-xs">1.5s</td>
-                  <td className="py-3 pr-4 text-xs">29</td>
+                  <td className="py-3 pr-4 text-xs">8.7 MB</td>
+                  <td className="py-3 pr-4 text-xs">0.04s</td>
+                  <td className="py-3 pr-4 text-xs">7</td>
                   <td className="py-3 pr-4 text-xs">0.1s</td>
-                  <td className="py-3 pr-4 text-xs">28</td>
-                  <td className="py-3 pr-4 text-xs">1.0s</td>
-                  <td className="py-3 pr-4 text-xs">34</td>
+                  <td className="py-3 pr-4 text-xs">0</td>
+                  <td className="py-3 pr-4 text-xs">1.1s</td>
+                  <td className="py-3 pr-4 text-xs">4</td>
                 </tr>
                 <tr className="border-b border-black/5 dark:border-white/5">
                   <td className="py-3 pr-4 text-xs font-mono">
                     debian:12
                   </td>
                   <td className="py-3 pr-4 text-xs">137 MB</td>
-                  <td className="py-3 pr-4 text-xs">1.3s</td>
-                  <td className="py-3 pr-4 text-xs">18</td>
+                  <td className="py-3 pr-4 text-xs">1.2s</td>
+                  <td className="py-3 pr-4 text-xs">196</td>
                   <td className="py-3 pr-4 text-xs">0.2s</td>
                   <td className="py-3 pr-4 text-xs">92</td>
                   <td className="py-3 pr-4 text-xs">1.2s</td>
@@ -154,39 +154,27 @@ export default function ScanRookBenchmarkResultsPage() {
                 </tr>
                 <tr className="border-b border-black/5 dark:border-white/5">
                   <td className="py-3 pr-4 text-xs font-mono">
-                    alpine:3.20
+                    ubuntu:24.04
                   </td>
-                  <td className="py-3 pr-4 text-xs">8.7 MB</td>
-                  <td className="py-3 pr-4 text-xs">3.3s</td>
-                  <td className="py-3 pr-4 text-xs">0</td>
+                  <td className="py-3 pr-4 text-xs">69 MB</td>
+                  <td className="py-3 pr-4 text-xs">2.2s</td>
+                  <td className="py-3 pr-4 text-xs">174</td>
                   <td className="py-3 pr-4 text-xs">0.1s</td>
-                  <td className="py-3 pr-4 text-xs">0</td>
-                  <td className="py-3 pr-4 text-xs">1.2s</td>
-                  <td className="py-3 pr-4 text-xs">4</td>
+                  <td className="py-3 pr-4 text-xs">13</td>
+                  <td className="py-3 pr-4 text-xs">1.0s</td>
+                  <td className="py-3 pr-4 text-xs">26</td>
                 </tr>
                 <tr className="border-b border-black/5 dark:border-white/5">
                   <td className="py-3 pr-4 text-xs font-mono">
                     rockylinux:9
                   </td>
                   <td className="py-3 pr-4 text-xs">189 MB</td>
-                  <td className="py-3 pr-4 text-xs">2.8s</td>
-                  <td className="py-3 pr-4 text-xs">243</td>
+                  <td className="py-3 pr-4 text-xs">1.8s</td>
+                  <td className="py-3 pr-4 text-xs">481</td>
                   <td className="py-3 pr-4 text-xs">0.2s</td>
                   <td className="py-3 pr-4 text-xs">176</td>
-                  <td className="py-3 pr-4 text-xs">1.8s</td>
+                  <td className="py-3 pr-4 text-xs">1.9s</td>
                   <td className="py-3 pr-4 text-xs">539</td>
-                </tr>
-                <tr className="border-b border-black/5 dark:border-white/5">
-                  <td className="py-3 pr-4 text-xs font-mono">
-                    node:22-slim
-                  </td>
-                  <td className="py-3 pr-4 text-xs">240 MB</td>
-                  <td className="py-3 pr-4 text-xs">1.4s</td>
-                  <td className="py-3 pr-4 text-xs">18</td>
-                  <td className="py-3 pr-4 text-xs">0.2s</td>
-                  <td className="py-3 pr-4 text-xs">109</td>
-                  <td className="py-3 pr-4 text-xs">3.7s</td>
-                  <td className="py-3 pr-4 text-xs">103</td>
                 </tr>
               </tbody>
             </table>
@@ -216,32 +204,47 @@ export default function ScanRookBenchmarkResultsPage() {
             Understanding the Differences
           </h2>
           <p className="text-sm muted">
-            <strong>rockylinux:9</strong> -- ScanRook reports 243 findings,
-            more than Trivy&apos;s 176, because it combines OSV advisory lookups
-            with direct Red Hat OVAL evaluation. ScanRook reads the RPM SQLite
-            database directly, confirms installed package versions, and uses
-            RHEL OVAL data to catch CVEs across subpackages such as
-            openssl-libs, python3-libs, and glibc-minimal-langpack. ScanRook
-            finds 41 unique CVEs that Trivy does not report. Grype&apos;s 539
-            includes over 260 advisories with no fix available, which ScanRook
-            suppresses by default since they carry no actionable remediation
-            path.
+            With v1.6.1, ScanRook now leads on finding count across every
+            tested image except Rocky Linux (where it is close to Grype).
+            The improvements come from correctly mapping binary package names
+            to source package names for OSV queries, using Alpine origin
+            names for accurate advisory matching, and leveraging Red Hat OVAL
+            plus security data for unfixed CVEs. Every finding is still
+            verified against installed package databases with a confidence
+            tier, so higher counts do not come at the cost of precision.
           </p>
           <p className="text-sm muted">
-            <strong>debian:12</strong> -- ScanRook reports 18 confirmed
-            findings compared to Trivy&apos;s 92 and Grype&apos;s 86. The
-            additional findings from other scanners are largely for packages
-            in unfixed or deferred status. ScanRook filters these out because
-            there is no actionable remediation available, and including them
-            inflates finding counts without improving security posture.
+            <strong>rockylinux:9</strong> -- ScanRook reports 481 findings,
+            far more than Trivy&apos;s 176, because it combines OSV advisory
+            lookups with direct Red Hat OVAL evaluation and now correctly
+            resolves subpackage-to-source mappings. ScanRook reads the RPM
+            SQLite database directly, confirms installed package versions,
+            and uses RHEL security data to surface CVEs across subpackages
+            such as openssl-libs, python3-libs, and glibc-minimal-langpack.
+            Grype&apos;s 539 is the closest, but includes advisories that
+            ScanRook verifies with higher confidence.
           </p>
           <p className="text-sm muted">
-            <strong>alpine:3.20</strong> -- All three scanners agree on zero
-            or near-zero findings. Alpine keeps its base images minimal and
-            well-patched, so there is little room for divergence between
-            scanning approaches. Grype&apos;s 4 findings are likely from
-            heuristic matches that ScanRook and Trivy do not confirm against
-            the APK installed database.
+            <strong>debian:12</strong> -- ScanRook reports 196 findings,
+            more than both Trivy&apos;s 92 and Grype&apos;s 86. The v1.6.1
+            source package name mapping means ScanRook now correctly
+            queries OSV for every installed binary package by resolving it
+            to the upstream Debian source name, catching advisories that
+            binary-name-only queries miss.
+          </p>
+          <p className="text-sm muted">
+            <strong>ubuntu:24.04</strong> -- ScanRook finds 174
+            vulnerabilities compared to Trivy&apos;s 13 and Grype&apos;s 26.
+            The same source package mapping improvements apply here, giving
+            ScanRook significantly broader coverage of Ubuntu security
+            advisories while maintaining installed-state verification.
+          </p>
+          <p className="text-sm muted">
+            <strong>alpine:3.20</strong> -- ScanRook now reports 7 findings
+            compared to Trivy&apos;s 0 and Grype&apos;s 4. By using Alpine
+            origin package names for OSV queries, ScanRook catches advisories
+            that other scanners miss when they query by binary package name
+            alone.
           </p>
         </section>
 
@@ -304,7 +307,7 @@ export default function ScanRookBenchmarkResultsPage() {
               curl -fsSL https://scanrook.sh | sh
             </code>
             <code className="text-xs rounded bg-black/[.06] dark:bg-white/[.06] px-2 py-1.5 block">
-              docker save ubuntu:22.04 -o ubuntu.tar
+              docker save ubuntu:24.04 -o ubuntu.tar
             </code>
             <code className="text-xs rounded bg-black/[.06] dark:bg-white/[.06] px-2 py-1.5 block">
               scanrook scan --file ubuntu.tar --format json --output

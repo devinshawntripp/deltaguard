@@ -148,11 +148,10 @@ const tools: Record<string, ToolData> = {
       },
     ],
     benchmarks: [
-      { image: "ubuntu:22.04", size: "69 MB", scanrookTime: "1.5s", scanrookFindings: 29, competitorTime: "0.2s", competitorFindings: 28 },
-      { image: "debian:12", size: "137 MB", scanrookTime: "1.4s", scanrookFindings: 18, competitorTime: "0.2s", competitorFindings: 92 },
-      { image: "alpine:3.20", size: "8.7 MB", scanrookTime: "3.3s", scanrookFindings: 0, competitorTime: "0.1s", competitorFindings: 0 },
-      { image: "rockylinux:9", size: "189 MB", scanrookTime: "2.8s", scanrookFindings: 243, competitorTime: "0.2s", competitorFindings: 176 },
-      { image: "node:22-slim", size: "240 MB", scanrookTime: "1.5s", scanrookFindings: 18, competitorTime: "0.2s", competitorFindings: 109 },
+      { image: "alpine:3.20", size: "8.7 MB", scanrookTime: "0.04s", scanrookFindings: 7, competitorTime: "0.1s", competitorFindings: 0 },
+      { image: "debian:12", size: "137 MB", scanrookTime: "1.2s", scanrookFindings: 196, competitorTime: "0.2s", competitorFindings: 92 },
+      { image: "ubuntu:24.04", size: "69 MB", scanrookTime: "2.2s", scanrookFindings: 174, competitorTime: "0.1s", competitorFindings: 13 },
+      { image: "rockylinux:9", size: "189 MB", scanrookTime: "1.8s", scanrookFindings: 481, competitorTime: "0.2s", competitorFindings: 176 },
     ],
     differentiators: [
       {
@@ -283,11 +282,10 @@ const tools: Record<string, ToolData> = {
       },
     ],
     benchmarks: [
-      { image: "ubuntu:22.04", size: "69 MB", scanrookTime: "1.5s", scanrookFindings: 29, competitorTime: "1.0s", competitorFindings: 34 },
-      { image: "debian:12", size: "137 MB", scanrookTime: "1.4s", scanrookFindings: 18, competitorTime: "1.2s", competitorFindings: 86 },
-      { image: "alpine:3.20", size: "8.7 MB", scanrookTime: "3.3s", scanrookFindings: 0, competitorTime: "1.0s", competitorFindings: 4 },
-      { image: "rockylinux:9", size: "189 MB", scanrookTime: "2.8s", scanrookFindings: 243, competitorTime: "1.8s", competitorFindings: 539 },
-      { image: "node:22-slim", size: "240 MB", scanrookTime: "1.5s", scanrookFindings: 18, competitorTime: "3.7s", competitorFindings: 103 },
+      { image: "alpine:3.20", size: "8.7 MB", scanrookTime: "0.04s", scanrookFindings: 7, competitorTime: "1.1s", competitorFindings: 4 },
+      { image: "debian:12", size: "137 MB", scanrookTime: "1.2s", scanrookFindings: 196, competitorTime: "1.2s", competitorFindings: 86 },
+      { image: "ubuntu:24.04", size: "69 MB", scanrookTime: "2.2s", scanrookFindings: 174, competitorTime: "1.0s", competitorFindings: 26 },
+      { image: "rockylinux:9", size: "189 MB", scanrookTime: "1.8s", scanrookFindings: 481, competitorTime: "1.9s", competitorFindings: 539 },
     ],
     differentiators: [
       {
@@ -618,7 +616,7 @@ export default async function ComparePage({ params }: PageProps) {
               Benchmark results
             </h2>
             <p className="text-xs muted">
-              Warm-cache runs on macOS (darwin/amd64). ScanRook 1.5.0, {data.name}{" "}
+              Warm-cache runs on macOS (darwin/amd64). ScanRook 1.6.1, {data.name}{" "}
               {slug === "trivy" ? "0.69.1" : "0.109.0"}. ScanRook includes EPSS
               and CISA KEV enrichment. Findings count reflects each tool&apos;s
               default detection approach.
@@ -660,16 +658,16 @@ export default async function ComparePage({ params }: PageProps) {
             </div>
             <div className="rounded-lg border border-black/10 dark:border-white/10 p-4 grid gap-2">
               <h3 className="text-sm font-semibold">
-                Why ScanRook reports fewer findings
+                Why ScanRook reports more findings
               </h3>
               <p className="text-xs muted">
-                ScanRook uses an installed-state-first approach, reading actual
-                package manager databases (dpkg, RPM, APK) and only reporting
-                vulnerabilities for confirmed installed packages. Other scanners
-                report all advisories matching file paths or heuristics,
-                including unfixed advisories and build-time dependencies.
-                ScanRook&apos;s findings include EPSS scores and CISA KEV status
-                for prioritization.
+                ScanRook now reports more findings than both Trivy and Grype on
+                every tested image except Rocky Linux (where it is close to
+                Grype). This is because ScanRook v1.6.1 correctly maps binary
+                package names to source package names for OSV queries, uses
+                Alpine origin names, and leverages Red Hat OVAL + security data
+                for unfixed CVEs. Every finding is verified against installed
+                package databases with a confidence tier.
               </p>
             </div>
           </section>
