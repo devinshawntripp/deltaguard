@@ -28,14 +28,14 @@ export default function UploadIndicator() {
         <button
           type="button"
           onClick={() => setExpanded(true)}
-          className="flex items-center gap-2 rounded-full bg-black/90 dark:bg-white/90 text-white dark:text-black px-4 py-2 text-sm font-medium shadow-lg hover:opacity-90 transition"
+          className="flex flex-col gap-1 rounded-2xl bg-black/90 dark:bg-white/90 text-white dark:text-black px-4 py-2 text-sm font-medium shadow-lg hover:opacity-90 transition min-w-[200px]"
         >
           {active.length > 0 ? (
             <>
               <Spinner />
               <span className="truncate max-w-[180px]">
                 {active.length === 1
-                  ? `Uploading ${active[0].filename}`
+                  ? `${active[0].filename} ${active[0].pct}%${active[0].speed ? ` \u2022 ${active[0].speed}` : ""}`
                   : `${active.length} uploads in progress`}
               </span>
             </>
@@ -44,6 +44,11 @@ export default function UploadIndicator() {
               <CheckIcon />
               <span>Upload complete</span>
             </>
+          )}
+          {active.length === 1 && (
+            <div className="w-full h-1 rounded bg-white/20 dark:bg-black/20 overflow-hidden">
+              <div className="h-1 bg-blue-400 rounded transition-all" style={{ width: `${active[0].pct}%` }} />
+            </div>
           )}
         </button>
       )}

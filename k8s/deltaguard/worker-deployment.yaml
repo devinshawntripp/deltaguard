@@ -49,7 +49,7 @@ spec:
             - name: WORKER_CONCURRENCY
               value: "1"
             - name: WORKER_STALE_JOB_TIMEOUT_SECONDS
-              value: "600"
+              value: "1800"
             - name: WORKER_STALE_SWEEP_SECONDS
               value: "60"
             - name: WORKER_HEARTBEAT_SECONDS
