@@ -169,8 +169,8 @@ export default function ScanRookBenchmarkResultsPage() {
                     rockylinux:9
                   </td>
                   <td className="py-3 pr-4 text-xs">189 MB</td>
-                  <td className="py-3 pr-4 text-xs">2.6s</td>
-                  <td className="py-3 pr-4 text-xs">117</td>
+                  <td className="py-3 pr-4 text-xs">2.8s</td>
+                  <td className="py-3 pr-4 text-xs">243</td>
                   <td className="py-3 pr-4 text-xs">0.2s</td>
                   <td className="py-3 pr-4 text-xs">176</td>
                   <td className="py-3 pr-4 text-xs">1.8s</td>
@@ -195,19 +195,19 @@ export default function ScanRookBenchmarkResultsPage() {
 
         <section className="grid gap-2">
           <h2 className="text-xl font-semibold tracking-tight">
-            Why ScanRook Reports Fewer Findings
+            How ScanRook Produces High-Confidence Findings
           </h2>
           <p className="text-sm muted">
             ScanRook uses an installed-state-first approach. It reads the
             actual package manager databases inside a container image -- dpkg
             status files, the RPM database, or APK&apos;s installed file -- and
             only reports vulnerabilities for packages that are confirmed
-            installed in the final image state. Other scanners may include
-            unfixed advisories, build-time dependencies, and packages from
-            intermediate layers that are no longer present in the running
-            container. ScanRook&apos;s approach produces fewer findings, but each
-            finding carries higher confidence because it is backed by actual
-            package manager evidence.
+            installed in the final image state. For RHEL-compatible images,
+            ScanRook further supplements OSV advisory lookups with direct
+            Red Hat OVAL evaluation, catching CVEs that are in the OVAL data
+            but not yet reflected in ecosystem-specific OSV entries. Each
+            finding is backed by actual package manager evidence and version
+            comparison against known-fixed EVRs.
           </p>
         </section>
 
@@ -216,16 +216,16 @@ export default function ScanRookBenchmarkResultsPage() {
             Understanding the Differences
           </h2>
           <p className="text-sm muted">
-            <strong>rockylinux:9</strong> -- Trivy reports 176 findings and
-            Grype reports 539, while ScanRook reports 117. ScanRook reads the
-            RPM SQLite database directly, confirms installed package versions,
-            and supplements its primary advisory lookup with RHSA coverage for
-            subpackages such as openssl-libs, python3-libs, and
-            glibc-minimal-langpack. The remaining gap vs Trivy reflects
-            advisories where the installed Rocky version is already patched or
-            where no actionable remediation is available. Grype&apos;s 539
+            <strong>rockylinux:9</strong> -- ScanRook reports 243 findings,
+            more than Trivy&apos;s 176, because it combines OSV advisory lookups
+            with direct Red Hat OVAL evaluation. ScanRook reads the RPM SQLite
+            database directly, confirms installed package versions, and uses
+            RHEL OVAL data to catch CVEs across subpackages such as
+            openssl-libs, python3-libs, and glibc-minimal-langpack. ScanRook
+            finds 41 unique CVEs that Trivy does not report. Grype&apos;s 539
             includes over 260 advisories with no fix available, which ScanRook
-            suppresses by default since they carry no remediation path.
+            suppresses by default since they carry no actionable remediation
+            path.
           </p>
           <p className="text-sm muted">
             <strong>debian:12</strong> -- ScanRook reports 18 confirmed

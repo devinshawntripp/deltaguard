@@ -11,7 +11,7 @@ const benchmarks = [
   { image: "ubuntu:22.04", size: "69 MB", sr: { time: "1.5s", findings: 29 }, trivy: { time: "0.2s", findings: 28 }, grype: { time: "1.0s", findings: 34 } },
   { image: "debian:12", size: "137 MB", sr: { time: "1.4s", findings: 18 }, trivy: { time: "0.2s", findings: 92 }, grype: { time: "1.2s", findings: 86 } },
   { image: "alpine:3.20", size: "8.7 MB", sr: { time: "3.3s", findings: 0 }, trivy: { time: "0.1s", findings: 0 }, grype: { time: "1.0s", findings: 4 } },
-  { image: "rockylinux:9", size: "189 MB", sr: { time: "2.6s", findings: 117 }, trivy: { time: "0.2s", findings: 176 }, grype: { time: "1.8s", findings: 539 } },
+  { image: "rockylinux:9", size: "189 MB", sr: { time: "2.8s", findings: 243 }, trivy: { time: "0.2s", findings: 176 }, grype: { time: "1.8s", findings: 539 } },
   { image: "node:22-slim", size: "240 MB", sr: { time: "1.5s", findings: 18 }, trivy: { time: "0.2s", findings: 109 }, grype: { time: "3.7s", findings: 103 } },
 ];
 
@@ -114,13 +114,13 @@ export default function BenchmarksPage() {
       {/* Why Fewer Findings */}
       <section className="surface-card p-7 grid gap-5">
         <SectionHeader
-          title="Why ScanRook Reports Fewer Findings"
-          blurb="Precision over volume."
+          title="ScanRook Findings vs Trivy and Grype"
+          blurb="Precision plus deeper RHEL advisory coverage."
         />
         <div className="grid gap-3 text-sm muted">
           <p>
-            ScanRook intentionally reports fewer findings than Trivy and Grype.
-            This is a feature, not a limitation:
+            ScanRook combines multiple advisory sources and verifies against the
+            installed package database to produce high-confidence findings:
           </p>
           <ul className="grid gap-2 list-disc pl-5">
             <li>
@@ -128,6 +128,13 @@ export default function BenchmarksPage() {
               databases (dpkg, RPM, APK) directly instead of relying on file path
               heuristics. Only packages confirmed as installed are reported with
               ConfirmedInstalled confidence.
+            </li>
+            <li>
+              <strong>RHEL OVAL + OSV dual-source for RPM images</strong> — For Rocky
+              Linux, AlmaLinux, and other RHEL-compatible distros, ScanRook supplements
+              its OSV advisory lookups with direct RHEL OVAL evaluation. This catches
+              CVEs that are in the OVAL data but not yet reflected in ecosystem-specific
+              OSV entries.
             </li>
             <li>
               <strong>Fixed advisory filtering</strong> — Vulnerabilities that have
@@ -139,18 +146,13 @@ export default function BenchmarksPage() {
               vulnerabilities with no fix available unless they appear in CISA KEV
               (known exploited).
             </li>
-            <li>
-              <strong>Confidence tiering</strong> — Heuristic-based findings are clearly
-              labeled as HeuristicUnverified so teams can prioritize confirmed issues.
-            </li>
           </ul>
           <p>
-            For example, rockylinux:9 shows 117 ScanRook findings vs 176 Trivy / 539 Grype.
-            ScanRook covers both base packages and subpackages (openssl-libs, python3-libs,
-            glibc-minimal-langpack) via supplemental RHSA advisory lookups. The remaining
-            gap vs Trivy reflects unfixed advisories and packages already patched at the
-            installed version, which ScanRook filters out since there is no actionable
-            remediation available.
+            For example, rockylinux:9 shows 243 ScanRook findings vs 176 Trivy / 539 Grype.
+            ScanRook finds 41 more unique CVEs than Trivy by combining OSV advisory lookups
+            with direct RHEL OVAL evaluation. Grype&apos;s 539 includes over 200 advisories
+            with no fix available, which ScanRook suppresses since they carry no actionable
+            remediation path.
           </p>
         </div>
       </section>
