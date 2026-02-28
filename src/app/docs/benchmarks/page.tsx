@@ -8,11 +8,10 @@ export const metadata: Metadata = {
 };
 
 const benchmarks = [
-  { image: "ubuntu:22.04", size: "69 MB", sr: { time: "1.5s", findings: 29 }, trivy: { time: "0.2s", findings: 28 }, grype: { time: "1.0s", findings: 34 } },
-  { image: "debian:12", size: "137 MB", sr: { time: "1.4s", findings: 18 }, trivy: { time: "0.2s", findings: 92 }, grype: { time: "1.2s", findings: 86 } },
-  { image: "alpine:3.20", size: "8.7 MB", sr: { time: "3.3s", findings: 0 }, trivy: { time: "0.1s", findings: 0 }, grype: { time: "1.0s", findings: 4 } },
-  { image: "rockylinux:9", size: "189 MB", sr: { time: "2.8s", findings: 243 }, trivy: { time: "0.2s", findings: 176 }, grype: { time: "1.8s", findings: 539 } },
-  { image: "node:22-slim", size: "240 MB", sr: { time: "1.5s", findings: 18 }, trivy: { time: "0.2s", findings: 109 }, grype: { time: "3.7s", findings: 103 } },
+  { image: "rockylinux:9", size: "189 MB", sr: { time: "1.8s", findings: 481 }, trivy: { time: "0.2s", findings: 176 }, grype: { time: "1.7s", findings: 539 } },
+  { image: "ubuntu:24.04", size: "98 MB", sr: { time: "1.2s", findings: 17 }, trivy: { time: "0.1s", findings: 13 }, grype: { time: "1.1s", findings: 26 } },
+  { image: "debian:12", size: "137 MB", sr: { time: "1.3s", findings: 18 }, trivy: { time: "0.2s", findings: 92 }, grype: { time: "1.3s", findings: 86 } },
+  { image: "alpine:3.20", size: "8.7 MB", sr: { time: "3.9s", findings: 0 }, trivy: { time: "0.1s", findings: 0 }, grype: { time: "1.2s", findings: 4 } },
 ];
 
 const metrics = [
@@ -59,7 +58,7 @@ export default function BenchmarksPage() {
       <section className="surface-card p-7 grid gap-5">
         <SectionHeader
           title="Container Scan Comparison"
-          blurb="ScanRook v1.5.0 vs Trivy 0.69.1 vs Grype 0.109.0 — warm cache, macOS."
+          blurb="ScanRook v1.6.0 vs Trivy 0.69.1 vs Grype 0.109.0 — warm cache, macOS."
         />
         <div className="overflow-auto">
           <table className="w-full text-sm border-collapse">
@@ -130,11 +129,11 @@ export default function BenchmarksPage() {
               ConfirmedInstalled confidence.
             </li>
             <li>
-              <strong>RHEL OVAL + OSV dual-source for RPM images</strong> — For Rocky
-              Linux, AlmaLinux, and other RHEL-compatible distros, ScanRook supplements
-              its OSV advisory lookups with direct RHEL OVAL evaluation. This catches
-              CVEs that are in the OVAL data but not yet reflected in ecosystem-specific
-              OSV entries.
+              <strong>Triple-source RHEL coverage</strong> — For Rocky Linux, AlmaLinux,
+              and other RHEL-based images, ScanRook combines three sources: OSV batch queries,
+              RHEL OVAL patch evaluation, and the Red Hat Security Data API for unfixed CVEs
+              (will-not-fix, fix-deferred, affected). This produces 2.7x more findings than
+              Trivy on Rocky Linux 9.
             </li>
             <li>
               <strong>Fixed advisory filtering</strong> — Vulnerabilities that have
@@ -142,17 +141,18 @@ export default function BenchmarksPage() {
               may report advisories for the package name regardless of installed version.
             </li>
             <li>
-              <strong>No unfixed noise</strong> — By default, ScanRook does not report
-              vulnerabilities with no fix available unless they appear in CISA KEV
-              (known exploited).
+              <strong>Unfixed CVE visibility</strong> — ScanRook surfaces CVEs that
+              Red Hat has marked as &quot;Will not fix&quot;, &quot;Fix deferred&quot;, or
+              &quot;Affected&quot; — with strict RHEL-version-specific validation to avoid
+              false positives from historical advisories.
             </li>
           </ul>
           <p>
-            For example, rockylinux:9 shows 243 ScanRook findings vs 176 Trivy / 539 Grype.
-            ScanRook finds 41 more unique CVEs than Trivy by combining OSV advisory lookups
-            with direct RHEL OVAL evaluation. Grype&apos;s 539 includes over 200 advisories
-            with no fix available, which ScanRook suppresses since they carry no actionable
-            remediation path.
+            For example, rockylinux:9 shows 481 ScanRook findings vs 176 Trivy / 539 Grype.
+            ScanRook finds 2.7x more CVEs than Trivy by combining OSV, RHEL OVAL, and
+            Red Hat per-package security data. Compared to Grype&apos;s 539, ScanRook&apos;s
+            481 is more conservative because it requires RHEL-9-specific confirmation for
+            every unfixed advisory — avoiding false positives from older RHEL streams.
           </p>
         </div>
       </section>
@@ -201,7 +201,7 @@ export default function BenchmarksPage() {
           <ul className="grid gap-1.5 list-disc pl-5">
             <li>All tools run on the same machine with warm caches (second run after initial cache population).</li>
             <li>Container images saved via <code className="bg-black/5 dark:bg-white/10 px-1 rounded">docker save</code> to local tar files.</li>
-            <li>ScanRook uses <code className="bg-black/5 dark:bg-white/10 px-1 rounded">--mode deep</code> with NVD API key.</li>
+            <li>ScanRook uses default settings (light mode, all enrichment sources active).</li>
             <li>Trivy uses <code className="bg-black/5 dark:bg-white/10 px-1 rounded">trivy image --input</code> with default settings.</li>
             <li>Grype uses <code className="bg-black/5 dark:bg-white/10 px-1 rounded">grype [file] -o json</code> with default settings.</li>
             <li>Finding counts are unique CVE IDs after deduplication.</li>
