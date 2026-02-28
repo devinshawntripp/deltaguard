@@ -169,8 +169,8 @@ export default function ScanRookBenchmarkResultsPage() {
                     rockylinux:9
                   </td>
                   <td className="py-3 pr-4 text-xs">189 MB</td>
-                  <td className="py-3 pr-4 text-xs">1.5s</td>
-                  <td className="py-3 pr-4 text-xs">0</td>
+                  <td className="py-3 pr-4 text-xs">2.3s</td>
+                  <td className="py-3 pr-4 text-xs">18</td>
                   <td className="py-3 pr-4 text-xs">0.2s</td>
                   <td className="py-3 pr-4 text-xs">176</td>
                   <td className="py-3 pr-4 text-xs">1.8s</td>
@@ -217,11 +217,12 @@ export default function ScanRookBenchmarkResultsPage() {
           </h2>
           <p className="text-sm muted">
             <strong>rockylinux:9</strong> -- Trivy reports 176 findings and
-            Grype reports 539, while ScanRook reports 0. ScanRook reads the
-            RPM database directly and identifies that all installed packages
-            are at patched versions. The findings reported by other scanners
-            include unfixed advisories and advisory-only matches that do not
-            correspond to actual vulnerable package versions on the system.
+            Grype reports 539, while ScanRook reports 18. ScanRook reads the
+            RPM SQLite database directly and only reports vulnerabilities for
+            packages confirmed installed at vulnerable versions. The
+            additional findings from other scanners include unfixed
+            advisories and advisory-only matches that do not correspond to
+            actual vulnerable package versions on the system.
           </p>
           <p className="text-sm muted">
             <strong>debian:12</strong> -- ScanRook reports 18 confirmed
