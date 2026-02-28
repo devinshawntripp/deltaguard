@@ -4,6 +4,7 @@ import { actorHasAnyRole, forbiddenByRole, JOB_READ_ROLES, JOB_WRITE_ROLES, reso
 import { canQueueScan, incrementUsage } from "@/lib/usage";
 import { getScannerSettings } from "@/lib/scannerSettings";
 import { withRateLimit } from "@/lib/rateLimit";
+import { ADMIN_OVERRIDE } from "@/lib/roles";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -40,8 +41,9 @@ export const POST = withRateLimit(async function POST(req: NextRequest) {
         const refs = Boolean(body.refs ?? false);
         if (!bucket || !object_key) return NextResponse.json({ error: "bucket and object_key required" }, { status: 400 });
 
+        const isAdmin = actor.rolesMask === ADMIN_OVERRIDE;
         const quota = await canQueueScan(actor.orgId);
-        if (!quota.allowed) {
+        if (!quota.allowed && !isAdmin) {
             return NextResponse.json(
                 {
                     error: "Monthly scan limit reached",
