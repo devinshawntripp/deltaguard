@@ -299,14 +299,34 @@ CREATE TABLE IF NOT EXISTS scanner_settings (
   nvd_enrich_enabled BOOLEAN NOT NULL DEFAULT TRUE,
   osv_enrich_enabled BOOLEAN NOT NULL DEFAULT TRUE,
   redhat_enrich_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+  epss_enrich_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+  kev_enrich_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+  debian_tracker_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+  ubuntu_tracker_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+  alpine_secdb_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+  redhat_unfixed_enabled BOOLEAN NOT NULL DEFAULT TRUE,
   skip_cache BOOLEAN NOT NULL DEFAULT FALSE,
+  nvd_api_key TEXT NOT NULL DEFAULT '',
   nvd_concurrency INTEGER NOT NULL DEFAULT 3,
   nvd_retry_max INTEGER NOT NULL DEFAULT 5,
   nvd_timeout_secs INTEGER NOT NULL DEFAULT 20,
   global_nvd_rate_per_minute INTEGER NOT NULL DEFAULT 40,
+  osv_batch_size INTEGER NOT NULL DEFAULT 50,
+  osv_timeout_secs INTEGER NOT NULL DEFAULT 60,
+  redhat_cve_concurrency INTEGER NOT NULL DEFAULT 4,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 )
         `,
+        `ALTER TABLE scanner_settings ADD COLUMN IF NOT EXISTS epss_enrich_enabled BOOLEAN NOT NULL DEFAULT TRUE`,
+        `ALTER TABLE scanner_settings ADD COLUMN IF NOT EXISTS kev_enrich_enabled BOOLEAN NOT NULL DEFAULT TRUE`,
+        `ALTER TABLE scanner_settings ADD COLUMN IF NOT EXISTS debian_tracker_enabled BOOLEAN NOT NULL DEFAULT TRUE`,
+        `ALTER TABLE scanner_settings ADD COLUMN IF NOT EXISTS ubuntu_tracker_enabled BOOLEAN NOT NULL DEFAULT TRUE`,
+        `ALTER TABLE scanner_settings ADD COLUMN IF NOT EXISTS alpine_secdb_enabled BOOLEAN NOT NULL DEFAULT TRUE`,
+        `ALTER TABLE scanner_settings ADD COLUMN IF NOT EXISTS redhat_unfixed_enabled BOOLEAN NOT NULL DEFAULT TRUE`,
+        `ALTER TABLE scanner_settings ADD COLUMN IF NOT EXISTS nvd_api_key TEXT NOT NULL DEFAULT ''`,
+        `ALTER TABLE scanner_settings ADD COLUMN IF NOT EXISTS osv_batch_size INTEGER NOT NULL DEFAULT 50`,
+        `ALTER TABLE scanner_settings ADD COLUMN IF NOT EXISTS osv_timeout_secs INTEGER NOT NULL DEFAULT 60`,
+        `ALTER TABLE scanner_settings ADD COLUMN IF NOT EXISTS redhat_cve_concurrency INTEGER NOT NULL DEFAULT 4`,
         `
 CREATE TABLE IF NOT EXISTS admin_content (
   key TEXT PRIMARY KEY,
@@ -516,13 +536,34 @@ CREATE TABLE IF NOT EXISTS scanner_settings (
   nvd_enrich_enabled BOOLEAN NOT NULL DEFAULT TRUE,
   osv_enrich_enabled BOOLEAN NOT NULL DEFAULT TRUE,
   redhat_enrich_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+  epss_enrich_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+  kev_enrich_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+  debian_tracker_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+  ubuntu_tracker_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+  alpine_secdb_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+  redhat_unfixed_enabled BOOLEAN NOT NULL DEFAULT TRUE,
   skip_cache BOOLEAN NOT NULL DEFAULT FALSE,
+  nvd_api_key TEXT NOT NULL DEFAULT '',
   nvd_concurrency INTEGER NOT NULL DEFAULT 3,
   nvd_retry_max INTEGER NOT NULL DEFAULT 5,
   nvd_timeout_secs INTEGER NOT NULL DEFAULT 20,
   global_nvd_rate_per_minute INTEGER NOT NULL DEFAULT 40,
+  osv_batch_size INTEGER NOT NULL DEFAULT 50,
+  osv_timeout_secs INTEGER NOT NULL DEFAULT 60,
+  redhat_cve_concurrency INTEGER NOT NULL DEFAULT 4,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+ALTER TABLE scanner_settings ADD COLUMN IF NOT EXISTS epss_enrich_enabled BOOLEAN NOT NULL DEFAULT TRUE;
+ALTER TABLE scanner_settings ADD COLUMN IF NOT EXISTS kev_enrich_enabled BOOLEAN NOT NULL DEFAULT TRUE;
+ALTER TABLE scanner_settings ADD COLUMN IF NOT EXISTS debian_tracker_enabled BOOLEAN NOT NULL DEFAULT TRUE;
+ALTER TABLE scanner_settings ADD COLUMN IF NOT EXISTS ubuntu_tracker_enabled BOOLEAN NOT NULL DEFAULT TRUE;
+ALTER TABLE scanner_settings ADD COLUMN IF NOT EXISTS alpine_secdb_enabled BOOLEAN NOT NULL DEFAULT TRUE;
+ALTER TABLE scanner_settings ADD COLUMN IF NOT EXISTS redhat_unfixed_enabled BOOLEAN NOT NULL DEFAULT TRUE;
+ALTER TABLE scanner_settings ADD COLUMN IF NOT EXISTS nvd_api_key TEXT NOT NULL DEFAULT '';
+ALTER TABLE scanner_settings ADD COLUMN IF NOT EXISTS osv_batch_size INTEGER NOT NULL DEFAULT 50;
+ALTER TABLE scanner_settings ADD COLUMN IF NOT EXISTS osv_timeout_secs INTEGER NOT NULL DEFAULT 60;
+ALTER TABLE scanner_settings ADD COLUMN IF NOT EXISTS redhat_cve_concurrency INTEGER NOT NULL DEFAULT 4;
 
 CREATE TABLE IF NOT EXISTS admin_content (
   key TEXT PRIMARY KEY,

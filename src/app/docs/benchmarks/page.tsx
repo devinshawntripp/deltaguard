@@ -282,6 +282,51 @@ export default function BenchmarksPage() {
         </div>
       </section>
 
+      {/* Transparency */}
+      <section className="surface-card p-7 grid gap-5">
+        <SectionHeader
+          title="Transparency"
+          blurb="No fudged numbers. Here's exactly how we test."
+        />
+        <div className="grid gap-3 text-sm muted">
+          <ul className="grid gap-2 list-disc pl-5">
+            <li>
+              <strong>Same environment</strong> — All three scanners (ScanRook, Trivy, Grype) run
+              on the same machine, same OS, same images saved to the same directory. No
+              scanner-specific hardware or network advantages.
+            </li>
+            <li>
+              <strong>No image-specific hardcoding</strong> — ScanRook does not contain any
+              image-specific logic or benchmark-specific cache warming. The same scanning
+              pipeline runs for all images.
+            </li>
+            <li>
+              <strong>Standard caching only</strong> — ScanRook uses its standard SHA256-keyed
+              file cache at <code className="bg-black/5 dark:bg-white/10 px-1 rounded">~/.scanrook/cache/</code>.
+              No benchmark-specific pre-loading or cache seeding.
+            </li>
+            <li>
+              <strong>Database differences</strong> — Trivy downloads a pre-compiled BoltDB
+              vulnerability database (~400MB) rebuilt every 6 hours. Grype uses a pre-compiled
+              SQLite database (~65MB) rebuilt daily. ScanRook queries live APIs (OSV, NVD, Red Hat)
+              on cold scans and caches responses locally for warm scans.
+            </li>
+            <li>
+              <strong>Cold vs warm scans</strong> — Published &quot;warm cache&quot; times
+              represent the second scan of the same image, where API responses are served from
+              local cache. Cold-scan times are significantly longer for ScanRook because every
+              vulnerability query hits a live API. We are transparent about this tradeoff.
+            </li>
+            <li>
+              <strong>Open source benchmark code</strong> — The <code className="bg-black/5 dark:bg-white/10 px-1 rounded">run_benchmark()</code> function
+              in <code className="bg-black/5 dark:bg-white/10 px-1 rounded">src/main.rs</code> is
+              open source and can be audited. Raw JSON outputs from all three tools are
+              available for independent verification.
+            </li>
+          </ul>
+        </div>
+      </section>
+
       <section className="surface-card p-7 grid gap-4">
         <SectionHeader title="More Comparisons" blurb="Detailed head-to-head pages." />
         <div className="flex flex-wrap gap-3">
