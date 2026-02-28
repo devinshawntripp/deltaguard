@@ -3,7 +3,7 @@ kind: PersistentVolumeClaim
 metadata:
   name: redis-data
   labels:
-    app: deltaguard-redis
+    app: scanrook-redis
 spec:
   accessModes:
     - ReadWriteOnce
@@ -14,18 +14,18 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: deltaguard-redis
+  name: scanrook-redis
   labels:
-    app: deltaguard-redis
+    app: scanrook-redis
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: deltaguard-redis
+      app: scanrook-redis
   template:
     metadata:
       labels:
-        app: deltaguard-redis
+        app: scanrook-redis
     spec:
       securityContext:
         runAsNonRoot: true
@@ -84,11 +84,11 @@ kind: Service
 metadata:
   name: redis
   labels:
-    app: deltaguard-redis
+    app: scanrook-redis
 spec:
   type: ClusterIP
   selector:
-    app: deltaguard-redis
+    app: scanrook-redis
   ports:
     - name: redis
       port: 6379

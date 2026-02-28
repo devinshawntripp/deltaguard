@@ -1,18 +1,18 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: deltaguard-worker
+  name: scanrook-worker
   labels:
-    app: deltaguard-worker
+    app: scanrook-worker
 spec:
   replicas: 3
   selector:
     matchLabels:
-      app: deltaguard-worker
+      app: scanrook-worker
   template:
     metadata:
       labels:
-        app: deltaguard-worker
+        app: scanrook-worker
     spec:
       affinity:
         nodeAffinity:
@@ -33,7 +33,7 @@ spec:
             value: "1"
       containers:
         - name: worker
-          image: devintripp/rust-scanner-worker:v1.5.3
+          image: devintripp/rust-scanner-worker:v1.7.1
           imagePullPolicy: Always
           securityContext:
             allowPrivilegeEscalation: false
@@ -98,9 +98,9 @@ spec:
               value: .svc,.svc.cluster.local,.cluster.local,10.96.0.0/12,10.0.0.0/8,192.168.0.0/16,172.16.0.0/12,s3.apps.onetripp.com,minio.apps.onetripp.com,minio.storage.svc.cluster.local,minio.storage.svc.cluster.local.
           envFrom:
             - secretRef:
-                name: deltaguard-secrets
+                name: scanrook-secrets
             - configMapRef:
-                name: deltaguard-config
+                name: scanrook-config
           readinessProbe:
             httpGet:
               path: /healthz

@@ -30,13 +30,18 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
     const safeSinceId = Number.isFinite(sinceId) && sinceId > 0 ? Math.trunc(sinceId) : 0;
 
     const encoder = new TextEncoder();
+    let unsub: (() => void) | null = null;
+    let closed = false;
     const stream = new ReadableStream<Uint8Array>({
         start: async (controller) => {
-            const send = (obj: unknown) => controller.enqueue(encoder.encode(`data: ${JSON.stringify(obj)}\n\n`));
+            const send = (obj: unknown) => {
+                if (closed) return;
+                try { controller.enqueue(encoder.encode(`data: ${JSON.stringify(obj)}\n\n`)); } catch { closed = true; }
+            };
             controller.enqueue(encoder.encode(`: ping\n\n`));
-            const unsub = await jobEventsBus.subscribe(id, (row) => send(row), { sinceId: safeSinceId });
-            (controller as any).onCancel = () => { try { unsub(); } catch { } };
+            unsub = await jobEventsBus.subscribe(id, (row) => send(row), { sinceId: safeSinceId });
         },
+        cancel() { closed = true; try { unsub?.(); } catch { } },
     });
     return new Response(stream, { headers: sseHeaders() });
 }

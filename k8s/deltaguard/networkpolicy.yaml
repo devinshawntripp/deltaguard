@@ -4,13 +4,13 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: deltaguard-web
+  name: scanrook-web
   labels:
-    app: deltaguard-web
+    app: scanrook-web
 spec:
   podSelector:
     matchLabels:
-      app: deltaguard-web
+      app: scanrook-web
   policyTypes:
     - Ingress
     - Egress
@@ -57,7 +57,7 @@ spec:
     - to:
         - podSelector:
             matchLabels:
-              app: deltaguard-redis
+              app: scanrook-redis
       ports:
         - protocol: TCP
           port: 6379
@@ -86,13 +86,13 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: deltaguard-worker
+  name: scanrook-worker
   labels:
-    app: deltaguard-worker
+    app: scanrook-worker
 spec:
   podSelector:
     matchLabels:
-      app: deltaguard-worker
+      app: scanrook-worker
   policyTypes:
     - Ingress
     - Egress
@@ -136,7 +136,7 @@ spec:
     - to:
         - podSelector:
             matchLabels:
-              app: deltaguard-redis
+              app: scanrook-redis
       ports:
         - protocol: TCP
           port: 6379
@@ -164,13 +164,13 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: deltaguard-redis
+  name: scanrook-redis
   labels:
-    app: deltaguard-redis
+    app: scanrook-redis
 spec:
   podSelector:
     matchLabels:
-      app: deltaguard-redis
+      app: scanrook-redis
   policyTypes:
     - Ingress
     - Egress
@@ -179,10 +179,10 @@ spec:
     - from:
         - podSelector:
             matchLabels:
-              app: deltaguard-web
+              app: scanrook-web
         - podSelector:
             matchLabels:
-              app: deltaguard-worker
+              app: scanrook-worker
       ports:
         - protocol: TCP
           port: 6379

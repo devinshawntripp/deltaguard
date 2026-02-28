@@ -4,7 +4,7 @@
 apiVersion: v1
 kind: ResourceQuota
 metadata:
-  name: deltaguard-quota
+  name: scanrook-quota
 spec:
   hard:
     requests.memory: 24Gi

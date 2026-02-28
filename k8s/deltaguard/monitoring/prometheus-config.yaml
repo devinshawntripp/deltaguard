@@ -20,7 +20,7 @@ data:
           - targets: ["localhost:9090"]
 
       # Worker pods /metrics endpoint
-      - job_name: "deltaguard-worker"
+      - job_name: "scanrook-worker"
         kubernetes_sd_configs:
           - role: pod
             namespaces:
@@ -29,7 +29,7 @@ data:
         relabel_configs:
           - source_labels: [__meta_kubernetes_pod_label_app]
             action: keep
-            regex: deltaguard-worker
+            regex: scanrook-worker
           - source_labels: [__meta_kubernetes_pod_ip]
             action: replace
             target_label: __address__
@@ -39,7 +39,7 @@ data:
             target_label: pod
 
       # Web pods
-      - job_name: "deltaguard-web"
+      - job_name: "scanrook-web"
         kubernetes_sd_configs:
           - role: pod
             namespaces:
@@ -48,7 +48,7 @@ data:
         relabel_configs:
           - source_labels: [__meta_kubernetes_pod_label_app]
             action: keep
-            regex: deltaguard-web
+            regex: scanrook-web
           - source_labels: [__meta_kubernetes_pod_ip]
             action: replace
             target_label: __address__

@@ -1,17 +1,17 @@
-# HorizontalPodAutoscaler for deltaguard-web (Phase 5.8)
+# HorizontalPodAutoscaler for scanrook-web (Phase 5.8)
 # Requires metrics-server to be installed in the cluster.
 # Conservative maxReplicas for a 3-node homelab cluster.
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: deltaguard-web
+  name: scanrook-web
   labels:
-    app: deltaguard-web
+    app: scanrook-web
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: deltaguard-web
+    name: scanrook-web
   minReplicas: 2
   maxReplicas: 5
   metrics:

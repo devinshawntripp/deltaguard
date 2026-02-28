@@ -1,18 +1,18 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: deltaguard-web
+  name: scanrook-web
   labels:
-    app: deltaguard-web
+    app: scanrook-web
 spec:
   replicas: 3
   selector:
     matchLabels:
-      app: deltaguard-web
+      app: scanrook-web
   template:
     metadata:
       labels:
-        app: deltaguard-web
+        app: scanrook-web
     spec:
       securityContext:
         runAsNonRoot: true
@@ -24,7 +24,7 @@ spec:
             value: "1"
       containers:
         - name: web
-          image: devintripp/deltaguard-ui:v1.5.3
+          image: devintripp/deltaguard-ui:v1.6.3
           imagePullPolicy: Always
           command: ["npm", "run", "start"]
           securityContext:
@@ -57,9 +57,9 @@ spec:
               value: ScanRook
           envFrom:
             - secretRef:
-                name: deltaguard-secrets
+                name: scanrook-secrets
             - configMapRef:
-                name: deltaguard-config
+                name: scanrook-config
           readinessProbe:
             httpGet:
               path: /

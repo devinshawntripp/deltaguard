@@ -1,7 +1,7 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: deltaguard-web
+  name: scanrook-web
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
     nginx.ingress.kubernetes.io/proxy-body-size: 20g
@@ -18,7 +18,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: deltaguard-web
+                name: scanrook-web
                 port:
                   number: 3000
     - host: scanrook.sh
@@ -28,7 +28,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: deltaguard-web
+                name: scanrook-web
                 port:
                   number: 3000
     - host: deltaguard.apps.onetripp.com
@@ -38,6 +38,6 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: deltaguard-web
+                name: scanrook-web
                 port:
                   number: 3000

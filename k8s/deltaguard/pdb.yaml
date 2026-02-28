@@ -4,35 +4,35 @@
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: deltaguard-web-pdb
+  name: scanrook-web-pdb
   labels:
-    app: deltaguard-web
+    app: scanrook-web
 spec:
   minAvailable: 2
   selector:
     matchLabels:
-      app: deltaguard-web
+      app: scanrook-web
 ---
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: deltaguard-worker-pdb
+  name: scanrook-worker-pdb
   labels:
-    app: deltaguard-worker
+    app: scanrook-worker
 spec:
   minAvailable: 1
   selector:
     matchLabels:
-      app: deltaguard-worker
+      app: scanrook-worker
 ---
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: deltaguard-redis-pdb
+  name: scanrook-redis-pdb
   labels:
-    app: deltaguard-redis
+    app: scanrook-redis
 spec:
   minAvailable: 1
   selector:
     matchLabels:
-      app: deltaguard-redis
+      app: scanrook-redis
