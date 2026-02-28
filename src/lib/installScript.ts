@@ -79,17 +79,23 @@ curl -fsSL "\${BASE_URL}/\${SUMS}" -o "\${TMP}/\${SUMS}" || {
 }
 
 echo "Verifying checksum ..."
+EXPECTED="$(cd "\${TMP}" && grep "\${ASSET}" "\${SUMS}" | awk '{print $1}')"
+if [[ -z "\${EXPECTED}" ]]; then
+  echo "Checksum entry not found for \${ASSET} in \${SUMS}" >&2
+  exit 1
+fi
 if command -v sha256sum >/dev/null 2>&1; then
-  (cd "\${TMP}" && grep " \${ASSET}$" "\${SUMS}" | sha256sum -c -)
+  ACTUAL="$(sha256sum "\${TMP}/\${ASSET}" | awk '{print $1}')"
 elif command -v shasum >/dev/null 2>&1; then
-  EXPECTED="$(cd "\${TMP}" && grep " \${ASSET}$" "\${SUMS}" | awk '{print $1}')"
   ACTUAL="$(shasum -a 256 "\${TMP}/\${ASSET}" | awk '{print $1}')"
-  if [[ -z "\${EXPECTED}" || "\${EXPECTED}" != "\${ACTUAL}" ]]; then
-    echo "Checksum verification failed for \${ASSET}" >&2
-    exit 1
-  fi
 else
   echo "No SHA-256 tool found (need sha256sum or shasum)." >&2
+  exit 1
+fi
+if [[ "\${EXPECTED}" != "\${ACTUAL}" ]]; then
+  echo "Checksum verification failed for \${ASSET}" >&2
+  echo "  expected: \${EXPECTED}" >&2
+  echo "  actual:   \${ACTUAL}" >&2
   exit 1
 fi
 
