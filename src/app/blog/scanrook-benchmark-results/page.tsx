@@ -133,11 +133,11 @@ export default function ScanRookBenchmarkResultsPage() {
                     ubuntu:22.04
                   </td>
                   <td className="py-3 pr-4 text-xs">69 MB</td>
-                  <td className="py-3 pr-4 text-xs">15.2s</td>
+                  <td className="py-3 pr-4 text-xs">1.5s</td>
                   <td className="py-3 pr-4 text-xs">29</td>
-                  <td className="py-3 pr-4 text-xs">0.2s</td>
+                  <td className="py-3 pr-4 text-xs">0.1s</td>
                   <td className="py-3 pr-4 text-xs">28</td>
-                  <td className="py-3 pr-4 text-xs">1.1s</td>
+                  <td className="py-3 pr-4 text-xs">1.0s</td>
                   <td className="py-3 pr-4 text-xs">34</td>
                 </tr>
                 <tr className="border-b border-black/5 dark:border-white/5">
@@ -145,9 +145,9 @@ export default function ScanRookBenchmarkResultsPage() {
                     debian:12
                   </td>
                   <td className="py-3 pr-4 text-xs">137 MB</td>
-                  <td className="py-3 pr-4 text-xs">1.7s</td>
+                  <td className="py-3 pr-4 text-xs">1.3s</td>
                   <td className="py-3 pr-4 text-xs">18</td>
-                  <td className="py-3 pr-4 text-xs">0.7s</td>
+                  <td className="py-3 pr-4 text-xs">0.2s</td>
                   <td className="py-3 pr-4 text-xs">92</td>
                   <td className="py-3 pr-4 text-xs">1.2s</td>
                   <td className="py-3 pr-4 text-xs">86</td>
@@ -157,11 +157,11 @@ export default function ScanRookBenchmarkResultsPage() {
                     alpine:3.20
                   </td>
                   <td className="py-3 pr-4 text-xs">8.7 MB</td>
-                  <td className="py-3 pr-4 text-xs">5.1s</td>
+                  <td className="py-3 pr-4 text-xs">3.3s</td>
                   <td className="py-3 pr-4 text-xs">0</td>
-                  <td className="py-3 pr-4 text-xs">0.2s</td>
+                  <td className="py-3 pr-4 text-xs">0.1s</td>
                   <td className="py-3 pr-4 text-xs">0</td>
-                  <td className="py-3 pr-4 text-xs">1.1s</td>
+                  <td className="py-3 pr-4 text-xs">1.2s</td>
                   <td className="py-3 pr-4 text-xs">4</td>
                 </tr>
                 <tr className="border-b border-black/5 dark:border-white/5">
@@ -169,11 +169,11 @@ export default function ScanRookBenchmarkResultsPage() {
                     rockylinux:9
                   </td>
                   <td className="py-3 pr-4 text-xs">189 MB</td>
-                  <td className="py-3 pr-4 text-xs">1.1s</td>
+                  <td className="py-3 pr-4 text-xs">1.5s</td>
                   <td className="py-3 pr-4 text-xs">0</td>
-                  <td className="py-3 pr-4 text-xs">2.6s</td>
+                  <td className="py-3 pr-4 text-xs">0.2s</td>
                   <td className="py-3 pr-4 text-xs">176</td>
-                  <td className="py-3 pr-4 text-xs">2.0s</td>
+                  <td className="py-3 pr-4 text-xs">1.8s</td>
                   <td className="py-3 pr-4 text-xs">539</td>
                 </tr>
                 <tr className="border-b border-black/5 dark:border-white/5">
@@ -181,11 +181,11 @@ export default function ScanRookBenchmarkResultsPage() {
                     node:22-slim
                   </td>
                   <td className="py-3 pr-4 text-xs">240 MB</td>
-                  <td className="py-3 pr-4 text-xs">1.2s</td>
+                  <td className="py-3 pr-4 text-xs">1.4s</td>
                   <td className="py-3 pr-4 text-xs">18</td>
-                  <td className="py-3 pr-4 text-xs">0.8s</td>
+                  <td className="py-3 pr-4 text-xs">0.2s</td>
                   <td className="py-3 pr-4 text-xs">109</td>
-                  <td className="py-3 pr-4 text-xs">3.8s</td>
+                  <td className="py-3 pr-4 text-xs">3.7s</td>
                   <td className="py-3 pr-4 text-xs">103</td>
                 </tr>
               </tbody>

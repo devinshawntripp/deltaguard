@@ -8,11 +8,11 @@ export const metadata: Metadata = {
 };
 
 const benchmarks = [
-  { image: "ubuntu:22.04", size: "69 MB", sr: { time: "15.2s", findings: 29 }, trivy: { time: "0.2s", findings: 28 }, grype: { time: "1.1s", findings: 34 } },
-  { image: "debian:12", size: "137 MB", sr: { time: "1.7s", findings: 18 }, trivy: { time: "0.7s", findings: 92 }, grype: { time: "1.2s", findings: 86 } },
-  { image: "alpine:3.20", size: "8.7 MB", sr: { time: "5.1s", findings: 0 }, trivy: { time: "0.2s", findings: 0 }, grype: { time: "1.1s", findings: 4 } },
-  { image: "rockylinux:9", size: "189 MB", sr: { time: "1.1s", findings: 0 }, trivy: { time: "2.6s", findings: 176 }, grype: { time: "2.0s", findings: 539 } },
-  { image: "node:22-slim", size: "240 MB", sr: { time: "1.2s", findings: 18 }, trivy: { time: "0.8s", findings: 109 }, grype: { time: "3.8s", findings: 103 } },
+  { image: "ubuntu:22.04", size: "69 MB", sr: { time: "1.5s", findings: 29 }, trivy: { time: "0.1s", findings: 28 }, grype: { time: "1.0s", findings: 34 } },
+  { image: "debian:12", size: "137 MB", sr: { time: "1.3s", findings: 18 }, trivy: { time: "0.2s", findings: 92 }, grype: { time: "1.2s", findings: 86 } },
+  { image: "alpine:3.20", size: "8.7 MB", sr: { time: "3.3s", findings: 0 }, trivy: { time: "0.1s", findings: 0 }, grype: { time: "1.2s", findings: 4 } },
+  { image: "rockylinux:9", size: "189 MB", sr: { time: "1.5s", findings: 0 }, trivy: { time: "0.2s", findings: 176 }, grype: { time: "1.8s", findings: 539 } },
+  { image: "node:22-slim", size: "240 MB", sr: { time: "1.4s", findings: 18 }, trivy: { time: "0.2s", findings: 109 }, grype: { time: "3.7s", findings: 103 } },
 ];
 
 const metrics = [
