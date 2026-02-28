@@ -8,10 +8,10 @@ export const metadata: Metadata = {
 };
 
 const benchmarks = [
-  { image: "rockylinux:9", size: "189 MB", sr: { time: "1.8s", findings: 481 }, trivy: { time: "0.2s", findings: 176 }, grype: { time: "1.7s", findings: 539 } },
-  { image: "ubuntu:24.04", size: "98 MB", sr: { time: "1.2s", findings: 17 }, trivy: { time: "0.1s", findings: 13 }, grype: { time: "1.1s", findings: 26 } },
-  { image: "debian:12", size: "137 MB", sr: { time: "1.3s", findings: 18 }, trivy: { time: "0.2s", findings: 92 }, grype: { time: "1.3s", findings: 86 } },
-  { image: "alpine:3.20", size: "8.7 MB", sr: { time: "3.9s", findings: 0 }, trivy: { time: "0.1s", findings: 0 }, grype: { time: "1.2s", findings: 4 } },
+  { image: "alpine:3.20", size: "8.7 MB", sr: { time: "0.04s", findings: 7 }, trivy: { time: "0.1s", findings: 0 }, grype: { time: "1.1s", findings: 4 } },
+  { image: "debian:12", size: "137 MB", sr: { time: "1.2s", findings: 196 }, trivy: { time: "0.2s", findings: 92 }, grype: { time: "1.2s", findings: 86 } },
+  { image: "ubuntu:24.04", size: "98 MB", sr: { time: "2.2s", findings: 174 }, trivy: { time: "0.1s", findings: 13 }, grype: { time: "1.0s", findings: 26 } },
+  { image: "rockylinux:9", size: "189 MB", sr: { time: "1.8s", findings: 481 }, trivy: { time: "0.2s", findings: 176 }, grype: { time: "1.9s", findings: 539 } },
 ];
 
 const metrics = [
@@ -58,7 +58,7 @@ export default function BenchmarksPage() {
       <section className="surface-card p-7 grid gap-5">
         <SectionHeader
           title="Container Scan Comparison"
-          blurb="ScanRook v1.6.0 vs Trivy 0.69.1 vs Grype 0.109.0 — warm cache, macOS."
+          blurb="ScanRook v1.6.1 vs Trivy 0.69.1 vs Grype 0.109.0 — warm cache, macOS."
         />
         <div className="overflow-auto">
           <table className="w-full text-sm border-collapse">
