@@ -618,7 +618,7 @@ export default async function ComparePage({ params }: PageProps) {
               Benchmark results
             </h2>
             <p className="text-xs muted">
-              Warm-cache runs on macOS (darwin/amd64). ScanRook 1.3.1, {data.name}{" "}
+              Warm-cache runs on macOS (darwin/amd64). ScanRook 1.5.0, {data.name}{" "}
               {slug === "trivy" ? "0.69.1" : "0.109.0"}. ScanRook includes EPSS
               and CISA KEV enrichment. Findings count reflects each tool&apos;s
               default detection approach.

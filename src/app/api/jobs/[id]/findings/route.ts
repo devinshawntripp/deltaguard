@@ -21,6 +21,9 @@ type FindingsItem = {
     package: { name?: string; ecosystem?: string; version?: string } | null;
     source_ids: string[];
     references: Array<{ type: string; url: string }>;
+    epss_score: number | null;
+    epss_percentile: number | null;
+    in_kev: boolean | null;
 };
 
 type FindingsResponse = {
@@ -43,6 +46,7 @@ const SORT_COLUMNS: Record<string, string> = {
     fixed: "fixed",
     package: "package_name",
     created: "id",
+    epss: "(raw->>'epss_score')::float",
 };
 
 function parsePage(raw: string | null, fallback: number, min: number, max: number): number {
@@ -317,6 +321,10 @@ WHERE job_id = $1::uuid
                     ? (rawObj.source_ids as unknown[]).map((v) => String(v))
                     : [];
 
+            const epssScore = typeof rawObj.epss_score === "number" ? rawObj.epss_score : null;
+            const epssPercentile = typeof rawObj.epss_percentile === "number" ? rawObj.epss_percentile : null;
+            const inKev = typeof rawObj.in_kev === "boolean" ? rawObj.in_kev : null;
+
             return {
                 id: row.finding_id,
                 severity: row.severity,
@@ -340,6 +348,9 @@ WHERE job_id = $1::uuid
                 },
                 source_ids: sourceIds,
                 references: refMap.get(row.id) || [],
+                epss_score: epssScore as number | null,
+                epss_percentile: epssPercentile as number | null,
+                in_kev: inKev as boolean | null,
             };
         });
 

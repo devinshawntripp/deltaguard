@@ -77,6 +77,34 @@ const posts: BlogPost[] = [
     description:
       "Why we chose a local-first scanner architecture with optional cloud enrichment.",
   },
+  {
+    href: "/blog/what-is-yara",
+    category: "Deep scanning",
+    title: "What Is YARA and Why Security Teams Use It",
+    description:
+      "A guide to YARA, the pattern-matching engine used by security teams for malware detection, and how ScanRook integrates it for deep container scanning.",
+  },
+  {
+    href: "/blog/compliance-scanning-guide",
+    category: "Compliance",
+    title: "Vulnerability Scanning for Compliance: What You Need to Know",
+    description:
+      "Penalties for non-compliance, scanning frequency requirements by framework, and how to build a compliant vulnerability scanning program.",
+  },
+  {
+    href: "/blog/on-prem-vs-saas-scanning",
+    category: "Architecture",
+    title: "On-Prem vs SaaS Vulnerability Scanning: Which Is Right for You?",
+    description:
+      "Data sovereignty, air-gapped environments, cost comparison, and when on-prem scanning is required versus when SaaS makes sense.",
+  },
+  {
+    href: "/blog/scanrook-benchmark-results",
+    category: "Benchmarks",
+    title: "ScanRook Benchmark Results: Real Scan Data Against Trivy and Grype",
+    description:
+      "Transparent benchmark results comparing ScanRook, Trivy, and Grype on five container images with analysis of finding differences.",
+  },
 ];
 
 export default function BlogIndexPage() {

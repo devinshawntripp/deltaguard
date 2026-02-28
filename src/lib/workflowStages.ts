@@ -6,8 +6,11 @@ export const WORKFLOW_STAGE_ORDER = [
     "extract",
     "inventory",
     "osv",
+    "debian_tracker",
     "nvd",
     "redhat",
+    "epss",
+    "kev",
     "ingest",
     "report_upload",
     "complete",
@@ -24,8 +27,11 @@ export const WORKFLOW_STAGE_LABELS: Record<WorkflowStageId, string> = {
     extract: "Extract",
     inventory: "Inventory",
     osv: "OSV",
+    debian_tracker: "Debian Tracker",
     nvd: "NVD",
     redhat: "Red Hat",
+    epss: "EPSS",
+    kev: "CISA KEV",
     ingest: "Ingest",
     report_upload: "Report upload",
     complete: "Complete",
@@ -73,8 +79,11 @@ export function mapEventToWorkflowStage(stage: string): WorkflowStageId | null {
     }
 
     if (s.startsWith("osv.")) return "osv";
+    if (s.startsWith("container.enrich.debian_tracker") || s.startsWith("debian_tracker.") || s.startsWith("debian.tracker")) return "debian_tracker";
     if (s.startsWith("nvd.")) return "nvd";
     if (s.startsWith("redhat.") || s.startsWith("rh.")) return "redhat";
+    if (s.startsWith("epss.")) return "epss";
+    if (s.startsWith("kev.") || s.startsWith("cisa.kev")) return "kev";
 
     if (s.startsWith("worker.ingest") || s.startsWith("ingest.")) return "ingest";
     if (s.startsWith("worker.report") || s.startsWith("report.upload") || s.startsWith("s3.report")) return "report_upload";

@@ -16,6 +16,9 @@ type FindingApi = {
     package?: { name?: string; ecosystem?: string; version?: string } | null;
     source_ids?: string[];
     references?: Array<{ type?: string; url?: string }>;
+    epss_score?: number | null;
+    epss_percentile?: number | null;
+    in_kev?: boolean | null;
 };
 
 type FindingsResponse = {
@@ -34,7 +37,7 @@ type TierFilter = "confirmed" | "heuristic" | "all";
 
 type SeverityFilter = "ALL" | "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
 
-type SortKey = "severity" | "id" | "tier" | "fixed" | "package" | "cvss";
+type SortKey = "severity" | "id" | "tier" | "fixed" | "package" | "cvss" | "epss";
 
 function normalizeFindingId(idRaw: string): string {
     let id = (idRaw || "").trim();
@@ -239,6 +242,7 @@ export default function JobFindings({ jobId }: { jobId: string }) {
                             <option value="fixed">Sort: Fixed</option>
                             <option value="package">Sort: Package</option>
                             <option value="cvss">Sort: CVSS</option>
+                            <option value="epss">Sort: EPSS</option>
                         </select>
                         <select
                             value={sortDir}
@@ -285,6 +289,8 @@ export default function JobFindings({ jobId }: { jobId: string }) {
                             <th className="p-3">Fixed</th>
                             <th className="p-3">Fixed In</th>
                             <th className="p-3">CVSS</th>
+                            <th className="p-3">EPSS</th>
+                            <th className="p-3">KEV</th>
                             <th className="p-3">Description</th>
                             <th className="p-3">Recommendation</th>
                             <th className="p-3">Source</th>
@@ -293,11 +299,11 @@ export default function JobFindings({ jobId }: { jobId: string }) {
                     <tbody>
                         {loading ? (
                             <tr>
-                                <td className="p-3 opacity-70" colSpan={12}>Loading findings...</td>
+                                <td className="p-3 opacity-70" colSpan={14}>Loading findings...</td>
                             </tr>
                         ) : items.length === 0 ? (
                             <tr>
-                                <td className="p-3 opacity-70" colSpan={12}>No findings for current filters.</td>
+                                <td className="p-3 opacity-70" colSpan={14}>No findings for current filters.</td>
                             </tr>
                         ) : items.map((f, idx) => {
                             const id = normalizeFindingId(String(f.id || ""));
@@ -334,6 +340,27 @@ export default function JobFindings({ jobId }: { jobId: string }) {
                                     <td className="p-3 text-xs">
                                         {f.cvss?.base != null ? Number(f.cvss.base).toFixed(1) : "-"}
                                         {f.cvss?.vector ? <div className="opacity-60 mt-1 max-w-[220px] truncate" title={f.cvss.vector}>{f.cvss.vector}</div> : null}
+                                    </td>
+                                    <td className="p-3 text-xs whitespace-nowrap">
+                                        {f.epss_score != null ? (
+                                            <div>
+                                                <span className="font-semibold">{(Number(f.epss_score) * 100).toFixed(2)}%</span>
+                                                {f.epss_percentile != null && (
+                                                    <div className="opacity-60 text-[10px] mt-0.5">
+                                                        P{(Number(f.epss_percentile) * 100).toFixed(0)}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ) : "-"}
+                                    </td>
+                                    <td className="p-3 text-xs">
+                                        {f.in_kev === true ? (
+                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded font-semibold bg-red-700 text-white text-[10px]">
+                                                CISA KEV
+                                            </span>
+                                        ) : f.in_kev === false ? (
+                                            <span className="opacity-40">No</span>
+                                        ) : "-"}
                                     </td>
                                     <td className="p-3 text-xs max-w-[340px]">
                                         <div className="line-clamp-3" title={f.description || ""}>{f.description || "-"}</div>

@@ -21,8 +21,12 @@ const navItems: NavItem[] = [
     children: [
       { href: "/docs/concepts/enrichment", label: "Enrichment" },
       { href: "/docs/concepts/confidence-tiers", label: "Confidence Tiers" },
+      { href: "/docs/concepts/deep-scanning", label: "Deep Scanning" },
+      { href: "/docs/concepts/compliance", label: "Compliance" },
+      { href: "/docs/concepts/supply-chain-security", label: "Supply Chain Security" },
     ],
   },
+  { href: "/docs/self-hosted", label: "Self-Hosted" },
   { href: "/docs/data-sources", label: "Data Sources" },
   {
     href: "/docs/integrations",
@@ -41,6 +45,10 @@ const breadcrumbLabels: Record<string, string> = {
   concepts: "Concepts",
   enrichment: "Enrichment",
   "confidence-tiers": "Confidence Tiers",
+  "deep-scanning": "Deep Scanning",
+  compliance: "Compliance",
+  "supply-chain-security": "Supply Chain Security",
+  "self-hosted": "Self-Hosted",
   "data-sources": "Data Sources",
   integrations: "Integrations",
   "github-actions": "GitHub Actions",

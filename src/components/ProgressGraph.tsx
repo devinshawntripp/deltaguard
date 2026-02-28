@@ -156,11 +156,37 @@ function StageIcon({ stage, className = "h-4 w-4" }: { stage: string; className?
                     <path d="m9.5 12 2 2 3-3" />
                 </svg>
             );
+        case "debian_tracker":
+            return (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={cls} aria-hidden="true">
+                    <circle cx="12" cy="12" r="9" />
+                    <path d="M12 3c2.5 3 4 6 4 9s-1.5 6-4 9" />
+                    <path d="M12 3c-2.5 3-4 6-4 9s1.5 6 4 9" />
+                </svg>
+            );
         case "redhat":
             return (
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={cls} aria-hidden="true">
                     <path d="M6 8c0-2.2 1.8-4 4-4h4c2.2 0 4 1.8 4 4v8H6z" />
                     <path d="M6 12h12" />
+                </svg>
+            );
+        case "epss":
+            return (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={cls} aria-hidden="true">
+                    <path d="M3 20h18" />
+                    <path d="M6 16V10" />
+                    <path d="M10 16V6" />
+                    <path d="M14 16V12" />
+                    <path d="M18 16V4" />
+                </svg>
+            );
+        case "kev":
+            return (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={cls} aria-hidden="true">
+                    <path d="M12 2 L2 7 L2 17 L12 22 L22 17 L22 7 Z" />
+                    <path d="M12 8v5" />
+                    <circle cx="12" cy="16" r="0.5" fill="currentColor" />
                 </svg>
             );
         case "ingest":
