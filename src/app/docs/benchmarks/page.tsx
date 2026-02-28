@@ -11,7 +11,7 @@ const benchmarks = [
   { image: "ubuntu:22.04", size: "69 MB", sr: { time: "1.5s", findings: 29 }, trivy: { time: "0.2s", findings: 28 }, grype: { time: "1.0s", findings: 34 } },
   { image: "debian:12", size: "137 MB", sr: { time: "1.4s", findings: 18 }, trivy: { time: "0.2s", findings: 92 }, grype: { time: "1.2s", findings: 86 } },
   { image: "alpine:3.20", size: "8.7 MB", sr: { time: "3.3s", findings: 0 }, trivy: { time: "0.1s", findings: 0 }, grype: { time: "1.0s", findings: 4 } },
-  { image: "rockylinux:9", size: "189 MB", sr: { time: "2.3s", findings: 18 }, trivy: { time: "0.2s", findings: 176 }, grype: { time: "1.8s", findings: 539 } },
+  { image: "rockylinux:9", size: "189 MB", sr: { time: "2.6s", findings: 117 }, trivy: { time: "0.2s", findings: 176 }, grype: { time: "1.8s", findings: 539 } },
   { image: "node:22-slim", size: "240 MB", sr: { time: "1.5s", findings: 18 }, trivy: { time: "0.2s", findings: 109 }, grype: { time: "3.7s", findings: 103 } },
 ];
 
@@ -145,10 +145,12 @@ export default function BenchmarksPage() {
             </li>
           </ul>
           <p>
-            For example, rockylinux:9 shows 18 ScanRook findings vs 176 Trivy / 539 Grype.
-            The difference comes from unfixed advisories and advisory-only matches
-            for packages where the installed version is already patched. ScanRook
-            filters these out because there is no actionable remediation available.
+            For example, rockylinux:9 shows 117 ScanRook findings vs 176 Trivy / 539 Grype.
+            ScanRook covers both base packages and subpackages (openssl-libs, python3-libs,
+            glibc-minimal-langpack) via supplemental RHSA advisory lookups. The remaining
+            gap vs Trivy reflects unfixed advisories and packages already patched at the
+            installed version, which ScanRook filters out since there is no actionable
+            remediation available.
           </p>
         </div>
       </section>

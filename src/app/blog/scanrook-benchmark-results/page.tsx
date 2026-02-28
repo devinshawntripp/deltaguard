@@ -169,8 +169,8 @@ export default function ScanRookBenchmarkResultsPage() {
                     rockylinux:9
                   </td>
                   <td className="py-3 pr-4 text-xs">189 MB</td>
-                  <td className="py-3 pr-4 text-xs">2.3s</td>
-                  <td className="py-3 pr-4 text-xs">18</td>
+                  <td className="py-3 pr-4 text-xs">2.6s</td>
+                  <td className="py-3 pr-4 text-xs">117</td>
                   <td className="py-3 pr-4 text-xs">0.2s</td>
                   <td className="py-3 pr-4 text-xs">176</td>
                   <td className="py-3 pr-4 text-xs">1.8s</td>
@@ -217,12 +217,15 @@ export default function ScanRookBenchmarkResultsPage() {
           </h2>
           <p className="text-sm muted">
             <strong>rockylinux:9</strong> -- Trivy reports 176 findings and
-            Grype reports 539, while ScanRook reports 18. ScanRook reads the
-            RPM SQLite database directly and only reports vulnerabilities for
-            packages confirmed installed at vulnerable versions. The
-            additional findings from other scanners include unfixed
-            advisories and advisory-only matches that do not correspond to
-            actual vulnerable package versions on the system.
+            Grype reports 539, while ScanRook reports 117. ScanRook reads the
+            RPM SQLite database directly, confirms installed package versions,
+            and supplements its primary advisory lookup with RHSA coverage for
+            subpackages such as openssl-libs, python3-libs, and
+            glibc-minimal-langpack. The remaining gap vs Trivy reflects
+            advisories where the installed Rocky version is already patched or
+            where no actionable remediation is available. Grype&apos;s 539
+            includes over 260 advisories with no fix available, which ScanRook
+            suppresses by default since they carry no remediation path.
           </p>
           <p className="text-sm muted">
             <strong>debian:12</strong> -- ScanRook reports 18 confirmed

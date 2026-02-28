@@ -151,7 +151,7 @@ const tools: Record<string, ToolData> = {
       { image: "ubuntu:22.04", size: "69 MB", scanrookTime: "1.5s", scanrookFindings: 29, competitorTime: "0.2s", competitorFindings: 28 },
       { image: "debian:12", size: "137 MB", scanrookTime: "1.4s", scanrookFindings: 18, competitorTime: "0.2s", competitorFindings: 92 },
       { image: "alpine:3.20", size: "8.7 MB", scanrookTime: "3.3s", scanrookFindings: 0, competitorTime: "0.1s", competitorFindings: 0 },
-      { image: "rockylinux:9", size: "189 MB", scanrookTime: "2.3s", scanrookFindings: 18, competitorTime: "0.2s", competitorFindings: 176 },
+      { image: "rockylinux:9", size: "189 MB", scanrookTime: "2.6s", scanrookFindings: 117, competitorTime: "0.2s", competitorFindings: 176 },
       { image: "node:22-slim", size: "240 MB", scanrookTime: "1.5s", scanrookFindings: 18, competitorTime: "0.2s", competitorFindings: 109 },
     ],
     differentiators: [
@@ -286,7 +286,7 @@ const tools: Record<string, ToolData> = {
       { image: "ubuntu:22.04", size: "69 MB", scanrookTime: "1.5s", scanrookFindings: 29, competitorTime: "1.0s", competitorFindings: 34 },
       { image: "debian:12", size: "137 MB", scanrookTime: "1.4s", scanrookFindings: 18, competitorTime: "1.2s", competitorFindings: 86 },
       { image: "alpine:3.20", size: "8.7 MB", scanrookTime: "3.3s", scanrookFindings: 0, competitorTime: "1.0s", competitorFindings: 4 },
-      { image: "rockylinux:9", size: "189 MB", scanrookTime: "2.3s", scanrookFindings: 18, competitorTime: "1.8s", competitorFindings: 539 },
+      { image: "rockylinux:9", size: "189 MB", scanrookTime: "2.6s", scanrookFindings: 117, competitorTime: "1.8s", competitorFindings: 539 },
       { image: "node:22-slim", size: "240 MB", scanrookTime: "1.5s", scanrookFindings: 18, competitorTime: "3.7s", competitorFindings: 103 },
     ],
     differentiators: [
