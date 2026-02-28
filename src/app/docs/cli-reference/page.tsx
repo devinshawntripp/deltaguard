@@ -59,10 +59,11 @@ export default function CliReferencePage() {
 
       {/* scan */}
       <section className="surface-card p-7 grid gap-4">
-        <SectionHeader title="scanrook scan" blurb="Smart scan: auto-detect file type (container tar, source tar, ISO, or binary) and produce a report." />
+        <SectionHeader title="scanrook scan" blurb="Smart scan: auto-detect file type (container tar, source tar, ISO, or binary) and produce a report. Accepts either a local file path or a Docker/OCI image reference." />
         <FlagTable
           flags={[
-            { flag: "-f, --file <PATH>", description: "Path to file (tar/tar.gz/tar.bz2/iso/bin)", default: "(required)" },
+            { flag: "-f, --file <PATH>", description: "Path to file (tar/tar.gz/tar.bz2/iso/bin)", default: "(required unless --image)" },
+            { flag: "--image <REF>", description: "Docker/OCI image reference to scan (e.g., alpine:3.20, ubuntu:latest). Pulls and saves the image automatically.", default: "(required unless --file)" },
             { flag: "--format <json|text>", description: "Output format", default: "json" },
             { flag: "--out <PATH>", description: "Output file for JSON format", default: "(stdout)" },
             { flag: "--refs", description: "Include references in report", default: "false" },
@@ -71,8 +72,12 @@ export default function CliReferencePage() {
           ]}
         />
         <CodeCopyBlock
-          label="Example"
+          label="Example (local file)"
           code="scanrook scan --file ./myapp.tar --mode deep --format json --out report.json"
+        />
+        <CodeCopyBlock
+          label="Example (image reference)"
+          code="scanrook scan --image alpine:3.20 --format json --out report.json"
         />
       </section>
 
@@ -125,6 +130,20 @@ export default function CliReferencePage() {
         <CodeCopyBlock
           label="Example"
           code="scanrook source --tar ./project.tar.gz --format json --out report.json"
+        />
+      </section>
+
+      {/* license */}
+      <section className="surface-card p-7 grid gap-4">
+        <SectionHeader title="scanrook license" blurb="Detect the software license of a file or project directory." />
+        <FlagTable
+          flags={[
+            { flag: "-p, --path <PATH>", description: "Path to file or directory to scan for license", default: "(required)" },
+          ]}
+        />
+        <CodeCopyBlock
+          label="Example"
+          code="scanrook license --path ./project/"
         />
       </section>
 
