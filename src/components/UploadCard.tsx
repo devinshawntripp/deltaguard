@@ -4,7 +4,7 @@ import { useUploadStore } from "@/store/useUploadStore";
 
 export default function UploadCard() {
   const [file, setFile] = useState<File | null>(null);
-  const [mode, setMode] = useState<"light" | "deep">("deep");
+  const [mode, setMode] = useState<"light" | "deep">("light");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
