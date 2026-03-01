@@ -319,14 +319,22 @@ NVD_PAGE_SIZE = 2000
 def import_nvd(conn, session: requests.Session):
     log.info("=== NVD import starting ===")
 
-    # Determine incremental start: use the most recent nvd_last_modified in PG
+    # Determine incremental vs full: only use incremental if we have a
+    # substantial number of rows (>100K). Otherwise do a full import.
     last_modified_str = None
     with conn.cursor() as cur:
-        cur.execute("SELECT MAX(nvd_last_modified) FROM nvd_cve_cache")
-        row = cur.fetchone()
-        if row and row[0]:
-            # NVD API wants format: 2024-01-01T00:00:00.000
-            last_modified_str = row[0].strftime("%Y-%m-%dT%H:%M:%S.000")
+        cur.execute("SELECT COUNT(*) FROM nvd_cve_cache")
+        nvd_count = cur.fetchone()[0]
+        if nvd_count > 100000 and not force_refresh():
+            cur.execute("SELECT MAX(nvd_last_modified) FROM nvd_cve_cache")
+            row = cur.fetchone()
+            if row and row[0]:
+                last_modified_str = row[0].strftime("%Y-%m-%dT%H:%M:%S.000")
+                log.info("NVD: %d rows in cache, using incremental since %s",
+                         nvd_count, last_modified_str)
+        else:
+            log.info("NVD: %d rows in cache (< 100K or force_refresh), doing full import",
+                     nvd_count)
 
     start_index = 0
     total_inserted = 0
