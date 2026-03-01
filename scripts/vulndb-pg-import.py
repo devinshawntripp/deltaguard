@@ -686,7 +686,7 @@ def _upsert_debian_batch(conn, rows):
 # Ubuntu USN Import
 # ---------------------------------------------------------------------------
 
-UBUNTU_CVE_BASE = "https://ubuntu.com/security/cves"
+UBUNTU_CVE_BASE = "https://ubuntu.com/security/cves.json"
 
 
 def import_ubuntu(conn, session: requests.Session):
@@ -697,9 +697,8 @@ def import_ubuntu(conn, session: requests.Session):
 
     while True:
         url = f"{UBUNTU_CVE_BASE}?limit={limit}&offset={offset}"
-        headers = {"Accept": "application/json"}
         try:
-            resp = session.get(url, headers=headers, timeout=120)
+            resp = session.get(url, timeout=120)
             if resp.status_code in (422, 404, 500):
                 log.warning("Ubuntu CVE API returned %d at offset %d, stopping", resp.status_code, offset)
                 break
