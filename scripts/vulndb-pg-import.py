@@ -658,6 +658,13 @@ def import_debian(conn, session: requests.Session):
 
 
 def _upsert_debian_batch(conn, rows):
+    # Deduplicate by PK (cve_id, package, release)
+    seen = {}
+    for row in rows:
+        key = (row[0], row[1], row[2])
+        seen[key] = row
+    deduped = list(seen.values())
+
     with conn.cursor() as cur:
         psycopg2.extras.execute_values(
             cur,
@@ -669,7 +676,7 @@ def _upsert_debian_batch(conn, rows):
                    urgency = EXCLUDED.urgency,
                    fixed_version = EXCLUDED.fixed_version,
                    last_checked_at = EXCLUDED.last_checked_at""",
-            rows,
+            deduped,
             page_size=CHUNK_SIZE,
         )
     conn.commit()
@@ -679,33 +686,42 @@ def _upsert_debian_batch(conn, rows):
 # Ubuntu USN Import
 # ---------------------------------------------------------------------------
 
-UBUNTU_USN_BASE = "https://ubuntu.com/security/cves.json"
+UBUNTU_CVE_BASE = "https://ubuntu.com/security/cves"
 
 
 def import_ubuntu(conn, session: requests.Session):
-    log.info("=== Ubuntu USN import starting ===")
+    log.info("=== Ubuntu CVE import starting ===")
     total = 0
     offset = 0
-    limit = 500
+    limit = 100
 
     while True:
-        url = f"{UBUNTU_USN_BASE}?limit={limit}&offset={offset}"
+        url = f"{UBUNTU_CVE_BASE}?limit={limit}&offset={offset}"
+        headers = {"Accept": "application/json"}
         try:
-            resp = session.get(url, timeout=120)
+            resp = session.get(url, headers=headers, timeout=120)
+            if resp.status_code in (422, 404, 500):
+                log.warning("Ubuntu CVE API returned %d at offset %d, stopping", resp.status_code, offset)
+                break
             resp.raise_for_status()
         except requests.RequestException as e:
-            log.warning("Ubuntu USN request failed at offset %d: %s", offset, e)
+            log.warning("Ubuntu CVE request failed at offset %d: %s", offset, e)
             break
 
-        data = resp.json()
-        cves = data.get("cves", [])
+        try:
+            data = resp.json()
+        except Exception:
+            log.warning("Ubuntu CVE: non-JSON response at offset %d, stopping", offset)
+            break
+
+        cves = data.get("cves", data.get("results", []))
         if not cves:
             break
 
         now = datetime.now(timezone.utc)
         rows = []
         for cve_entry in cves:
-            cve_id = cve_entry.get("id", "")
+            cve_id = cve_entry.get("id", cve_entry.get("cve_id", ""))
             if not cve_id.startswith("CVE-"):
                 continue
             priority = cve_entry.get("priority", "")
@@ -714,7 +730,7 @@ def import_ubuntu(conn, session: requests.Session):
                 pkg_name = pkg.get("name", "")
                 statuses = pkg.get("statuses", [])
                 for st in statuses:
-                    release = st.get("release_codename", "")
+                    release = st.get("release_codename", st.get("release", ""))
                     status = st.get("status", "")
                     if pkg_name and release:
                         rows.append((cve_id, pkg_name, release, status, priority, now))
@@ -728,13 +744,20 @@ def import_ubuntu(conn, session: requests.Session):
 
         if len(cves) < limit:
             break
-        time.sleep(0.5)
+        time.sleep(1.0)
 
     log.info("Ubuntu import done: %d entries upserted", total)
     return total
 
 
 def _upsert_ubuntu_batch(conn, rows):
+    # Deduplicate by PK (cve_id, package, release)
+    seen = {}
+    for row in rows:
+        key = (row[0], row[1], row[2])
+        seen[key] = row
+    deduped = list(seen.values())
+
     with conn.cursor() as cur:
         psycopg2.extras.execute_values(
             cur,
@@ -745,7 +768,7 @@ def _upsert_ubuntu_batch(conn, rows):
                    status = EXCLUDED.status,
                    priority = EXCLUDED.priority,
                    last_checked_at = EXCLUDED.last_checked_at""",
-            rows,
+            deduped,
             page_size=CHUNK_SIZE,
         )
     conn.commit()
@@ -804,6 +827,15 @@ def import_alpine(conn, session: requests.Session):
 
 
 def _upsert_alpine_batch(conn, rows):
+    # Deduplicate by composite PK (cve_id, package, branch, repo) — Alpine secfixes
+    # can list the same CVE under multiple fixed versions for the same package.
+    # PG rejects duplicate keys within a single INSERT ... ON CONFLICT command.
+    seen = {}
+    for row in rows:
+        key = (row[0], row[1], row[2], row[3])  # cve_id, package, branch, repo
+        seen[key] = row  # last wins
+    deduped = list(seen.values())
+
     with conn.cursor() as cur:
         psycopg2.extras.execute_values(
             cur,
@@ -813,7 +845,7 @@ def _upsert_alpine_batch(conn, rows):
                ON CONFLICT (cve_id, package, branch, repo) DO UPDATE SET
                    fixed_version = EXCLUDED.fixed_version,
                    last_checked_at = EXCLUDED.last_checked_at""",
-            rows,
+            deduped,
             page_size=CHUNK_SIZE,
         )
     conn.commit()
