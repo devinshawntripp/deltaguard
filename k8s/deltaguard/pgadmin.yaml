@@ -1,0 +1,154 @@
+---
+# ConfigMap: pre-configured server connection
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pgadmin-server-config
+  namespace: db
+data:
+  servers.json: |
+    {
+      "Servers": {
+        "1": {
+          "Name": "pg-shared",
+          "Group": "Servers",
+          "Host": "pg-shared-rw",
+          "Port": 5432,
+          "MaintenanceDB": "postgres",
+          "Username": "deltaguard",
+          "SSLMode": "prefer"
+        }
+      }
+    }
+---
+# PVC: persistent storage for pgAdmin data
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pgadmin-data
+  namespace: db
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 1Gi
+---
+# Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pgadmin
+  namespace: db
+  labels:
+    app: pgadmin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pgadmin
+  template:
+    metadata:
+      labels:
+        app: pgadmin
+    spec:
+      dnsConfig:
+        options:
+          - name: ndots
+            value: "1"
+      securityContext:
+        runAsUser: 5050
+        runAsGroup: 5050
+        fsGroup: 5050
+      containers:
+        - name: pgadmin
+          image: dpage/pgadmin4:latest
+          ports:
+            - containerPort: 80
+              protocol: TCP
+          env:
+            - name: PGADMIN_DEFAULT_EMAIL
+              value: "admin@scanrook.io"
+            - name: PGADMIN_DEFAULT_PASSWORD
+              value: "DgApp2026Strong"
+            - name: PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION
+              value: "False"
+            - name: PGADMIN_SERVER_JSON_FILE
+              value: "/pgadmin4/servers.json"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          volumeMounts:
+            - name: pgadmin-data
+              mountPath: /var/lib/pgadmin
+            - name: server-config
+              mountPath: /pgadmin4/servers.json
+              subPath: servers.json
+              readOnly: true
+          startupProbe:
+            httpGet:
+              path: /misc/ping
+              port: 80
+            failureThreshold: 30
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /misc/ping
+              port: 80
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /misc/ping
+              port: 80
+            periodSeconds: 10
+      volumes:
+        - name: pgadmin-data
+          persistentVolumeClaim:
+            claimName: pgadmin-data
+        - name: server-config
+          configMap:
+            name: pgadmin-server-config
+---
+# Service: ClusterIP on port 80
+apiVersion: v1
+kind: Service
+metadata:
+  name: pgadmin
+  namespace: db
+  labels:
+    app: pgadmin
+spec:
+  type: ClusterIP
+  selector:
+    app: pgadmin
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+---
+# Ingress: route pg.apps.onetripp.com via ingress-nginx
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: pgadmin
+  namespace: db
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: pg.apps.onetripp.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: pgadmin
+                port:
+                  number: 80

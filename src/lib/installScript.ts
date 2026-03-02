@@ -106,22 +106,19 @@ if [[ ! -f "\${TMP}/\${BIN_NAME}" ]]; then
   exit 1
 fi
 
+mkdir -p "\${INSTALL_DIR}" 2>/dev/null || true
+
 if [[ -w "\${INSTALL_DIR}" || "$(id -u)" -eq 0 ]]; then
   install -m 0755 "\${TMP}/\${BIN_NAME}" "\${INSTALL_DIR}/\${BIN_NAME}"
   ln -sf "\${INSTALL_DIR}/\${BIN_NAME}" "\${INSTALL_DIR}/scanner"
 elif command -v sudo >/dev/null 2>&1; then
+  sudo mkdir -p "\${INSTALL_DIR}"
   sudo install -m 0755 "\${TMP}/\${BIN_NAME}" "\${INSTALL_DIR}/\${BIN_NAME}"
   sudo ln -sf "\${INSTALL_DIR}/\${BIN_NAME}" "\${INSTALL_DIR}/scanner"
 else
-  FALLBACK_DIR="\${HOME}/.local/bin"
-  mkdir -p "\${FALLBACK_DIR}"
-  install -m 0755 "\${TMP}/\${BIN_NAME}" "\${FALLBACK_DIR}/\${BIN_NAME}"
-  ln -sf "\${FALLBACK_DIR}/\${BIN_NAME}" "\${FALLBACK_DIR}/scanner"
-  echo "Installed to \${FALLBACK_DIR}"
-  echo "Add to PATH:"
-  echo "  export PATH=\"\${FALLBACK_DIR}:\$PATH\""
-  echo "Run: \${BIN_NAME} --help"
-  exit 0
+  echo "Cannot write to \${INSTALL_DIR} and sudo is not available." >&2
+  echo "Run as root or set INSTALL_DIR to a writable directory." >&2
+  exit 1
 fi
 
 echo "Installed \${BIN_NAME} \${VERSION} to \${INSTALL_DIR}"

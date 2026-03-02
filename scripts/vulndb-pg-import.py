@@ -7,8 +7,8 @@ Pipeline:
   1. Check revalidation schedule per source (skip sources that are fresh enough)
   2. Download fresh data, diff against PG, upsert only new/changed rows
   3. Export PG enrichment cache → SQLite DB (matching Rust scanner schema)
-  4. Compress SQLite with gzip
-  5. Upload to MinIO for CLI 'scanrook db fetch' users
+  4. Upload raw SQLite to MinIO for CLI 'scanrook db fetch' users
+     (payloads inside are already zstd-compressed, no outer compression needed)
 
 Env vars:
   DATABASE_URL       PostgreSQL connection string (required)
@@ -168,12 +168,31 @@ def force_refresh() -> bool:
     return os.environ.get("FORCE_REFRESH", "0") == "1"
 
 
+def pg_connect(db_url: str, max_attempts: int = 5) -> "psycopg2.connection":
+    """Connect to PostgreSQL with retry + exponential backoff.
+
+    Handles CNPG failovers where the -rw service briefly has no target.
+    """
+    for attempt in range(1, max_attempts + 1):
+        try:
+            conn = psycopg2.connect(db_url)
+            conn.set_session(autocommit=False)
+            return conn
+        except psycopg2.OperationalError as e:
+            if attempt == max_attempts:
+                raise
+            wait = min(5 * (2 ** (attempt - 1)), 60)  # 5, 10, 20, 40, 60
+            log.warning("PG connect attempt %d/%d failed: %s — retrying in %ds",
+                        attempt, max_attempts, e, wait)
+            time.sleep(wait)
+    raise RuntimeError("unreachable")
+
+
 def get_session() -> requests.Session:
     s = requests.Session()
     s.headers["User-Agent"] = "scanrook-vulndb-import/1.0"
-    api_key = os.environ.get("NVD_API_KEY")
-    if api_key:
-        s.headers["apiKey"] = api_key
+    # NVD API key is passed per-request in nvd_request_with_retry(),
+    # NOT on the session — other APIs (Ubuntu, etc.) reject unknown headers.
     return s
 
 
@@ -274,26 +293,118 @@ def source_is_stale(conn, source: str) -> bool:
         return True  # table doesn't exist yet → stale
 
 
-def zstd_compress(data: bytes) -> bytes:
-    """Compress with zstd level 3 — matches Rust scanner's compress_json()."""
-    cctx = zstd.ZstdCompressor(level=3)
+ZSTD_LEVEL = 15
+DICT_SAMPLE_SIZE = 10000  # number of payloads to sample for dictionary training
+DICT_SIZE = 131072        # 128 KB dictionary
+
+
+def zstd_compress(data: bytes, cctx=None) -> bytes:
+    """Compress with zstd. Uses provided compressor (dict-aware) or standalone."""
+    if cctx is None:
+        cctx = zstd.ZstdCompressor(level=ZSTD_LEVEL)
     return cctx.compress(data)
 
 
+def train_zstd_dict(samples: list[bytes]) -> zstd.ZstdCompressionDict:
+    """Train a zstd dictionary from a list of raw payload samples."""
+    log.info("Training zstd dictionary from %d samples (%d bytes total)...",
+             len(samples), sum(len(s) for s in samples))
+    t0 = time.time()
+    dict_data = zstd.train_dictionary(DICT_SIZE, samples)
+    log.info("Dictionary trained in %.1fs (%d bytes)", time.time() - t0, len(dict_data.as_bytes()))
+    return dict_data
+
+
 def strip_osv_unused_fields(vuln: dict) -> dict:
-    """Strip bulky unused fields from OSV vulns to reduce payload size ~50-70%.
-    Matches the Rust scanner's strip_osv_unused_fields()."""
-    keep_keys = {"id", "summary", "details", "aliases", "severity",
-                 "affected", "references", "modified", "published",
-                 "database_specific", "schema_version"}
-    return {k: v for k, v in vuln.items() if k in keep_keys}
+    """Strip bulky unused fields from OSV vulns to reduce payload size.
+    Matches the Rust scanner's strip_osv_unused_fields() exactly:
+    - Keeps: id, modified, summary, details, aliases, severity, references
+    - From database_specific: only severity
+    - From affected[]: only package + ranges (type + fixed events only)
+    - Drops: published, schema_version, versions, ecosystem_specific, etc.
+    """
+    out = {}
+    for key in ("id", "modified", "summary", "details", "aliases", "severity", "references"):
+        if key in vuln:
+            out[key] = vuln[key]
+
+    # database_specific — keep only severity
+    db_spec = vuln.get("database_specific")
+    if isinstance(db_spec, dict) and "severity" in db_spec:
+        out["database_specific"] = {"severity": db_spec["severity"]}
+
+    # affected[] — keep package + stripped ranges (type + fixed events only)
+    affected = vuln.get("affected")
+    if isinstance(affected, list):
+        stripped = []
+        for aff in affected:
+            s = {}
+            if "package" in aff:
+                s["package"] = aff["package"]
+            ranges = aff.get("ranges")
+            if isinstance(ranges, list):
+                sr_list = []
+                for r in ranges:
+                    sr = {}
+                    if "type" in r:
+                        sr["type"] = r["type"]
+                    events = r.get("events")
+                    if isinstance(events, list):
+                        fixed_events = [e for e in events if "fixed" in e]
+                        if fixed_events:
+                            sr["events"] = fixed_events
+                    sr_list.append(sr)
+                s["ranges"] = sr_list
+            stripped.append(s)
+        out["affected"] = stripped
+
+    return out
+
+
+def strip_nvd_unused_fields(cve: dict) -> dict:
+    """Strip bulky unused fields from NVD CVE payloads for SQLite export.
+    The Rust scanner only reads: descriptions (English), metrics
+    (cvssMetricV31/V30/V2), and configurations. Everything else is dropped."""
+    out = {}
+
+    # Keep only id and sourceIdentifier
+    for key in ("id", "sourceIdentifier", "published", "lastModified"):
+        if key in cve:
+            out[key] = cve[key]
+
+    # descriptions — English only
+    descriptions = cve.get("descriptions")
+    if isinstance(descriptions, list):
+        en_descs = [d for d in descriptions if d.get("lang") == "en"]
+        if en_descs:
+            out["descriptions"] = en_descs
+
+    # metrics — only cvssMetricV31, cvssMetricV30, cvssMetricV2
+    metrics = cve.get("metrics")
+    if isinstance(metrics, dict):
+        stripped_metrics = {}
+        for key in ("cvssMetricV31", "cvssMetricV30", "cvssMetricV2"):
+            if key in metrics:
+                stripped_metrics[key] = metrics[key]
+        if stripped_metrics:
+            out["metrics"] = stripped_metrics
+
+    # configurations — keep as-is (used for CPE matching)
+    if "configurations" in cve:
+        out["configurations"] = cve["configurations"]
+
+    return out
 
 
 def nvd_request_with_retry(session, url, max_attempts=5):
     """Make an NVD API request with retry + backoff for rate limits."""
+    headers = {}
+    api_key = os.environ.get("NVD_API_KEY")
+    if api_key:
+        headers["apiKey"] = api_key
     for attempt in range(max_attempts):
         try:
-            resp = session.get(url, timeout=120)
+            resp = session.get(url, timeout=120, headers=headers)
             if resp.status_code == 403:
                 wait = 30 * (attempt + 1)
                 log.warning("NVD rate limited (403), waiting %ds...", wait)
@@ -701,14 +812,15 @@ def import_ubuntu(conn, session: requests.Session):
     log.info("=== Ubuntu CVE import starting ===")
     total = 0
     offset = 0
-    limit = 100
+    limit = 20  # Ubuntu API max page size is 20
 
     while True:
         url = f"{UBUNTU_CVE_BASE}?limit={limit}&offset={offset}"
         try:
             resp = session.get(url, timeout=120)
             if resp.status_code in (422, 404, 500):
-                log.warning("Ubuntu CVE API returned %d at offset %d, stopping", resp.status_code, offset)
+                log.warning("Ubuntu CVE API returned %d at offset %d, body=%s",
+                            resp.status_code, offset, resp.text[:500])
                 break
             resp.raise_for_status()
         except requests.RequestException as e:
@@ -875,16 +987,43 @@ def export_pg_to_sqlite(conn, sqlite_path: str, summary: dict):
     sconn = sqlite3.connect(sqlite_path)
     sconn.executescript(SQLITE_SCHEMA)
 
-    # --- NVD ---
-    log.info("SQLite export: NVD CVEs...")
+    # --- NVD (two-pass: sample for dict training, then compress with dict) ---
+    log.info("SQLite export: NVD CVEs — collecting samples for dictionary training...")
+    nvd_samples = []
+    with conn.cursor("nvd_sample") as cur:
+        cur.itersize = 5000
+        cur.execute("SELECT payload FROM nvd_cve_cache LIMIT %s", (DICT_SAMPLE_SIZE,))
+        for (payload,) in cur:
+            if isinstance(payload, dict):
+                cve = payload
+            else:
+                try:
+                    cve = json.loads(str(payload))
+                except Exception:
+                    continue
+            nvd_samples.append(json.dumps(strip_nvd_unused_fields(cve)).encode("utf-8"))
+
+    nvd_dict = train_zstd_dict(nvd_samples)
+    nvd_cctx = zstd.ZstdCompressor(level=ZSTD_LEVEL, dict_data=nvd_dict)
+    del nvd_samples  # free memory
+
+    log.info("SQLite export: NVD CVEs — compressing with trained dictionary...")
     with conn.cursor("nvd_export") as cur:
         cur.itersize = 5000
         cur.execute("SELECT cve_id, payload, nvd_last_modified FROM nvd_cve_cache")
         batch = []
         nvd_count = 0
         for cve_id, payload, last_mod in cur:
-            payload_json = json.dumps(payload) if isinstance(payload, dict) else str(payload)
-            compressed = zstd_compress(payload_json.encode("utf-8"))
+            if isinstance(payload, dict):
+                cve = payload
+            else:
+                try:
+                    cve = json.loads(str(payload))
+                except Exception:
+                    continue
+            stripped = strip_nvd_unused_fields(cve)
+            payload_json = json.dumps(stripped)
+            compressed = zstd_compress(payload_json.encode("utf-8"), cctx=nvd_cctx)
             last_mod_str = str(last_mod) if last_mod else ""
             batch.append((cve_id, compressed, last_mod_str))
             if len(batch) >= CHUNK_SIZE:
@@ -899,10 +1038,35 @@ def export_pg_to_sqlite(conn, sqlite_path: str, summary: dict):
                 batch)
             nvd_count += len(batch)
         sconn.commit()
-    log.info("SQLite export: %d NVD CVEs", nvd_count)
 
-    # --- OSV ---
-    log.info("SQLite export: OSV vulns...")
+    # Store NVD dictionary in metadata for scanner decompression
+    sconn.execute("INSERT OR REPLACE INTO metadata (key, value) VALUES ('nvd_zstd_dict', ?)",
+                  (sqlite3.Binary(nvd_dict.as_bytes()),))
+    sconn.commit()
+    del nvd_cctx
+    log.info("SQLite export: %d NVD CVEs (dict-compressed)", nvd_count)
+
+    # --- OSV (two-pass: sample for dict training, then compress with dict) ---
+    log.info("SQLite export: OSV vulns — collecting samples for dictionary training...")
+    osv_samples = []
+    with conn.cursor("osv_sample") as cur:
+        cur.itersize = 5000
+        cur.execute("SELECT payload FROM osv_vuln_cache LIMIT %s", (DICT_SAMPLE_SIZE,))
+        for (payload,) in cur:
+            if isinstance(payload, dict):
+                vuln = payload
+            else:
+                try:
+                    vuln = json.loads(str(payload))
+                except Exception:
+                    continue
+            osv_samples.append(json.dumps(strip_osv_unused_fields(vuln)).encode("utf-8"))
+
+    osv_dict = train_zstd_dict(osv_samples)
+    osv_cctx = zstd.ZstdCompressor(level=ZSTD_LEVEL, dict_data=osv_dict)
+    del osv_samples
+
+    log.info("SQLite export: OSV vulns — compressing with trained dictionary...")
     with conn.cursor("osv_export") as cur:
         cur.itersize = 5000
         cur.execute("SELECT vuln_id, payload, osv_last_modified FROM osv_vuln_cache")
@@ -921,7 +1085,7 @@ def export_pg_to_sqlite(conn, sqlite_path: str, summary: dict):
 
             stripped = strip_osv_unused_fields(vuln)
             payload_bytes = json.dumps(stripped).encode("utf-8")
-            compressed = zstd_compress(payload_bytes)
+            compressed = zstd_compress(payload_bytes, cctx=osv_cctx)
             modified = vuln.get("modified", "")
 
             batch_payloads.append((vuln_id, compressed))
@@ -962,7 +1126,13 @@ def export_pg_to_sqlite(conn, sqlite_path: str, summary: dict):
                 batch_vulns)
             osv_count += len(batch_payloads)
         sconn.commit()
-    log.info("SQLite export: %d OSV vulns", osv_count)
+
+    # Store OSV dictionary in metadata for scanner decompression
+    sconn.execute("INSERT OR REPLACE INTO metadata (key, value) VALUES ('osv_zstd_dict', ?)",
+                  (sqlite3.Binary(osv_dict.as_bytes()),))
+    sconn.commit()
+    del osv_cctx
+    log.info("SQLite export: %d OSV vulns (dict-compressed)", osv_count)
 
     # --- EPSS ---
     log.info("SQLite export: EPSS scores...")
@@ -1019,13 +1189,16 @@ def export_pg_to_sqlite(conn, sqlite_path: str, summary: dict):
         sconn.commit()
     log.info("SQLite export: %d Debian entries", deb_count)
 
-    # --- Ubuntu ---
-    log.info("SQLite export: Ubuntu USN...")
+    # --- Ubuntu (filter out DNE/not-affected/ignored — only keep actionable statuses) ---
+    log.info("SQLite export: Ubuntu USN (actionable statuses only)...")
     with conn.cursor("ubuntu_export") as cur:
         cur.itersize = 10000
-        cur.execute("SELECT cve_id, package, release, status, priority FROM ubuntu_usn_cache")
+        cur.execute("""SELECT cve_id, package, release, status, priority
+                       FROM ubuntu_usn_cache
+                       WHERE status NOT IN ('DNE', 'not-affected', 'ignored')""")
         batch = []
         ubuntu_count = 0
+        since_commit = 0
         for row in cur:
             batch.append(row)
             if len(batch) >= CHUNK_SIZE:
@@ -1033,7 +1206,11 @@ def export_pg_to_sqlite(conn, sqlite_path: str, summary: dict):
                     "INSERT OR REPLACE INTO ubuntu_usn (cve_id, package, release, status, priority) VALUES (?, ?, ?, ?, ?)",
                     batch)
                 ubuntu_count += len(batch)
+                since_commit += len(batch)
                 batch = []
+                if since_commit >= 50000:
+                    sconn.commit()
+                    since_commit = 0
         if batch:
             sconn.executemany(
                 "INSERT OR REPLACE INTO ubuntu_usn (cve_id, package, release, status, priority) VALUES (?, ?, ?, ?, ?)",
@@ -1068,7 +1245,8 @@ def export_pg_to_sqlite(conn, sqlite_path: str, summary: dict):
     # --- Metadata ---
     build_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     sconn.execute("INSERT OR REPLACE INTO metadata (key, value) VALUES ('build_date', ?)", (build_date,))
-    sconn.execute("INSERT OR REPLACE INTO metadata (key, value) VALUES ('schema_version', '1')")
+    sconn.execute("INSERT OR REPLACE INTO metadata (key, value) VALUES ('schema_version', '2')")
+    sconn.execute("INSERT OR REPLACE INTO metadata (key, value) VALUES ('dict_compression', '1')")
     sconn.execute("INSERT OR REPLACE INTO metadata (key, value) VALUES ('nvd_count', ?)", (str(nvd_count),))
     sconn.execute("INSERT OR REPLACE INTO metadata (key, value) VALUES ('osv_count', ?)", (str(osv_count),))
     sconn.execute("INSERT OR REPLACE INTO metadata (key, value) VALUES ('epss_count', ?)", (str(epss_count),))
@@ -1145,6 +1323,32 @@ def upload_to_minio(local_path: str, object_name: str):
 # Main
 # ===========================================================================
 
+def _run_source(db_url, session, source_name, env_var, import_fn):
+    """Run a single source import with its own PG connection.
+
+    Returns (result, updated_bool). On failure, returns (error_string, False)
+    and logs the error so subsequent sources are not affected.
+    """
+    if not enabled(env_var):
+        return None, False
+
+    conn = pg_connect(db_url)
+    try:
+        if not source_is_stale(conn, source_name):
+            conn.close()
+            return "fresh", False
+        result = import_fn(conn, session)
+        conn.close()
+        return result, True
+    except Exception as e:
+        log.error("%s import FAILED: %s", source_name.upper(), e, exc_info=True)
+        try:
+            conn.close()
+        except Exception:
+            pass
+        return f"FAILED: {e}", False
+
+
 def main():
     db_url = os.environ.get("DATABASE_URL")
     if not db_url:
@@ -1152,78 +1356,78 @@ def main():
         sys.exit(1)
 
     log.info("Connecting to PostgreSQL...")
-    conn = psycopg2.connect(db_url)
-    conn.set_session(autocommit=False)
-
+    conn = pg_connect(db_url)
     ensure_pg_tables(conn)
+    conn.close()
 
     session = get_session()
     summary = {}
     any_updated = False
 
-    # --- Source imports with revalidation checks ---
+    # --- Source imports: each gets its own connection for resilience ---
+    sources = [
+        ("nvd",     "IMPORT_NVD",     import_nvd),
+        ("osv",     "IMPORT_OSV",     import_osv),
+        ("epss",    "IMPORT_EPSS",    import_epss),
+        ("kev",     "IMPORT_KEV",     import_kev),
+        ("debian",  "IMPORT_DEBIAN",  import_debian),
+        ("ubuntu",  "IMPORT_UBUNTU",  import_ubuntu),
+        ("alpine",  "IMPORT_ALPINE",  import_alpine),
+    ]
 
-    if enabled("IMPORT_NVD") and source_is_stale(conn, "nvd"):
-        summary["nvd"] = import_nvd(conn, session)
-        any_updated = True
-    elif enabled("IMPORT_NVD"):
-        summary["nvd"] = "fresh"
-
-    if enabled("IMPORT_OSV") and source_is_stale(conn, "osv"):
-        summary["osv"] = import_osv(conn, session)
-        any_updated = True
-    elif enabled("IMPORT_OSV"):
-        summary["osv"] = "fresh"
-
-    if enabled("IMPORT_EPSS") and source_is_stale(conn, "epss"):
-        summary["epss"] = import_epss(conn, session)
-        any_updated = True
-    elif enabled("IMPORT_EPSS"):
-        summary["epss"] = "fresh"
-
-    if enabled("IMPORT_KEV") and source_is_stale(conn, "kev"):
-        summary["kev"] = import_kev(conn, session)
-        any_updated = True
-    elif enabled("IMPORT_KEV"):
-        summary["kev"] = "fresh"
-
-    if enabled("IMPORT_DEBIAN") and source_is_stale(conn, "debian"):
-        summary["debian"] = import_debian(conn, session)
-        any_updated = True
-    elif enabled("IMPORT_DEBIAN"):
-        summary["debian"] = "fresh"
-
-    if enabled("IMPORT_UBUNTU") and source_is_stale(conn, "ubuntu"):
-        summary["ubuntu"] = import_ubuntu(conn, session)
-        any_updated = True
-    elif enabled("IMPORT_UBUNTU"):
-        summary["ubuntu"] = "fresh"
-
-    if enabled("IMPORT_ALPINE") and source_is_stale(conn, "alpine"):
-        summary["alpine"] = import_alpine(conn, session)
-        any_updated = True
-    elif enabled("IMPORT_ALPINE"):
-        summary["alpine"] = "fresh"
+    for source_name, env_var, import_fn in sources:
+        result, updated = _run_source(db_url, session, source_name, env_var, import_fn)
+        if result is not None:
+            summary[source_name] = result
+            if updated:
+                any_updated = True
 
     log.info("=== PG import phase complete === %s", json.dumps(summary, default=str))
 
     # --- SQLite export + MinIO upload ---
-    if os.environ.get("SKIP_SQLITE_EXPORT", "0") == "1":
+    skip_export = os.environ.get("SKIP_SQLITE_EXPORT", "0") == "1"
+    do_export = False
+
+    if skip_export:
         log.info("SQLite export skipped (SKIP_SQLITE_EXPORT=1)")
-    elif not any_updated and not force_refresh():
-        log.info("No sources updated, skipping SQLite rebuild")
+    elif any_updated or force_refresh():
+        do_export = True
     else:
-        with tempfile.TemporaryDirectory() as tmpdir:
-            date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-            sqlite_name = f"scanrook-db-{date_str}.sqlite"
-            sqlite_path = os.path.join(tmpdir, sqlite_name)
-            gz_path = sqlite_path + ".gz"
+        # No sources updated — still export if today's file doesn't exist in MinIO
+        from minio import Minio
+        endpoint = os.environ.get("S3_ENDPOINT", "minio.storage.svc:9000")
+        access_key = os.environ.get("S3_ACCESS_KEY", "")
+        secret_key = os.environ.get("S3_SECRET_KEY", "")
+        use_ssl = os.environ.get("S3_USE_SSL", "false").lower() == "true"
+        bucket = os.environ.get("VULNDB_BUCKET", "vulndb")
+        date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        today_obj = f"scanrook-db-{date_str}.sqlite"
+        try:
+            mc = Minio(endpoint, access_key=access_key, secret_key=secret_key, secure=use_ssl)
+            mc.stat_object(bucket, today_obj)
+            log.info("No sources updated and %s/%s already exists, skipping SQLite rebuild",
+                     bucket, today_obj)
+        except Exception:
+            log.info("No sources updated but %s/%s missing — exporting anyway", bucket, today_obj)
+            do_export = True
 
-            export_pg_to_sqlite(conn, sqlite_path, summary)
-            gzip_file(sqlite_path, gz_path)
-            upload_to_minio(gz_path, sqlite_name + ".gz")
+    if do_export:
+        conn = pg_connect(db_url)
+        try:
+            # Use SCRATCH_DIR if set (emptyDir volume in K8s), else system tmp
+            scratch = os.environ.get("SCRATCH_DIR", None)
+            with tempfile.TemporaryDirectory(dir=scratch) as tmpdir:
+                date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+                sqlite_name = f"scanrook-db-{date_str}.sqlite"
+                sqlite_path = os.path.join(tmpdir, sqlite_name)
 
-    conn.close()
+                export_pg_to_sqlite(conn, sqlite_path, summary)
+                # Upload raw .sqlite — payloads inside are already zstd-compressed,
+                # so outer compression (gzip/zstd) is ineffective double-compression
+                upload_to_minio(sqlite_path, sqlite_name)
+        finally:
+            conn.close()
+
     log.info("=== vulndb-pg-import complete ===")
 
 
