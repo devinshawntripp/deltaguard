@@ -91,6 +91,24 @@ function withUniqueById(existingDesc: ProgressEvent[], incomingDesc: ProgressEve
     return out.slice(0, MAX_EVENTS);
 }
 
+/** Extract workflow stages and earliest timestamp from a batch of events. */
+function extractStageInfo(events: ProgressEvent[], currentSeen: Record<string, true>): { newSeen: Record<string, true> | null; earliestTs: number } {
+    let changed = false;
+    const out = { ...currentSeen };
+    let earliest = Infinity;
+
+    for (const e of events) {
+        const ws = mapEventToWorkflowStage(e.stage, e.detail);
+        if (ws && !out[ws]) { out[ws] = true; changed = true; }
+        if (e.ts) {
+            const t = new Date(e.ts).getTime();
+            if (t > 0 && t < earliest) earliest = t;
+        }
+    }
+
+    return { newSeen: changed ? out : null, earliestTs: earliest };
+}
+
 function progressBarColor(pct: number): string {
     if (pct >= 80) return "bg-emerald-500";
     if (pct >= 50) return "bg-cyan-500";
@@ -275,6 +293,11 @@ export default function ProgressGraph({
     const [nowMs, setNowMs] = React.useState<number>(() => Date.now());
     const [visibleCount, setVisibleCount] = React.useState(VISIBLE_EVENTS);
 
+    // Persistent stage tracking — survives event windowing
+    const [stagesSeen, setStagesSeen] = React.useState<Record<string, true>>({});
+    // Earliest event timestamp — never moves forward once set
+    const [scanStartTs, setScanStartTs] = React.useState<number>(0);
+
     // Debounced SSE event batching
     const pendingEventsRef = React.useRef<ProgressEvent[]>([]);
     const flushTimerRef = React.useRef<NodeJS.Timeout | null>(null);
@@ -284,6 +307,23 @@ export default function ProgressGraph({
         const batch = pendingEventsRef.current;
         if (batch.length === 0) return;
         pendingEventsRef.current = [];
+
+        // Track stages persistently from new events
+        setStagesSeen((prev) => {
+            const { newSeen } = extractStageInfo(batch, prev);
+            return newSeen || prev;
+        });
+        setScanStartTs((prev) => {
+            let min = prev || Infinity;
+            for (const e of batch) {
+                if (e.ts) {
+                    const t = new Date(e.ts).getTime();
+                    if (t > 0 && t < min) min = t;
+                }
+            }
+            return min < Infinity ? min : prev;
+        });
+
         setEventsDesc((prev) => withUniqueById(prev, batch));
         setTotalEvents((prev) => (prev == null ? prev : prev + batch.length));
     }, []);
@@ -302,10 +342,10 @@ export default function ProgressGraph({
         };
     }, []);
 
-    const fetchPage = React.useCallback(async (cursor?: number | null) => {
+    const fetchPage = React.useCallback(async (cursor?: number | null, pageSize?: number, order?: "asc" | "desc") => {
         const params = new URLSearchParams();
-        params.set("order", "desc");
-        params.set("page_size", String(INITIAL_PAGE_SIZE));
+        params.set("order", order || "desc");
+        params.set("page_size", String(pageSize || INITIAL_PAGE_SIZE));
         if (cursor && cursor > 0) params.set("cursor", String(cursor));
 
         const res = await fetch(`/api/jobs/${scanId}/events/list?${params.toString()}`, {
@@ -357,10 +397,37 @@ export default function ProgressGraph({
             setNextCursor(null);
             setHasMore(false);
             setVisibleCount(VISIBLE_EVENTS);
+            setStagesSeen({});
+            setScanStartTs(0);
 
             try {
                 const first = await fetchPage(null);
                 if (cancelled) return;
+
+                // Track stages from ALL fetched items (not just the 200 kept for display)
+                const { newSeen, earliestTs } = extractStageInfo(first.items, {});
+                if (newSeen) setStagesSeen(newSeen);
+
+                // If we have all events, use the earliest. Otherwise fetch the first event.
+                let startTs = earliestTs < Infinity ? earliestTs : 0;
+                if (first.has_more && first.items.length > 0) {
+                    // The initial page doesn't contain the oldest events — fetch event #1
+                    try {
+                        const oldest = await fetchPage(null, 1, "asc");
+                        if (!cancelled && oldest.items.length > 0 && oldest.items[0].ts) {
+                            const t = new Date(oldest.items[0].ts).getTime();
+                            if (t > 0) startTs = t;
+                        }
+                        // Also track stages from the oldest event
+                        if (!cancelled && oldest.items.length > 0) {
+                            const { newSeen: oldSeen } = extractStageInfo(oldest.items, newSeen || {});
+                            if (oldSeen) setStagesSeen(oldSeen);
+                        }
+                    } catch {
+                        // Non-critical — use what we have
+                    }
+                }
+                if (startTs > 0) setScanStartTs(startTs);
 
                 setEventsDesc(first.items.slice(0, MAX_EVENTS));
                 setTotalEvents(Number.isFinite(first.total) ? first.total : first.items.length);
@@ -418,6 +485,11 @@ export default function ProgressGraph({
         setLoadingMore(true);
         try {
             const page = await fetchPage(nextCursor);
+            // Track stages from older events too
+            setStagesSeen((prev) => {
+                const { newSeen } = extractStageInfo(page.items, prev);
+                return newSeen || prev;
+            });
             setEventsDesc((prev) => withUniqueById(prev, page.items));
             setNextCursor(page.next_cursor);
             setHasMore(page.has_more);
@@ -486,7 +558,7 @@ export default function ProgressGraph({
     const grouped = React.useMemo(() => {
         const out: Record<string, ProgressEvent[]> = {};
         for (const e of eventsChrono) {
-            const stage = mapEventToWorkflowStage(e.stage);
+            const stage = mapEventToWorkflowStage(e.stage, e.detail);
             if (!stage) continue;
             (out[stage] ||= []).push(e);
         }
@@ -503,9 +575,9 @@ export default function ProgressGraph({
     const isFailed = terminalStage === "scan.err" || terminalStage === "scan.error" || terminalStage === "worker.stale.fail";
     const isFinished = terminalStage === "scan.done" || terminalStage === "scan.summary";
 
-    const firstEvent = eventsChrono[0];
+    // Duration: use persistent scanStartTs instead of windowed events
     const lastEvent = eventsChrono.length ? eventsChrono[eventsChrono.length - 1] : undefined;
-    const firstTs = firstEvent?.ts ? new Date(firstEvent.ts).getTime() : 0;
+    const firstTs = scanStartTs || (eventsChrono[0]?.ts ? new Date(eventsChrono[0].ts).getTime() : 0);
     const lastTs = lastEvent?.ts ? new Date(lastEvent.ts).getTime() : 0;
     const effectiveLastTs = terminal ? lastTs : Math.max(lastTs, nowMs);
     const durationSec = firstTs && effectiveLastTs >= firstTs ? Math.round((effectiveLastTs - firstTs) / 1000) : 0;
@@ -520,15 +592,22 @@ export default function ProgressGraph({
         const stageStatus = {} as Record<WorkflowStageId, FlowStatus>;
         const completeIdx = WORKFLOW_STAGE_ORDER.indexOf("complete");
         const failedIdx = WORKFLOW_STAGE_ORDER.indexOf("failed");
-        const stageMeta = {} as Record<WorkflowStageId, { hasEvents: boolean; hasErr: boolean; hasExplicitSkip: boolean }>;
+        const stageMeta = {} as Record<WorkflowStageId, { hasEvents: boolean; wasSeen: boolean; hasErr: boolean; hasExplicitSkip: boolean }>;
 
+        // Build seen indexes from persistent stagesSeen (survives event windowing)
         const seenIndexes: number[] = [];
+        for (const id of Object.keys(stagesSeen)) {
+            const idx = WORKFLOW_STAGE_ORDER.indexOf(id as WorkflowStageId);
+            if (idx >= 0 && !seenIndexes.includes(idx)) seenIndexes.push(idx);
+        }
+        // Also include stages visible in the current event window
         for (const e of eventsChrono) {
-            const stage = mapEventToWorkflowStage(e.stage);
+            const stage = mapEventToWorkflowStage(e.stage, e.detail);
             if (!stage) continue;
             const idx = WORKFLOW_STAGE_ORDER.indexOf(stage);
-            if (idx >= 0) seenIndexes.push(idx);
+            if (idx >= 0 && !seenIndexes.includes(idx)) seenIndexes.push(idx);
         }
+
         const firstSeenIndex = seenIndexes.length ? Math.min(...seenIndexes) : -1;
         const lastSeenIndex = seenIndexes.length ? Math.max(...seenIndexes) : -1;
 
@@ -536,26 +615,33 @@ export default function ProgressGraph({
             const id = WORKFLOW_STAGE_ORDER[i];
             const eventsForStage = grouped[id] || [];
             const hasEvents = eventsForStage.length > 0;
+            const wasSeen = !!stagesSeen[id] || hasEvents;
             const hasErr = eventsForStage.some(isErrorEvent);
             const hasExplicitSkip = eventsForStage.some((e) => {
                 const stage = String(e.stage || "").toLowerCase();
                 return stage.endsWith(".skip") || stage.endsWith(".skipped") || stage.includes(".skip.");
             });
-            stageMeta[id] = { hasEvents, hasErr, hasExplicitSkip };
+            stageMeta[id] = { hasEvents, wasSeen, hasErr, hasExplicitSkip };
 
             let status: FlowStatus = "pending";
             if (id === "failed") {
-                status = isFailed ? "error" : hasEvents ? "done" : "pending";
+                status = isFailed ? "error" : "pending";
             } else if (id === "complete") {
-                status = isFinished ? "done" : hasEvents ? "active" : "pending";
+                status = isFinished ? "done" : "pending";
             } else if (hasErr) {
                 status = "error";
-            } else if (hasExplicitSkip) {
+            } else if (hasExplicitSkip && !wasSeen) {
                 status = "skipped";
-            } else if (hasEvents) {
-                status = terminal || i < lastSeenIndex ? "done" : "active";
-            } else if (!terminal && i === lastSeenIndex + 1 && lastSeenIndex >= 0) {
-                status = "active";
+            } else if (wasSeen) {
+                // Use stage ordering: stages before the last seen are done, last seen is active
+                if (terminal || i < lastSeenIndex) {
+                    status = "done";
+                } else {
+                    status = "active";
+                }
+            } else if (!terminal && i > firstSeenIndex && i < lastSeenIndex) {
+                // Between first and last seen but not explicitly seen — infer done from ordering
+                status = "done";
             }
 
             stageStatus[id] = status;
@@ -566,7 +652,7 @@ export default function ProgressGraph({
             visibleIds = WORKFLOW_STAGE_ORDER.filter((id) => {
                 if (id === "complete") return isFinished;
                 if (id === "failed") return isFailed;
-                if (!stageMeta[id].hasEvents) return false;
+                if (!stageMeta[id].wasSeen) return false;
                 return stageStatus[id] !== "skipped";
             });
             if (isFinished && !visibleIds.includes("complete")) visibleIds.push("complete");
@@ -604,7 +690,7 @@ export default function ProgressGraph({
             isFinished,
             finishedTs: terminal?.ts,
         };
-    }, [eventsChrono, grouped, terminal, isFailed, isFinished]);
+    }, [eventsChrono, grouped, terminal, isFailed, isFinished, stagesSeen]);
 
     // Memoize column count — only changes when new stages appear
     const gridCols = React.useMemo(() => {
@@ -848,7 +934,7 @@ export default function ProgressGraph({
                             <tbody>
                                 {visibleEvents.map((e, idx) => {
                                     const errRow = isErrorEvent(e);
-                                    const mappedStage = mapEventToWorkflowStage(e.stage) || "all";
+                                    const mappedStage = mapEventToWorkflowStage(e.stage, e.detail) || "all";
                                     return (
                                         <tr key={`${e.id || 0}-${e.ts || idx}-${idx}`} className={`border-t border-black/5 dark:border-white/5 ${errRow ? "bg-red-500/10" : ""}`}>
                                             <td className="p-2 font-mono text-[11px] opacity-75">{e.id || ""}</td>
