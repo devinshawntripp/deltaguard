@@ -44,19 +44,21 @@ export default function JobLiveStatus({ initial }: { initial: JobState }) {
         const isActive = job.status === "queued" || job.status === "running";
         if (!isActive) return;
 
-        const timer = setInterval(() => {
-            fetch(`/api/jobs/${job.id}`, { cache: "no-store" })
-                .then((r) => (r.ok ? r.json() : null))
-                .then((next) => {
-                    if (!next || !next.id) return;
-                    setJob((cur) => mergeMonotonic(cur, next));
-                })
-                .catch(() => {
-                    // noop
-                });
-        }, 5000);
-
-        return () => clearInterval(timer);
+        const es = new EventSource("/api/jobs/events");
+        es.onmessage = (ev) => {
+            try {
+                const msg = JSON.parse(ev.data);
+                if (msg.type === "changed" && msg.item && msg.item.id === job.id) {
+                    setJob((cur) => mergeMonotonic(cur, msg.item));
+                }
+                if (msg.type === "snapshot" && Array.isArray(msg.items)) {
+                    const match = msg.items.find((x: any) => x.id === job.id);
+                    if (match) setJob((cur) => mergeMonotonic(cur, match));
+                }
+            } catch { }
+        };
+        es.onerror = () => es.close();
+        return () => es.close();
     }, [job.id, job.status]);
 
     return (

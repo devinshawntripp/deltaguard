@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
 
     const encoder = new TextEncoder();
     let closed = false;
-    let lastUpdatedAt: Date | null = null;
+    let pgClient: any = null;
 
     const stream = new ReadableStream<Uint8Array>({
         start: async (controller) => {
@@ -41,48 +41,62 @@ export async function GET(req: NextRequest) {
                     take: 25,
                 });
                 if (items.length) {
-                    lastUpdatedAt = items[0].updatedAt;
                     await send({ type: "snapshot", items });
                 }
             } catch (e) {
                 console.error("Failed to send snapshot", e);
             }
 
-            const interval = setInterval(async () => {
-                if (closed) return;
-                try {
-                    const where = lastUpdatedAt ? { updatedAt: { gt: lastUpdatedAt } } : {};
-                    const fresh = await prisma.package.findMany({
-                        where: where as any,
-                        orderBy: { updatedAt: "desc" },
-                        include: { scans: { orderBy: { createdAt: "desc" } } },
-                        take: 50,
-                    });
-                    if (fresh.length) {
-                        lastUpdatedAt = fresh[0].updatedAt;
-                        await send({ type: "changed", items: fresh });
+            // Listen for job_events — when a job changes, packages may have been updated
+            try {
+                const pg = await import("pg");
+                pgClient = new pg.Client({ connectionString: process.env.DATABASE_URL });
+                await pgClient.connect();
+                await pgClient.query("LISTEN job_events");
+
+                pgClient.on("notification", async () => {
+                    if (closed) return;
+                    try {
+                        const fresh = await prisma.package.findMany({
+                            orderBy: { updatedAt: "desc" },
+                            include: { scans: { orderBy: { createdAt: "desc" } } },
+                            take: 50,
+                        });
+                        if (fresh.length) {
+                            await send({ type: "changed", items: fresh });
+                        }
+                    } catch (e) {
+                        console.error("Failed to send changed", e);
                     }
-                } catch (e) {
-                    console.error("Failed to send changed", e);
-                }
-            }, 1500);
+                });
+
+                pgClient.on("error", () => {
+                    if (!closed) {
+                        closed = true;
+                        try { controller.close(); } catch { }
+                    }
+                });
+            } catch {
+                closed = true;
+                try { controller.close(); } catch { }
+            }
 
             const hb = setInterval(() => {
-                if (closed) return;
-                controller.enqueue(encoder.encode(`: ping\n\n`));
+                if (closed) { clearInterval(hb); return; }
+                try { controller.enqueue(encoder.encode(`: ping\n\n`)); } catch { closed = true; clearInterval(hb); }
             }, 15000);
 
             (controller as any).onCancel = () => {
                 closed = true;
-                clearInterval(interval);
                 clearInterval(hb);
+                try { pgClient?.end(); } catch { }
             };
         },
         cancel() {
             closed = true;
+            try { pgClient?.end(); } catch { }
         },
     });
 
     return new Response(stream, { headers: sseHeaders() });
 }
-

@@ -12,8 +12,6 @@ type Tailer = {
     jobId: string;
     listeners: Set<Listener>;
     lastId: number;
-    timer: NodeJS.Timeout | null;
-    starting: boolean;
     terminal: boolean;
 };
 
@@ -26,6 +24,10 @@ function isTerminalStage(stage: string): boolean {
 
 class JobEventsBus {
     private tailers = new Map<string, Tailer>();
+    private pgClient: any = null;
+    private pgConnecting = false;
+    private reconnectTimer: NodeJS.Timeout | null = null;
+    private reconnectAttempts = 0;
 
     private async fetchBacklog(jobId: string, sinceId: number, limit = 500): Promise<EventRow[]> {
         if (sinceId > 0) {
@@ -47,50 +49,89 @@ LIMIT ${limit}
     }
 
     private stopTailer(t: Tailer) {
-        if (t.timer) {
-            clearInterval(t.timer);
-            t.timer = null;
-        }
         t.terminal = true;
         this.tailers.delete(t.jobId);
     }
 
-    private pump(t: Tailer) {
-        if (t.starting || t.listeners.size === 0 || t.terminal) return;
-        t.starting = true;
-        const run = async () => {
-            try {
-                const rows = await this.fetchBacklog(t.jobId, t.lastId, 200);
-                for (const r of rows) {
-                    const rowId = typeof r.id === "bigint" ? Number(r.id) : Number(r.id);
-                    const normalized: EventRow = { ...r, id: rowId };
-                    if (rowId > t.lastId) t.lastId = rowId;
-                    for (const l of t.listeners) {
-                        if (rowId <= l.sinceId) continue;
-                        l.sinceId = rowId;
-                        try { l.handler(normalized); } catch { }
-                    }
-                    // Stop polling when job reaches a terminal stage
-                    if (isTerminalStage(r.stage)) {
-                        this.stopTailer(t);
-                        return;
-                    }
+    private async dispatchForJob(jobId: string) {
+        const t = this.tailers.get(jobId);
+        if (!t || t.terminal || t.listeners.size === 0) return;
+        try {
+            const rows = await this.fetchBacklog(jobId, t.lastId, 200);
+            for (const r of rows) {
+                const rowId = typeof r.id === "bigint" ? Number(r.id) : Number(r.id);
+                const normalized: EventRow = { ...r, id: rowId };
+                if (rowId > t.lastId) t.lastId = rowId;
+                for (const l of t.listeners) {
+                    if (rowId <= l.sinceId) continue;
+                    l.sinceId = rowId;
+                    try { l.handler(normalized); } catch { }
                 }
-            } catch { }
-            finally { t.starting = false; }
-        };
-        run().catch(() => { t.starting = false; });
+                if (isTerminalStage(r.stage)) {
+                    this.stopTailer(t);
+                    return;
+                }
+            }
+        } catch { }
     }
 
-    private ensureTimer(t: Tailer) {
-        if (t.timer || t.terminal) return;
-        t.timer = setInterval(() => this.pump(t), 1000);
+    private async ensurePgListener() {
+        if (this.pgClient || this.pgConnecting) return;
+        this.pgConnecting = true;
+        try {
+            const pg = await import("pg");
+            const client = new pg.Client({ connectionString: process.env.DATABASE_URL });
+            await client.connect();
+            await client.query("LISTEN scan_events");
+
+            client.on("notification", (msg: any) => {
+                if (msg.channel === "scan_events" && msg.payload) {
+                    this.dispatchForJob(msg.payload).catch(() => {});
+                }
+            });
+
+            client.on("error", (err: any) => {
+                console.error("[jobEventsBus] pg client error:", err?.message);
+                this.handleDisconnect();
+            });
+
+            client.on("end", () => {
+                console.warn("[jobEventsBus] pg connection ended, scheduling reconnect");
+                this.handleDisconnect();
+            });
+
+            if (this.pgClient) {
+                try { this.pgClient.end(); } catch { }
+            }
+            this.pgClient = client;
+            this.reconnectAttempts = 0;
+        } catch (err: any) {
+            console.error("[jobEventsBus] pg connect failed:", err?.message);
+            this.scheduleReconnect();
+        } finally {
+            this.pgConnecting = false;
+        }
+    }
+
+    private handleDisconnect() {
+        this.pgClient = null;
+        this.scheduleReconnect();
+    }
+
+    private scheduleReconnect() {
+        if (this.reconnectTimer) return;
+        const delay = Math.min(2000 * Math.pow(2, this.reconnectAttempts), 30000);
+        this.reconnectAttempts++;
+        this.reconnectTimer = setTimeout(() => {
+            this.reconnectTimer = null;
+            this.ensurePgListener().catch(() => {});
+        }, delay);
     }
 
     async subscribe(jobId: string, handler: Handler, opts?: { sinceId?: number }): Promise<() => void> {
         let t = this.tailers.get(jobId);
         if (!t) {
-            t = { jobId, listeners: new Set<Listener>(), lastId: 0, timer: null, starting: false, terminal: false };
+            t = { jobId, listeners: new Set<Listener>(), lastId: 0, terminal: false };
             this.tailers.set(jobId, t);
         }
         const listener: Listener = { handler, sinceId: Math.max(0, Number(opts?.sinceId || 0)) };
@@ -112,14 +153,12 @@ LIMIT ${limit}
                 return () => { };
             }
         } catch { }
-        this.ensureTimer(t);
-        this.pump(t);
+        await this.ensurePgListener();
         return () => {
             const cur = this.tailers.get(jobId);
             if (!cur) return;
             cur.listeners.delete(listener);
             if (cur.listeners.size === 0 && !cur.terminal) {
-                if (cur.timer) clearInterval(cur.timer);
                 this.tailers.delete(jobId);
             }
         };

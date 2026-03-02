@@ -14,6 +14,10 @@ function sseHeaders() {
     });
 }
 
+type EventRow = { id: number | bigint; ts: string; stage: string; detail?: string | null; pct?: number | null };
+
+const TERMINAL_STAGES = new Set(["scan.done", "scan.summary", "scan.error", "scan.err", "worker.stale.fail"]);
+
 export async function GET(req: NextRequest, context: { params: Promise<{ id: string }> }) {
     const guard = await requireRequestActor(req, {
         requiredKinds: ["user", "api_key"],
@@ -25,7 +29,6 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
 
     const { id: scanId } = await context.params;
 
-    // Enforce org ownership before tailing the on-disk progress stream.
     const rows = await prisma.$queryRaw<Array<{ id: string }>>`
 SELECT id::text AS id
 FROM scan_jobs
@@ -42,58 +45,81 @@ LIMIT 1
 
     const encoder = new TextEncoder();
     let closed = false;
+    let pgClient: any = null;
 
     const stream = new ReadableStream<Uint8Array>({
         start: async (controller) => {
-            const dir = process.env.PROGRESS_DIR || "/tmp/deltaguard";
-            const progressPath = `${dir}/${scanId}.ndjson`;
-            // send backlog immediately if file exists
-            try {
-                const fs = await import("node:fs");
-                if (fs.existsSync(progressPath)) {
-                    const text = fs.readFileSync(progressPath, "utf8");
-                    const lines = text ? text.split(/\r?\n/).filter(Boolean) : [];
-                    try { console.log(`[sse] sending backlog lines for ${scanId}:`, lines.length); } catch { }
-                    for (const line of lines.slice(-500)) {
-                        controller.enqueue(encoder.encode(`data: ${line}\n\n`));
-                    }
-                    try {
-                        const st = fs.statSync(progressPath);
-                        console.log(`[sse] backlog for ${scanId} from`, progressPath, 'size', st.size);
-                    } catch { }
-                }
-            } catch { }
-            controller.enqueue(encoder.encode(`: ping\n\n`));
+            let lastId = 0;
 
-            let lastSize = 0;
-            const fs = await import("node:fs");
-
-            const pump = () => {
+            const sendBacklog = async () => {
                 try {
-                    if (!fs.existsSync(progressPath)) return;
-                    const text = fs.readFileSync(progressPath, "utf8");
-                    const lines = text ? text.split(/\r?\n/).filter(Boolean) : [];
-                    let sent = 0;
-                    for (let i = lastSize; i < lines.length; i++) {
-                        controller.enqueue(encoder.encode(`data: ${lines[i]}\n\n`));
-                        sent++;
-                    }
-                    lastSize = lines.length;
-                    if (sent > 0) {
-                        try { console.log(`[sse] pumped ${sent} new events for ${scanId} (total ${lastSize})`); } catch { }
+                    const backlog = await prisma.$queryRaw<EventRow[]>`
+SELECT id, ts::text, stage, detail, pct
+FROM scan_events
+WHERE job_id=${scanId}::uuid AND id > ${lastId}::bigint
+ORDER BY id ASC
+LIMIT 500
+                    `;
+                    for (const r of backlog) {
+                        const rowId = typeof r.id === "bigint" ? Number(r.id) : Number(r.id);
+                        if (rowId > lastId) lastId = rowId;
+                        controller.enqueue(encoder.encode(`data: ${JSON.stringify(r)}\n\n`));
+                        if (TERMINAL_STAGES.has(String(r.stage).toLowerCase().trim())) {
+                            closed = true;
+                            controller.close();
+                            return;
+                        }
                     }
                 } catch { }
             };
 
-            const interval = setInterval(pump, 1000);
+            controller.enqueue(encoder.encode(`: ping\n\n`));
+            await sendBacklog();
+            if (closed) return;
+
+            // Listen for new scan_events via PG NOTIFY
+            try {
+                const pg = await import("pg");
+                pgClient = new pg.Client({ connectionString: process.env.DATABASE_URL });
+                await pgClient.connect();
+                await pgClient.query("LISTEN scan_events");
+
+                pgClient.on("notification", (msg: any) => {
+                    if (closed) return;
+                    if (msg.channel === "scan_events" && msg.payload === scanId) {
+                        sendBacklog().catch(() => {});
+                    }
+                });
+
+                pgClient.on("error", () => {
+                    if (!closed) {
+                        closed = true;
+                        try { controller.close(); } catch { }
+                    }
+                });
+            } catch {
+                // If PG LISTEN fails, close the stream — client will reconnect
+                closed = true;
+                try { controller.close(); } catch { }
+            }
+
+            // Heartbeat to keep connection alive
+            const hb = setInterval(() => {
+                if (closed) { clearInterval(hb); return; }
+                try { controller.enqueue(encoder.encode(`: ping\n\n`)); } catch { closed = true; clearInterval(hb); }
+            }, 15000);
+
             (controller as any).onCancel = () => {
                 closed = true;
-                clearInterval(interval);
+                clearInterval(hb);
+                try { pgClient?.end(); } catch { }
             };
         },
-        cancel() { closed = true; },
+        cancel() {
+            closed = true;
+            try { pgClient?.end(); } catch { }
+        },
     });
 
     return new Response(stream, { headers: sseHeaders() });
 }
-

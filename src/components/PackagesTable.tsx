@@ -121,28 +121,7 @@ export default function PackagesTable() {
     window.addEventListener('jobs-refresh', handler);
     return () => window.removeEventListener('jobs-refresh', handler);
   }, [sortJobs]);
-  React.useEffect(() => {
-    const hasActive = list.some((j) => j.status === "queued" || j.status === "running");
-    if (!hasActive) return;
-    const timer = setInterval(() => {
-      fetch("/api/jobs", { cache: "no-store" })
-        .then((r) => (r.ok ? r.json() : []))
-        .then((items) => {
-          if (!Array.isArray(items)) return;
-          setList((prev) => {
-            const map = new Map<string, Job>();
-            for (const j of prev) map.set(j.id, j);
-            for (const row of items as Job[]) {
-              const cur = map.get(row.id);
-              map.set(row.id, mergeMonotonicJob(cur, row));
-            }
-            return sortJobs(Array.from(map.values()));
-          });
-        })
-        .catch(() => { });
-    }, 5000);
-    return () => clearInterval(timer);
-  }, [list, sortJobs]);
+  // Job updates arrive via SSE (/api/jobs/events) above — no polling needed.
   React.useEffect(() => {
     if (list.length === 0) return;
     if (openIds.size === 0) setOpenIds(new Set([list[0].id]));

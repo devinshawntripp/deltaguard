@@ -30,7 +30,7 @@ Next.js 16 app (React 19, TypeScript, Tailwind CSS v4) serving as both the web f
 
 **File Upload Flow:** Browser gets presigned S3 POST URL from `/api/uploads/presign` → uploads directly to S3 (bypasses Next.js) → calls `POST /api/jobs` with S3 location → worker picks up.
 
-**Real-time Progress:** `/api/jobs/[id]/events` returns SSE stream. `jobEventsBus.ts` polls `scan_events` table every 1s. Terminal stages: `scan.done`, `scan.summary`, `scan.error`, `worker.stale.fail`.
+**Real-time Progress:** `/api/jobs/[id]/events` returns SSE stream. `jobEventsBus.ts` uses PG LISTEN on `scan_events` channel for push-based delivery. Terminal stages: `scan.done`, `scan.summary`, `scan.error`, `worker.stale.fail`.
 
 **Schema Bootstrap:** `src/lib/prisma.ts` calls `ensurePlatformSchema()` on first connection — creates all tables if missing, seeds default plans (FREE/BASIC/PRO/ENTERPRISE), creates default org.
 
@@ -67,3 +67,14 @@ Located in `k8s/deltaguard/`:
 - `ingress.yaml` — scanrook.io, scanrook.sh, deltaguard.apps.onetripp.com
 - `redis.yaml` — Single replica, 5Gi PVC
 - `pvc.yaml` — Redis storage claim
+
+## CRITICAL: No Polling
+
+NEVER use `setInterval`, `setTimeout`, or recursive timers to poll databases or REST APIs for data changes. This application uses PostgreSQL NOTIFY/LISTEN + SSE for all real-time updates. All data push must flow through:
+
+- **PostgreSQL NOTIFY/LISTEN** for server-side event propagation
+- **Server-Sent Events (SSE)** for client-side real-time updates
+- `jobsBus.ts` (PG LISTEN `job_events`) for job status changes
+- `jobEventsBus.ts` (PG LISTEN `scan_events`) for scan progress events
+
+The only acceptable `setInterval` is for UI-only timers (e.g., updating a clock display with `Date.now()`). Never poll a database table, REST endpoint, or file system for changes.

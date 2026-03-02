@@ -1,5 +1,3 @@
-import { listJobs } from "@/lib/jobs";
-
 type Handler = (payload: any) => void;
 
 function parseJobEventPayload(raw: string): { type: "changed"; id?: string; deleted?: boolean } | null {
@@ -24,7 +22,6 @@ class JobsBus {
     private started = false;
     private handlers = new Set<Handler>();
     private client: any = null;
-    private poll: NodeJS.Timeout | null = null;
     private reconnectAttempts = 0;
     private reconnectTimer: NodeJS.Timeout | null = null;
 
@@ -35,7 +32,6 @@ class JobsBus {
     }
 
     private async connectPg() {
-        // Clear any pending reconnect timer
         if (this.reconnectTimer) {
             clearTimeout(this.reconnectTimer);
             this.reconnectTimer = null;
@@ -57,39 +53,28 @@ class JobsBus {
 
             newClient.on("error", (err: any) => {
                 console.error("[jobsBus] pg client error:", err?.message);
-                this.scheduleReconnect();
+                this.handleDisconnect();
             });
 
             newClient.on("end", () => {
                 console.warn("[jobsBus] pg connection ended, scheduling reconnect");
-                this.scheduleReconnect();
+                this.handleDisconnect();
             });
 
-            // Replace old client
             if (this.client) {
                 try { this.client.end(); } catch { }
             }
             this.client = newClient;
             this.reconnectAttempts = 0;
-
-            // Clear fallback polling if pg is now available
-            if (this.poll) {
-                clearInterval(this.poll);
-                this.poll = null;
-            }
         } catch (err: any) {
             console.error("[jobsBus] pg connect failed:", err?.message);
             this.scheduleReconnect();
-            // Start fallback polling only if not already running
-            if (!this.poll) {
-                this.poll = setInterval(async () => {
-                    try {
-                        const items = await listJobs(50);
-                        this.emit({ type: "changed_bulk", items });
-                    } catch { }
-                }, 2000);
-            }
         }
+    }
+
+    private handleDisconnect() {
+        this.client = null;
+        this.scheduleReconnect();
     }
 
     private scheduleReconnect() {

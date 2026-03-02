@@ -36,6 +36,9 @@ const BACKDROP = {
 };
 
 const INITIAL_PAGE_SIZE = 1000;
+const MAX_EVENTS = 200;
+const VISIBLE_EVENTS = 50;
+const DEBOUNCE_MS = 500;
 
 function normalizeEvent(raw: unknown): ProgressEvent | null {
     if (!raw || typeof raw !== "object") return null;
@@ -62,15 +65,6 @@ function isErrorEvent(e: ProgressEvent): boolean {
     return isErrorStage(e.stage) || d.includes("error") || d.includes("failed");
 }
 
-function percentFromDetail(detail?: string): number | undefined {
-    if (!detail) return undefined;
-    const m = /\b(\d{1,3})%\b/.exec(detail);
-    if (!m) return undefined;
-    const n = Number(m[1]);
-    if (!Number.isFinite(n)) return undefined;
-    return Math.max(0, Math.min(100, n));
-}
-
 function withUniqueById(existingDesc: ProgressEvent[], incomingDesc: ProgressEvent[]): ProgressEvent[] {
     const seen = new Set<number>();
     const out: ProgressEvent[] = [];
@@ -94,7 +88,13 @@ function withUniqueById(existingDesc: ProgressEvent[], incomingDesc: ProgressEve
     }
 
     out.sort((a, b) => (b.id || 0) - (a.id || 0));
-    return out;
+    return out.slice(0, MAX_EVENTS);
+}
+
+function progressBarColor(pct: number): string {
+    if (pct >= 80) return "bg-emerald-500";
+    if (pct >= 50) return "bg-cyan-500";
+    return "bg-blue-500";
 }
 
 function StageIcon({ stage, className = "h-4 w-4" }: { stage: string; className?: string }) {
@@ -238,6 +238,21 @@ function StageIcon({ stage, className = "h-4 w-4" }: { stage: string; className?
     }
 }
 
+function ArrowConnector({ from, to }: { from: FlowStatus; to: FlowStatus }) {
+    let color = "text-gray-400/50";
+    if (from === "done" && to === "done") color = "text-emerald-500";
+    else if (from === "done" && to === "active") color = "text-cyan-500";
+    else if (from === "active") color = "text-cyan-500/60";
+    else if (from === "error" || to === "error") color = "text-red-500/60";
+    return (
+        <div className={`flex items-center justify-center ${color}`}>
+            <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M3 8h10M9 4l4 4-4 4" />
+            </svg>
+        </div>
+    );
+}
+
 export default function ProgressGraph({
     scanId,
     eventsPath,
@@ -258,6 +273,34 @@ export default function ProgressGraph({
     const [loadingMore, setLoadingMore] = React.useState(false);
     const [error, setError] = React.useState<string | null>(null);
     const [nowMs, setNowMs] = React.useState<number>(() => Date.now());
+    const [visibleCount, setVisibleCount] = React.useState(VISIBLE_EVENTS);
+
+    // Debounced SSE event batching
+    const pendingEventsRef = React.useRef<ProgressEvent[]>([]);
+    const flushTimerRef = React.useRef<NodeJS.Timeout | null>(null);
+
+    const flushPendingEvents = React.useCallback(() => {
+        flushTimerRef.current = null;
+        const batch = pendingEventsRef.current;
+        if (batch.length === 0) return;
+        pendingEventsRef.current = [];
+        setEventsDesc((prev) => withUniqueById(prev, batch));
+        setTotalEvents((prev) => (prev == null ? prev : prev + batch.length));
+    }, []);
+
+    const queueEvent = React.useCallback((evt: ProgressEvent) => {
+        pendingEventsRef.current.push(evt);
+        if (!flushTimerRef.current) {
+            flushTimerRef.current = setTimeout(flushPendingEvents, DEBOUNCE_MS);
+        }
+    }, [flushPendingEvents]);
+
+    // Clean up flush timer on unmount
+    React.useEffect(() => {
+        return () => {
+            if (flushTimerRef.current) clearTimeout(flushTimerRef.current);
+        };
+    }, []);
 
     const fetchPage = React.useCallback(async (cursor?: number | null) => {
         const params = new URLSearchParams();
@@ -313,12 +356,13 @@ export default function ProgressGraph({
             setTotalEvents(null);
             setNextCursor(null);
             setHasMore(false);
+            setVisibleCount(VISIBLE_EVENTS);
 
             try {
                 const first = await fetchPage(null);
                 if (cancelled) return;
 
-                setEventsDesc(first.items);
+                setEventsDesc(first.items.slice(0, MAX_EVENTS));
                 setTotalEvents(Number.isFinite(first.total) ? first.total : first.items.length);
                 setNextCursor(first.next_cursor);
                 setHasMore(first.has_more);
@@ -338,14 +382,7 @@ export default function ProgressGraph({
                             parsed = null;
                         }
                         if (!parsed) return;
-
-                        setEventsDesc((prev) => {
-                            return withUniqueById(prev, [parsed]);
-                        });
-                        setTotalEvents((prev) => {
-                            if (prev == null) return prev;
-                            return prev + 1;
-                        });
+                        queueEvent(parsed);
                         setLoading(false);
                     },
                     onError: () => {
@@ -374,7 +411,7 @@ export default function ProgressGraph({
                 // noop
             }
         };
-    }, [scanId, eventsPath, mode, fetchPage]);
+    }, [scanId, eventsPath, mode, fetchPage, queueEvent]);
 
     const loadOlder = React.useCallback(async () => {
         if (!hasMore || !nextCursor || loadingMore) return;
@@ -405,25 +442,31 @@ export default function ProgressGraph({
         setSelectedTab("all");
     }, [scanId]);
 
+    // Derive the overall percentage from the latest event with pct
+    const overallPct = React.useMemo(() => {
+        let maxPct = 0;
+        for (let i = eventsChrono.length - 1; i >= 0; i--) {
+            const e = eventsChrono[i];
+            if (typeof e.pct === "number" && e.pct > maxPct) {
+                maxPct = e.pct;
+            }
+            if (isTerminalStage(e.stage)) {
+                maxPct = 100;
+                break;
+            }
+        }
+        return Math.max(0, Math.min(100, maxPct));
+    }, [eventsChrono]);
+
     React.useEffect(() => {
         if (!eventsChrono.length) return;
 
-        let latestPct = -1;
+        let latestPct = overallPct;
         let latestMsg: string | undefined = undefined;
 
         for (let i = eventsChrono.length - 1; i >= 0; i--) {
             const e = eventsChrono[i];
-            if (!latestMsg && e.detail) latestMsg = e.detail;
-
-            let p = typeof e.pct === "number" ? e.pct : percentFromDetail(e.detail);
-            if (p === undefined && isTerminalStage(e.stage)) {
-                p = 100;
-            }
-
-            if (typeof p === "number") {
-                latestPct = Math.max(latestPct, Math.max(0, Math.min(100, p)));
-                break;
-            }
+            if (!latestMsg && e.detail) { latestMsg = e.detail; break; }
         }
 
         if (latestPct >= 0) {
@@ -438,7 +481,7 @@ export default function ProgressGraph({
                 }
             }
         }
-    }, [eventsChrono]);
+    }, [eventsChrono, overallPct]);
 
     const grouped = React.useMemo(() => {
         const out: Record<string, ProgressEvent[]> = {};
@@ -563,6 +606,13 @@ export default function ProgressGraph({
         };
     }, [eventsChrono, grouped, terminal, isFailed, isFinished]);
 
+    // Memoize column count — only changes when new stages appear
+    const gridCols = React.useMemo(() => {
+        const stageCount = flow.visibleIds.length;
+        // stages + arrows between them
+        return Math.max(stageCount * 2 - 1, 1);
+    }, [flow.visibleIds.length]);
+
     const tabs = React.useMemo(() => {
         const out: Array<{ id: string; label: string; count: number }> = [
             { id: "all", label: "All", count: eventsChrono.length },
@@ -586,16 +636,26 @@ export default function ProgressGraph({
         if (!tabs.find((t) => t.id === selectedTab)) setSelectedTab("all");
     }, [tabs, selectedTab]);
 
+    // Reset visible count when tab changes
+    React.useEffect(() => {
+        setVisibleCount(VISIBLE_EVENTS);
+    }, [selectedTab]);
+
     const selectedEvents = React.useMemo(() => {
         if (selectedTab === "all") return eventsChrono;
         if (selectedTab === "errors") return eventsChrono.filter(isErrorEvent);
         return grouped[selectedTab] || [];
     }, [eventsChrono, selectedTab, grouped]);
 
+    // Only render up to visibleCount events
+    const visibleEvents = React.useMemo(() => {
+        return selectedEvents.slice(0, visibleCount);
+    }, [selectedEvents, visibleCount]);
+
     if (loading) {
         return (
             <div className="rounded-xl border border-black/10 dark:border-white/10 p-3 text-sm opacity-75">
-                Loading workflow…
+                Loading workflow...
             </div>
         );
     }
@@ -649,7 +709,30 @@ export default function ProgressGraph({
 
     return (
         <div className="relative rounded-2xl border border-black/10 dark:border-white/10 overflow-hidden" style={BACKDROP}>
+            {/* Pulse animation style */}
+            <style>{`
+                @keyframes pulse-ring {
+                    0% { box-shadow: 0 0 0 0 rgba(6,182,212,0.5); }
+                    70% { box-shadow: 0 0 0 8px rgba(6,182,212,0); }
+                    100% { box-shadow: 0 0 0 0 rgba(6,182,212,0); }
+                }
+                .stage-pulse { animation: pulse-ring 2s ease-out infinite; }
+            `}</style>
             <div className="relative grid gap-3 p-4">
+                {/* Top-level progress bar */}
+                <div className="rounded-lg border border-black/10 dark:border-white/10 bg-white/75 dark:bg-black/45 p-3">
+                    <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-[11px] uppercase tracking-wide opacity-70">Progress</span>
+                        <span className="text-sm font-semibold">{overallPct}%</span>
+                    </div>
+                    <div className="h-2.5 w-full bg-black/10 dark:bg-white/10 rounded-full overflow-hidden">
+                        <div
+                            className={`h-full rounded-full transition-all duration-700 ease-out ${progressBarColor(overallPct)}`}
+                            style={{ width: `${overallPct}%` }}
+                        />
+                    </div>
+                </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-4 gap-2">
                     <div className="rounded-lg border border-black/10 dark:border-white/10 bg-white/75 dark:bg-black/45 px-3 py-2 min-w-0">
                         <div className="text-[11px] uppercase tracking-wide opacity-70">Events</div>
@@ -693,20 +776,28 @@ export default function ProgressGraph({
                     </div>
                     <div className="w-full min-w-0 overflow-hidden pb-1">
                         <div
-                            className="grid w-full min-w-0 items-start gap-2"
-                            style={{ gridTemplateColumns: `repeat(${Math.max(flow.visibleIds.length, 1)}, minmax(0, 1fr))` }}
+                            className="grid w-full min-w-0 items-start gap-0"
+                            style={{ gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))` }}
                         >
                             {flow.visibleIds.map((id, idx) => {
                                 const state = flow.stageStatus[id] || "pending";
+                                const isActive = state === "active";
+                                const nextId = flow.visibleIds[idx + 1];
+                                const nextState = nextId ? (flow.stageStatus[nextId] || "pending") : "pending";
                                 return (
-                                    <div key={id} className="min-w-0 text-center">
-                                        <div className={`mx-auto h-8 w-8 rounded-full border flex items-center justify-center ${flowTone(state)}`}>
-                                            <StageIcon stage={id} className="h-4 w-4" />
+                                    <React.Fragment key={id}>
+                                        <div className="min-w-0 text-center">
+                                            <div className={`mx-auto h-8 w-8 rounded-full border flex items-center justify-center ${flowTone(state)} ${isActive ? "stage-pulse" : ""}`}>
+                                                <StageIcon stage={id} className="h-4 w-4" />
+                                            </div>
+                                            <div className="text-[9px] uppercase opacity-60 mt-1">Step {idx + 1}</div>
+                                            <div className="mt-1 text-[10px] font-semibold leading-tight break-words px-1">{WORKFLOW_STAGE_LABELS[id]}</div>
+                                            <div className="text-[9px] opacity-70 truncate px-1">{flowLabel(state)}</div>
                                         </div>
-                                        <div className="text-[9px] uppercase opacity-60 mt-1">Step {idx + 1}</div>
-                                        <div className="mt-1 text-[10px] font-semibold leading-tight break-words px-1">{WORKFLOW_STAGE_LABELS[id]}</div>
-                                        <div className="text-[9px] opacity-70 truncate px-1">{flowLabel(state)}</div>
-                                    </div>
+                                        {idx < flow.visibleIds.length - 1 && (
+                                            <ArrowConnector from={state} to={nextState} />
+                                        )}
+                                    </React.Fragment>
                                 );
                             })}
                         </div>
@@ -733,7 +824,7 @@ export default function ProgressGraph({
                             disabled={loadingMore}
                             className="shrink-0 rounded-md border border-black/20 dark:border-white/20 px-3 py-1.5 text-xs font-semibold bg-white/80 dark:bg-black/45 hover:bg-white dark:hover:bg-black/55 disabled:opacity-60"
                         >
-                            {loadingMore ? "Loading…" : "Load older"}
+                            {loadingMore ? "Loading..." : "Load older"}
                         </button>
                     ) : null}
                 </div>
@@ -741,7 +832,7 @@ export default function ProgressGraph({
                 <div className="rounded-xl border border-black/10 dark:border-white/10 bg-white/75 dark:bg-black/45 overflow-hidden">
                     <div className="px-3 py-2 text-xs font-semibold border-b border-black/10 dark:border-white/10 flex items-center justify-between">
                         <span>{tabs.find((t) => t.id === selectedTab)?.label || "Events"}</span>
-                        <span className="opacity-70">{selectedEvents.length} loaded rows</span>
+                        <span className="opacity-70">{selectedEvents.length} events ({visibleEvents.length} shown)</span>
                     </div>
                     <div className="max-h-80 overflow-auto">
                         <table className="w-full text-xs">
@@ -755,7 +846,7 @@ export default function ProgressGraph({
                                 </tr>
                             </thead>
                             <tbody>
-                                {selectedEvents.map((e, idx) => {
+                                {visibleEvents.map((e, idx) => {
                                     const errRow = isErrorEvent(e);
                                     const mappedStage = mapEventToWorkflowStage(e.stage) || "all";
                                     return (
@@ -775,8 +866,18 @@ export default function ProgressGraph({
                                 })}
                             </tbody>
                         </table>
-                        {selectedEvents.length === 0 && (
+                        {visibleEvents.length === 0 && (
                             <div className="px-3 py-6 text-sm opacity-70">No events in this tab.</div>
+                        )}
+                        {visibleEvents.length < selectedEvents.length && (
+                            <div className="px-3 py-3 text-center">
+                                <button
+                                    onClick={() => setVisibleCount((c) => c + VISIBLE_EVENTS)}
+                                    className="text-xs font-semibold px-4 py-1.5 rounded-md border border-black/20 dark:border-white/20 bg-white/80 dark:bg-black/45 hover:bg-white dark:hover:bg-black/55"
+                                >
+                                    Show more ({selectedEvents.length - visibleEvents.length} remaining)
+                                </button>
+                            </div>
                         )}
                     </div>
                 </div>
