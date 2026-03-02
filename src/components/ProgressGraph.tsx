@@ -3,6 +3,7 @@
 import React from "react";
 import { openSse } from "@/lib/ssePool";
 import {
+    buildDynamicStageOrder,
     isErrorStage,
     isTerminalStage,
     mapEventToWorkflowStage,
@@ -63,6 +64,40 @@ function normalizeEvent(raw: unknown): ProgressEvent | null {
 function isErrorEvent(e: ProgressEvent): boolean {
     const d = String(e.detail || "").toLowerCase();
     return isErrorStage(e.stage) || d.includes("error") || d.includes("failed");
+}
+
+type PipelineStage = { id: string; label: string; weight: number };
+
+function parsePipelineManifest(events: ProgressEvent[]): PipelineStage[] | null {
+    for (const e of events) {
+        if (e.stage === "scan.pipeline" && e.detail) {
+            try {
+                const arr = JSON.parse(e.detail);
+                if (Array.isArray(arr) && arr.length > 0 && arr[0].id) return arr;
+            } catch { /* not JSON */ }
+        }
+    }
+    return null;
+}
+
+/** Extract max pct from events (never decreases). */
+function extractMaxPct(events: ProgressEvent[]): number {
+    let max = 0;
+    for (const e of events) {
+        if (typeof e.pct === "number" && e.pct > max) max = e.pct;
+        if (isTerminalStage(e.stage)) return 100;
+    }
+    return max;
+}
+
+/** Count events per workflow stage. */
+function countByStage(events: ProgressEvent[]): Record<string, number> {
+    const out: Record<string, number> = {};
+    for (const e of events) {
+        const ws = mapEventToWorkflowStage(e.stage, e.detail);
+        if (ws) out[ws] = (out[ws] || 0) + 1;
+    }
+    return out;
 }
 
 function withUniqueById(existingDesc: ProgressEvent[], incomingDesc: ProgressEvent[]): ProgressEvent[] {
@@ -297,6 +332,14 @@ export default function ProgressGraph({
     const [stagesSeen, setStagesSeen] = React.useState<Record<string, true>>({});
     // Earliest event timestamp — never moves forward once set
     const [scanStartTs, setScanStartTs] = React.useState<number>(0);
+    // Pipeline manifest from scan.pipeline event
+    const [pipelineStages, setPipelineStages] = React.useState<PipelineStage[] | null>(null);
+    // Persistent max pct — never decreases, survives event windowing
+    const [maxPctSeen, setMaxPctSeen] = React.useState<number>(0);
+    // Persistent per-stage event counts — survives event windowing
+    const [stageCounts, setStageCounts] = React.useState<Record<string, number>>({});
+    // Persistent total error count
+    const [totalErrorCount, setTotalErrorCount] = React.useState<number>(0);
 
     // Debounced SSE event batching
     const pendingEventsRef = React.useRef<ProgressEvent[]>([]);
@@ -323,6 +366,20 @@ export default function ProgressGraph({
             }
             return min < Infinity ? min : prev;
         });
+
+        // Track pipeline manifest
+        setPipelineStages((prev) => prev ?? parsePipelineManifest(batch));
+        // Track max pct persistently
+        setMaxPctSeen((prev) => Math.max(prev, extractMaxPct(batch)));
+        // Track per-stage counts persistently
+        setStageCounts((prev) => {
+            const delta = countByStage(batch);
+            const out = { ...prev };
+            for (const [k, v] of Object.entries(delta)) out[k] = (out[k] || 0) + v;
+            return out;
+        });
+        // Track error count persistently
+        setTotalErrorCount((prev) => prev + batch.filter(isErrorEvent).length);
 
         setEventsDesc((prev) => withUniqueById(prev, batch));
         setTotalEvents((prev) => (prev == null ? prev : prev + batch.length));
@@ -399,6 +456,10 @@ export default function ProgressGraph({
             setVisibleCount(VISIBLE_EVENTS);
             setStagesSeen({});
             setScanStartTs(0);
+            setPipelineStages(null);
+            setMaxPctSeen(0);
+            setStageCounts({});
+            setTotalErrorCount(0);
 
             try {
                 const first = await fetchPage(null);
@@ -407,6 +468,12 @@ export default function ProgressGraph({
                 // Track stages from ALL fetched items (not just the 200 kept for display)
                 const { newSeen, earliestTs } = extractStageInfo(first.items, {});
                 if (newSeen) setStagesSeen(newSeen);
+
+                // Extract pipeline manifest, persistent pct, and stage counts
+                setPipelineStages(parsePipelineManifest(first.items));
+                setMaxPctSeen(extractMaxPct(first.items));
+                setStageCounts(countByStage(first.items));
+                setTotalErrorCount(first.items.filter(isErrorEvent).length);
 
                 // If we have all events, use the earliest. Otherwise fetch the first event.
                 let startTs = earliestTs < Infinity ? earliestTs : 0;
@@ -490,6 +557,15 @@ export default function ProgressGraph({
                 const { newSeen } = extractStageInfo(page.items, prev);
                 return newSeen || prev;
             });
+            setPipelineStages((prev) => prev ?? parsePipelineManifest(page.items));
+            setMaxPctSeen((prev) => Math.max(prev, extractMaxPct(page.items)));
+            setStageCounts((prev) => {
+                const delta = countByStage(page.items);
+                const out = { ...prev };
+                for (const [k, v] of Object.entries(delta)) out[k] = (out[k] || 0) + v;
+                return out;
+            });
+            setTotalErrorCount((prev) => prev + page.items.filter(isErrorEvent).length);
             setEventsDesc((prev) => withUniqueById(prev, page.items));
             setNextCursor(page.next_cursor);
             setHasMore(page.has_more);
@@ -514,21 +590,21 @@ export default function ProgressGraph({
         setSelectedTab("all");
     }, [scanId]);
 
-    // Derive the overall percentage from the latest event with pct
+    // Derive the overall percentage — use persistent maxPctSeen so it never decreases
     const overallPct = React.useMemo(() => {
-        let maxPct = 0;
+        let windowMax = 0;
         for (let i = eventsChrono.length - 1; i >= 0; i--) {
             const e = eventsChrono[i];
-            if (typeof e.pct === "number" && e.pct > maxPct) {
-                maxPct = e.pct;
+            if (typeof e.pct === "number" && e.pct > windowMax) {
+                windowMax = e.pct;
             }
             if (isTerminalStage(e.stage)) {
-                maxPct = 100;
+                windowMax = 100;
                 break;
             }
         }
-        return Math.max(0, Math.min(100, maxPct));
-    }, [eventsChrono]);
+        return Math.max(0, Math.min(100, Math.max(maxPctSeen, windowMax)));
+    }, [eventsChrono, maxPctSeen]);
 
     React.useEffect(() => {
         if (!eventsChrono.length) return;
@@ -588,31 +664,37 @@ export default function ProgressGraph({
         return () => clearInterval(timer);
     }, [eventsChrono.length, terminal]);
 
+    // Use dynamic stage order when pipeline manifest is available, else fallback
+    const activeStageOrder: readonly WorkflowStageId[] = React.useMemo(() => {
+        if (pipelineStages) return buildDynamicStageOrder(pipelineStages);
+        return WORKFLOW_STAGE_ORDER;
+    }, [pipelineStages]);
+
     const flow = React.useMemo(() => {
         const stageStatus = {} as Record<WorkflowStageId, FlowStatus>;
-        const completeIdx = WORKFLOW_STAGE_ORDER.indexOf("complete");
-        const failedIdx = WORKFLOW_STAGE_ORDER.indexOf("failed");
+        const completeIdx = activeStageOrder.indexOf("complete");
+        const failedIdx = activeStageOrder.indexOf("failed");
         const stageMeta = {} as Record<WorkflowStageId, { hasEvents: boolean; wasSeen: boolean; hasErr: boolean; hasExplicitSkip: boolean }>;
 
         // Build seen indexes from persistent stagesSeen (survives event windowing)
         const seenIndexes: number[] = [];
         for (const id of Object.keys(stagesSeen)) {
-            const idx = WORKFLOW_STAGE_ORDER.indexOf(id as WorkflowStageId);
+            const idx = activeStageOrder.indexOf(id as WorkflowStageId);
             if (idx >= 0 && !seenIndexes.includes(idx)) seenIndexes.push(idx);
         }
         // Also include stages visible in the current event window
         for (const e of eventsChrono) {
             const stage = mapEventToWorkflowStage(e.stage, e.detail);
             if (!stage) continue;
-            const idx = WORKFLOW_STAGE_ORDER.indexOf(stage);
+            const idx = activeStageOrder.indexOf(stage);
             if (idx >= 0 && !seenIndexes.includes(idx)) seenIndexes.push(idx);
         }
 
         const firstSeenIndex = seenIndexes.length ? Math.min(...seenIndexes) : -1;
         const lastSeenIndex = seenIndexes.length ? Math.max(...seenIndexes) : -1;
 
-        for (let i = 0; i < WORKFLOW_STAGE_ORDER.length; i++) {
-            const id = WORKFLOW_STAGE_ORDER[i];
+        for (let i = 0; i < activeStageOrder.length; i++) {
+            const id = activeStageOrder[i];
             const eventsForStage = grouped[id] || [];
             const hasEvents = eventsForStage.length > 0;
             const wasSeen = !!stagesSeen[id] || hasEvents;
@@ -649,10 +731,10 @@ export default function ProgressGraph({
 
         let visibleIds: WorkflowStageId[] = [];
         if (terminal) {
-            visibleIds = WORKFLOW_STAGE_ORDER.filter((id) => {
+            visibleIds = (activeStageOrder as readonly WorkflowStageId[]).filter((id) => {
                 if (id === "complete") return isFinished;
                 if (id === "failed") return isFailed;
-                if (!stageMeta[id].wasSeen) return false;
+                if (!stageMeta[id]?.wasSeen) return false;
                 return stageStatus[id] !== "skipped";
             });
             if (isFinished && !visibleIds.includes("complete")) visibleIds.push("complete");
@@ -666,14 +748,14 @@ export default function ProgressGraph({
             } else if (isFailed) {
                 visibleEnd = failedIdx;
             } else if (lastSeenIndex >= 0) {
-                visibleEnd = Math.min(WORKFLOW_STAGE_ORDER.length - 1, lastSeenIndex + 1);
+                visibleEnd = Math.min(activeStageOrder.length - 1, lastSeenIndex + 1);
             }
 
             if (visibleEnd < visibleStart) {
                 visibleEnd = visibleStart;
             }
 
-            visibleIds = WORKFLOW_STAGE_ORDER.slice(visibleStart, visibleEnd + 1);
+            visibleIds = activeStageOrder.slice(visibleStart, visibleEnd + 1) as WorkflowStageId[];
             if (isFailed) {
                 visibleIds = visibleIds.filter((id) => id !== "complete");
                 if (!visibleIds.includes("failed")) visibleIds.push("failed");
@@ -690,7 +772,7 @@ export default function ProgressGraph({
             isFinished,
             finishedTs: terminal?.ts,
         };
-    }, [eventsChrono, grouped, terminal, isFailed, isFinished, stagesSeen]);
+    }, [eventsChrono, grouped, terminal, isFailed, isFinished, stagesSeen, activeStageOrder]);
 
     // Memoize column count — only changes when new stages appear
     const gridCols = React.useMemo(() => {
@@ -700,23 +782,28 @@ export default function ProgressGraph({
     }, [flow.visibleIds.length]);
 
     const tabs = React.useMemo(() => {
+        const total = totalEvents ?? eventsChrono.length;
         const out: Array<{ id: string; label: string; count: number }> = [
-            { id: "all", label: "All", count: eventsChrono.length },
+            { id: "all", label: "All", count: total },
         ];
 
-        for (const id of WORKFLOW_STAGE_ORDER) {
-            const count = (grouped[id] || []).length;
+        // Use persistent stageCounts (survives event windowing) with windowed fallback
+        for (const id of activeStageOrder) {
+            const persistentCount = stageCounts[id] || 0;
+            const windowedCount = (grouped[id] || []).length;
+            const count = Math.max(persistentCount, windowedCount);
             if (count > 0 || id === "complete" || id === "failed") {
-                out.push({ id, label: WORKFLOW_STAGE_LABELS[id], count });
+                out.push({ id, label: WORKFLOW_STAGE_LABELS[id] || id, count });
             }
         }
 
-        if (errorCount > 0) {
-            out.push({ id: "errors", label: "Errors", count: errorCount });
+        const errCount = Math.max(totalErrorCount, errorCount);
+        if (errCount > 0) {
+            out.push({ id: "errors", label: "Errors", count: errCount });
         }
 
         return out;
-    }, [eventsChrono.length, grouped, errorCount]);
+    }, [eventsChrono.length, totalEvents, grouped, errorCount, stageCounts, totalErrorCount, activeStageOrder]);
 
     React.useEffect(() => {
         if (!tabs.find((t) => t.id === selectedTab)) setSelectedTab("all");

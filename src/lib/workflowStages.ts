@@ -38,7 +38,7 @@ export const WORKFLOW_STAGE_LABELS: Record<WorkflowStageId, string> = {
     failed: "Failed",
 };
 
-const PIPELINE_TO_WORKFLOW: Record<string, WorkflowStageId> = {
+export const PIPELINE_TO_WORKFLOW: Record<string, WorkflowStageId> = {
     extract: "extract",
     detect: "extract",
     inventory: "inventory",
@@ -157,4 +157,25 @@ export function mapEventToWorkflowStage(stage: string, detail?: string): Workflo
     if (s.startsWith("seed.") || s.startsWith("db.seed.") || s.startsWith("vulndb.")) return null;
 
     return null;
+}
+
+export function buildDynamicStageOrder(
+    pipeline: Array<{ id: string; label: string; weight: number }>,
+): WorkflowStageId[] {
+    const prefix: WorkflowStageId[] = ["claimed", "s3_download", "scanner_start"];
+    const suffix: WorkflowStageId[] = ["ingest", "report_upload", "complete"];
+
+    const scannerStages: WorkflowStageId[] = pipeline
+        .map((s) => PIPELINE_TO_WORKFLOW[s.id])
+        .filter((id): id is WorkflowStageId => !!id);
+
+    // Deduplicate (osv_query + osv_enrich both map to "osv")
+    const seen = new Set<string>();
+    const deduped = scannerStages.filter((id) => {
+        if (seen.has(id)) return false;
+        seen.add(id);
+        return true;
+    });
+
+    return [...prefix, ...deduped, ...suffix];
 }
