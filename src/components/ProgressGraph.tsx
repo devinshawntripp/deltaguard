@@ -345,6 +345,16 @@ export default function ProgressGraph({
     const pendingEventsRef = React.useRef<ProgressEvent[]>([]);
     const flushTimerRef = React.useRef<NodeJS.Timeout | null>(null);
 
+    // UIBF-01: Pipeline scroll strip refs
+    const pipelineScrollRef = React.useRef<HTMLDivElement>(null);
+    const activeStageRef = React.useRef<HTMLDivElement>(null);
+    const userScrolledPipeline = React.useRef(false);
+
+    // UIBF-02: Badge collapse state
+    const [badgesExpanded, setBadgesExpanded] = React.useState(false);
+    const badgeContainerRef = React.useRef<HTMLDivElement>(null);
+    const [badgeOverflowCount, setBadgeOverflowCount] = React.useState(0);
+
     const flushPendingEvents = React.useCallback(() => {
         flushTimerRef.current = null;
         const batch = pendingEventsRef.current;
@@ -831,6 +841,43 @@ export default function ProgressGraph({
         setVisibleCount(VISIBLE_EVENTS);
     }, [selectedTab]);
 
+    // UIBF-01: Auto-scroll active pipeline stage into view
+    const activeStageId = React.useMemo(() => {
+        return flow.visibleIds.find((id) => (flow.stageStatus[id] || "pending") === "active") ?? null;
+    }, [flow.visibleIds, flow.stageStatus]);
+
+    React.useEffect(() => {
+        if (userScrolledPipeline.current) return;
+        activeStageRef.current?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+    }, [activeStageId]);
+
+    React.useEffect(() => {
+        const el = pipelineScrollRef.current;
+        if (!el) return;
+        const handleUserScroll = () => { userScrolledPipeline.current = true; };
+        el.addEventListener("wheel", handleUserScroll, { passive: true });
+        el.addEventListener("touchmove", handleUserScroll, { passive: true });
+        return () => {
+            el.removeEventListener("wheel", handleUserScroll);
+            el.removeEventListener("touchmove", handleUserScroll);
+        };
+    }, []);
+
+    // UIBF-02: Detect badge container overflow (how many badges are hidden)
+    React.useEffect(() => {
+        const el = badgeContainerRef.current;
+        if (!el || badgesExpanded) { setBadgeOverflowCount(0); return; }
+        if (el.scrollHeight > el.clientHeight) {
+            const visibleBottom = el.getBoundingClientRect().top + el.clientHeight;
+            const hidden = Array.from(el.children).filter(
+                (child) => child.getBoundingClientRect().top >= visibleBottom
+            ).length;
+            setBadgeOverflowCount(hidden);
+        } else {
+            setBadgeOverflowCount(0);
+        }
+    }, [tabs.length, badgesExpanded]);
+
     const selectedEvents = React.useMemo(() => {
         if (selectedTab === "all") return eventsChrono;
         if (selectedTab === "errors") return eventsChrono.filter(isErrorEvent);
@@ -964,33 +1011,42 @@ export default function ProgressGraph({
                             {flow.finishedTs ? <span className="opacity-85 truncate">{new Date(flow.finishedTs).toLocaleTimeString()}</span> : null}
                         </span>
                     </div>
-                    <div className="w-full min-w-0 overflow-hidden pb-1">
-                        <div
-                            className="grid w-full min-w-0 items-start gap-0"
-                            style={{ gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))` }}
-                        >
-                            {flow.visibleIds.map((id, idx) => {
-                                const state = flow.stageStatus[id] || "pending";
-                                const isActive = state === "active";
-                                const nextId = flow.visibleIds[idx + 1];
-                                const nextState = nextId ? (flow.stageStatus[nextId] || "pending") : "pending";
-                                return (
-                                    <React.Fragment key={id}>
-                                        <div className="min-w-0 text-center">
-                                            <div className={`mx-auto h-8 w-8 rounded-full border flex items-center justify-center ${flowTone(state)} ${isActive ? "stage-pulse" : ""}`}>
-                                                <StageIcon stage={id} className="h-4 w-4" />
+                    <div className="relative">
+                        {/* Left fade gradient */}
+                        <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-8 z-10"
+                             style={{ background: "linear-gradient(to right, var(--dg-bg-elevated), transparent)" }} />
+                        {/* Scrollable pipeline */}
+                        <div ref={pipelineScrollRef} className="overflow-x-auto pb-1">
+                            <div
+                                className="grid items-start gap-0 min-w-max"
+                                style={{ gridTemplateColumns: `repeat(${gridCols}, minmax(60px, 1fr))` }}
+                            >
+                                {flow.visibleIds.map((id, idx) => {
+                                    const state = flow.stageStatus[id] || "pending";
+                                    const isActive = state === "active";
+                                    const nextId = flow.visibleIds[idx + 1];
+                                    const nextState = nextId ? (flow.stageStatus[nextId] || "pending") : "pending";
+                                    return (
+                                        <React.Fragment key={id}>
+                                            <div ref={isActive ? activeStageRef : undefined} className="min-w-0 text-center">
+                                                <div className={`mx-auto h-8 w-8 rounded-full border flex items-center justify-center ${flowTone(state)} ${isActive ? "stage-pulse" : ""}`}>
+                                                    <StageIcon stage={id} className="h-4 w-4" />
+                                                </div>
+                                                <div className="text-[9px] uppercase opacity-60 mt-1">Step {idx + 1}</div>
+                                                <div className="mt-1 text-[10px] font-semibold leading-tight break-words px-1">{WORKFLOW_STAGE_LABELS[id]}</div>
+                                                <div className="text-[9px] opacity-70 truncate px-1">{flowLabel(state)}</div>
                                             </div>
-                                            <div className="text-[9px] uppercase opacity-60 mt-1">Step {idx + 1}</div>
-                                            <div className="mt-1 text-[10px] font-semibold leading-tight break-words px-1">{WORKFLOW_STAGE_LABELS[id]}</div>
-                                            <div className="text-[9px] opacity-70 truncate px-1">{flowLabel(state)}</div>
-                                        </div>
-                                        {idx < flow.visibleIds.length - 1 && (
-                                            <ArrowConnector from={state} to={nextState} />
-                                        )}
-                                    </React.Fragment>
-                                );
-                            })}
+                                            {idx < flow.visibleIds.length - 1 && (
+                                                <ArrowConnector from={state} to={nextState} />
+                                            )}
+                                        </React.Fragment>
+                                    );
+                                })}
+                            </div>
                         </div>
+                        {/* Right fade gradient */}
+                        <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 z-10"
+                             style={{ background: "linear-gradient(to left, var(--dg-bg-elevated), transparent)" }} />
                     </div>
                 </div>
 
