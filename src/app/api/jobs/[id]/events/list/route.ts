@@ -58,12 +58,18 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
         );
         const cursor = normalizePositiveInt(u.searchParams.get("cursor"), 0, 0, Number.MAX_SAFE_INTEGER);
         const hasCursor = cursor > 0;
+        const stageFilter = u.searchParams.get("stage_filter");
 
-        const totalRows = await prisma.$queryRaw<Array<{ total: bigint | number | string }>>`
-            SELECT COUNT(*)::bigint AS total
-            FROM scan_events
-            WHERE job_id=${id}::uuid
-        `;
+        const totalRows = stageFilter
+            ? await prisma.$queryRawUnsafe<Array<{ total: bigint | number | string }>>(
+                `SELECT COUNT(*)::bigint AS total FROM scan_events WHERE job_id=$1::uuid AND stage LIKE $2`,
+                id, stageFilter + '%'
+              )
+            : await prisma.$queryRaw<Array<{ total: bigint | number | string }>>`
+                SELECT COUNT(*)::bigint AS total
+                FROM scan_events
+                WHERE job_id=${id}::uuid
+              `;
         const total = Number(totalRows[0]?.total ?? 0);
 
         const whereParts: string[] = ["job_id = $1::uuid"];
@@ -71,6 +77,10 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
         if (hasCursor) {
             values.push(cursor);
             whereParts.push(order === "asc" ? `id > $${values.length}::bigint` : `id < $${values.length}::bigint`);
+        }
+        if (stageFilter) {
+            values.push(stageFilter + '%');
+            whereParts.push(`stage LIKE $${values.length}`);
         }
 
         values.push(pageSize + 1);
