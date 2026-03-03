@@ -458,12 +458,16 @@ export default function ProgressGraph({
         }
     }, [appendToStageEvents, userCollapsedStages]);
 
+    // Use a ref for flushPendingEvents so queueEvent never changes identity
+    const flushRef = React.useRef(flushPendingEvents);
+    React.useEffect(() => { flushRef.current = flushPendingEvents; }, [flushPendingEvents]);
+
     const queueEvent = React.useCallback((evt: ProgressEvent) => {
         pendingEventsRef.current.push(evt);
         if (!flushTimerRef.current) {
-            flushTimerRef.current = setTimeout(flushPendingEvents, DEBOUNCE_MS);
+            flushTimerRef.current = setTimeout(() => flushRef.current(), DEBOUNCE_MS);
         }
-    }, [flushPendingEvents]);
+    }, []);
 
     // Clean up flush timer on unmount
     React.useEffect(() => {
@@ -646,7 +650,8 @@ export default function ProgressGraph({
                 // noop
             }
         };
-    }, [scanId, eventsPath, mode, fetchPage, queueEvent]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [scanId, eventsPath, mode]);
 
     const progressCbRef = React.useRef<typeof onProgress | undefined>(undefined);
     React.useEffect(() => {
