@@ -4,7 +4,7 @@ import assert from "node:assert";
 
 test("SSE events route does not instantiate raw pg.Client", () => {
   const routeFile = readFileSync(
-    new URL("../../app/api/scans/[id]/events/route.ts", import.meta.url),
+    new URL("../app/api/jobs/[id]/events/route.ts", import.meta.url),
     "utf-8"
   );
   assert.ok(
