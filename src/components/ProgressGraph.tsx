@@ -11,6 +11,7 @@ import {
     WORKFLOW_STAGE_ORDER,
     type WorkflowStageId,
 } from "@/lib/workflowStages";
+import StageAccordionSection, { runLengthEncode } from "@/components/StageAccordionSection";
 
 type ProgressEvent = {
     id?: number;
@@ -36,9 +37,6 @@ const BACKDROP = {
         "radial-gradient(circle at 12% 18%, rgba(14,165,233,0.22), transparent 36%), radial-gradient(circle at 82% 16%, rgba(244,114,182,0.18), transparent 40%), radial-gradient(circle at 30% 88%, rgba(34,197,94,0.16), transparent 34%)",
 };
 
-const INITIAL_PAGE_SIZE = 1000;
-const MAX_EVENTS = 200;
-const VISIBLE_EVENTS = 50;
 const DEBOUNCE_MS = 500;
 
 function normalizeEvent(raw: unknown): ProgressEvent | null {
@@ -100,30 +98,22 @@ function countByStage(events: ProgressEvent[]): Record<string, number> {
     return out;
 }
 
-function withUniqueById(existingDesc: ProgressEvent[], incomingDesc: ProgressEvent[]): ProgressEvent[] {
-    const seen = new Set<number>();
-    const out: ProgressEvent[] = [];
-
-    for (const item of existingDesc) {
-        const id = item.id;
-        if (typeof id === "number" && Number.isFinite(id)) {
-            if (seen.has(id)) continue;
-            seen.add(id);
-        }
-        out.push(item);
+/** Extract per-stage first/last timestamps. */
+function extractStageTimes(
+    events: ProgressEvent[],
+    currentFirst: Record<string, string>,
+    currentLast: Record<string, string>,
+): { firstTs: Record<string, string>; lastTs: Record<string, string> } {
+    const firstTs = { ...currentFirst };
+    const lastTs = { ...currentLast };
+    for (const e of events) {
+        if (!e.ts) continue;
+        const ws = mapEventToWorkflowStage(e.stage, e.detail);
+        if (!ws) continue;
+        if (!firstTs[ws] || e.ts < firstTs[ws]) firstTs[ws] = e.ts;
+        if (!lastTs[ws] || e.ts > lastTs[ws]) lastTs[ws] = e.ts;
     }
-
-    for (const item of incomingDesc) {
-        const id = item.id;
-        if (typeof id === "number" && Number.isFinite(id)) {
-            if (seen.has(id)) continue;
-            seen.add(id);
-        }
-        out.push(item);
-    }
-
-    out.sort((a, b) => (b.id || 0) - (a.id || 0));
-    return out.slice(0, MAX_EVENTS);
+    return { firstTs, lastTs };
 }
 
 /** Extract workflow stages and earliest timestamp from a batch of events. */
@@ -273,15 +263,6 @@ function StageIcon({ stage, className = "h-4 w-4" }: { stage: string; className?
                     <path d="m9 9 6 6M15 9l-6 6" />
                 </svg>
             );
-        case "all":
-            return (
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={cls} aria-hidden="true">
-                    <rect x="4" y="4" width="7" height="7" rx="1" />
-                    <rect x="13" y="4" width="7" height="7" rx="1" />
-                    <rect x="4" y="13" width="7" height="7" rx="1" />
-                    <rect x="13" y="13" width="7" height="7" rx="1" />
-                </svg>
-            );
         default:
             return (
                 <svg viewBox="0 0 24 24" fill="currentColor" className={cls} aria-hidden="true">
@@ -311,22 +292,18 @@ export default function ProgressGraph({
     eventsPath,
     mode = "auto",
     onProgress,
+    height = "compact",
 }: {
     scanId: string;
     eventsPath?: string;
     mode?: "auto" | "stream" | "list";
     onProgress?: (pct: number, msg?: string) => void;
+    height?: "compact" | "viewport" | number;
 }) {
-    const [eventsDesc, setEventsDesc] = React.useState<ProgressEvent[]>([]);
     const [totalEvents, setTotalEvents] = React.useState<number | null>(null);
-    const [nextCursor, setNextCursor] = React.useState<number | null>(null);
-    const [hasMore, setHasMore] = React.useState(false);
-    const [selectedTab, setSelectedTab] = React.useState<string>("all");
     const [loading, setLoading] = React.useState(true);
-    const [loadingMore, setLoadingMore] = React.useState(false);
     const [error, setError] = React.useState<string | null>(null);
     const [nowMs, setNowMs] = React.useState<number>(() => Date.now());
-    const [visibleCount, setVisibleCount] = React.useState(VISIBLE_EVENTS);
 
     // Persistent stage tracking — survives event windowing
     const [stagesSeen, setStagesSeen] = React.useState<Record<string, true>>({});
@@ -338,8 +315,26 @@ export default function ProgressGraph({
     const [maxPctSeen, setMaxPctSeen] = React.useState<number>(0);
     // Persistent per-stage event counts — survives event windowing
     const [stageCounts, setStageCounts] = React.useState<Record<string, number>>({});
+    // Persistent per-stage first/last timestamps
+    const [stageFirstTs, setStageFirstTs] = React.useState<Record<string, string>>({});
+    const [stageLastTs, setStageLastTs] = React.useState<Record<string, string>>({});
+    // Persistent per-stage error counts
+    const [stageErrorCounts, setStageErrorCounts] = React.useState<Record<string, number>>({});
     // Persistent total error count
     const [totalErrorCount, setTotalErrorCount] = React.useState<number>(0);
+    // Stage-grouped events for accordion
+    const [stageEvents, setStageEvents] = React.useState<Record<string, ProgressEvent[]>>({});
+    // Terminal event
+    const [terminalEvent, setTerminalEvent] = React.useState<ProgressEvent | null>(null);
+
+    // Accordion state
+    const [expandedStages, setExpandedStages] = React.useState<Set<WorkflowStageId>>(new Set());
+    const [userCollapsedStages, setUserCollapsedStages] = React.useState<Set<WorkflowStageId>>(new Set());
+    // The most recently active (streaming) stage
+    const [activeStage, setActiveStage] = React.useState<WorkflowStageId | null>(null);
+
+    // Section scroll refs for pipeline bubble clicks
+    const sectionRefs = React.useRef<Record<string, HTMLDivElement | null>>({});
 
     // Debounced SSE event batching
     const pendingEventsRef = React.useRef<ProgressEvent[]>([]);
@@ -350,10 +345,25 @@ export default function ProgressGraph({
     const activeStageRef = React.useRef<HTMLDivElement>(null);
     const userScrolledPipeline = React.useRef(false);
 
-    // UIBF-02: Badge collapse state
+    // UIBF-02: Badge collapse state (kept for the pipeline status badge area)
     const [badgesExpanded, setBadgesExpanded] = React.useState(false);
     const badgeContainerRef = React.useRef<HTMLDivElement>(null);
     const [badgeOverflowCount, setBadgeOverflowCount] = React.useState(0);
+
+    /** Append events to stageEvents grouped by workflow stage. */
+    const appendToStageEvents = React.useCallback((batch: ProgressEvent[]) => {
+        setStageEvents((prev) => {
+            const next = { ...prev };
+            for (const e of batch) {
+                const ws = mapEventToWorkflowStage(e.stage, e.detail);
+                if (!ws) continue;
+                const arr = next[ws] ? [...next[ws]] : [];
+                arr.push(e);
+                next[ws] = arr;
+            }
+            return next;
+        });
+    }, []);
 
     const flushPendingEvents = React.useCallback(() => {
         flushTimerRef.current = null;
@@ -388,12 +398,65 @@ export default function ProgressGraph({
             for (const [k, v] of Object.entries(delta)) out[k] = (out[k] || 0) + v;
             return out;
         });
+        // Track per-stage timestamps
+        setStageFirstTs((prev) => {
+            const { firstTs } = extractStageTimes(batch, prev, {});
+            return firstTs;
+        });
+        setStageLastTs((prev) => {
+            const { lastTs } = extractStageTimes(batch, {}, prev);
+            return lastTs;
+        });
+        // Track per-stage error counts
+        setStageErrorCounts((prev) => {
+            const next = { ...prev };
+            for (const e of batch) {
+                if (!isErrorEvent(e)) continue;
+                const ws = mapEventToWorkflowStage(e.stage, e.detail);
+                if (ws) next[ws] = (next[ws] || 0) + 1;
+            }
+            return next;
+        });
         // Track error count persistently
         setTotalErrorCount((prev) => prev + batch.filter(isErrorEvent).length);
 
-        setEventsDesc((prev) => withUniqueById(prev, batch));
+        // Track terminal event
+        const termBatch = batch.find((e) => isTerminalStage(e.stage));
+        if (termBatch) setTerminalEvent(termBatch);
+
+        // Append to stage event groups
+        appendToStageEvents(batch);
+
         setTotalEvents((prev) => (prev == null ? prev : prev + batch.length));
-    }, []);
+
+        // Update active stage from the most recent non-terminal event
+        const lastNonTerminal = [...batch].reverse().find((e) => {
+            const ws = mapEventToWorkflowStage(e.stage, e.detail);
+            return ws && !isTerminalStage(e.stage);
+        });
+        if (lastNonTerminal) {
+            const ws = mapEventToWorkflowStage(lastNonTerminal.stage, lastNonTerminal.detail);
+            if (ws) {
+                setActiveStage((prevActive) => {
+                    if (prevActive === ws) return prevActive;
+                    // Auto-expand new stage and collapse old stage (unless user controlled them)
+                    setExpandedStages((prevExpanded) => {
+                        const next = new Set(prevExpanded);
+                        // Collapse old active stage if user hasn't pinned it
+                        if (prevActive && !userCollapsedStages.has(prevActive)) {
+                            next.delete(prevActive);
+                        }
+                        // Expand new active stage if user hasn't manually collapsed it
+                        if (!userCollapsedStages.has(ws)) {
+                            next.add(ws);
+                        }
+                        return next;
+                    });
+                    return ws;
+                });
+            }
+        }
+    }, [appendToStageEvents, userCollapsedStages]);
 
     const queueEvent = React.useCallback((evt: ProgressEvent) => {
         pendingEventsRef.current.push(evt);
@@ -411,8 +474,8 @@ export default function ProgressGraph({
 
     const fetchPage = React.useCallback(async (cursor?: number | null, pageSize?: number, order?: "asc" | "desc") => {
         const params = new URLSearchParams();
-        params.set("order", order || "desc");
-        params.set("page_size", String(pageSize || INITIAL_PAGE_SIZE));
+        params.set("order", order || "asc");
+        params.set("page_size", String(pageSize || 1000));
         if (cursor && cursor > 0) params.set("cursor", String(cursor));
 
         const res = await fetch(`/api/jobs/${scanId}/events/list?${params.toString()}`, {
@@ -433,7 +496,7 @@ export default function ProgressGraph({
         if (Array.isArray(body)) {
             const legacyItems = body.map(normalizeEvent).filter((x): x is ProgressEvent => Boolean(x));
             return {
-                items: legacyItems.sort((a, b) => (b.id || 0) - (a.id || 0)),
+                items: legacyItems,
                 total: legacyItems.length,
                 next_cursor: null,
                 has_more: false,
@@ -459,23 +522,27 @@ export default function ProgressGraph({
         async function run() {
             setLoading(true);
             setError(null);
-            setEventsDesc([]);
             setTotalEvents(null);
-            setNextCursor(null);
-            setHasMore(false);
-            setVisibleCount(VISIBLE_EVENTS);
             setStagesSeen({});
             setScanStartTs(0);
             setPipelineStages(null);
             setMaxPctSeen(0);
             setStageCounts({});
+            setStageFirstTs({});
+            setStageLastTs({});
+            setStageErrorCounts({});
             setTotalErrorCount(0);
+            setStageEvents({});
+            setTerminalEvent(null);
+            setExpandedStages(new Set());
+            setUserCollapsedStages(new Set());
+            setActiveStage(null);
 
             try {
-                const first = await fetchPage(null);
+                const first = await fetchPage(null, 1000, "asc");
                 if (cancelled) return;
 
-                // Track stages from ALL fetched items (not just the 200 kept for display)
+                // Track stages from ALL fetched items
                 const { newSeen, earliestTs } = extractStageInfo(first.items, {});
                 if (newSeen) setStagesSeen(newSeen);
 
@@ -485,14 +552,27 @@ export default function ProgressGraph({
                 setStageCounts(countByStage(first.items));
                 setTotalErrorCount(first.items.filter(isErrorEvent).length);
 
-                // If we have all events, use the earliest. Otherwise fetch the oldest batch
-                // to find the scan.pipeline manifest and earliest timestamp.
+                // Extract per-stage timestamps and error counts
+                const { firstTs: fts, lastTs: lts } = extractStageTimes(first.items, {}, {});
+                setStageFirstTs(fts);
+                setStageLastTs(lts);
+
+                const errCounts: Record<string, number> = {};
+                for (const e of first.items) {
+                    if (!isErrorEvent(e)) continue;
+                    const ws = mapEventToWorkflowStage(e.stage, e.detail);
+                    if (ws) errCounts[ws] = (errCounts[ws] || 0) + 1;
+                }
+                setStageErrorCounts(errCounts);
+
+                // Find terminal event in initial batch
+                const term = first.items.find((e) => isTerminalStage(e.stage));
+                if (term) setTerminalEvent(term);
+
+                // Also fetch oldest events if has_more, to capture scan.pipeline manifest
                 let startTs = earliestTs < Infinity ? earliestTs : 0;
                 let pipeline = parsePipelineManifest(first.items);
                 if (first.has_more && first.items.length > 0) {
-                    // The initial page (newest-first) won't contain the scan.pipeline event
-                    // which is emitted near the start. Fetch the first 50 events (ascending)
-                    // to capture it.
                     try {
                         const oldest = await fetchPage(null, 50, "asc");
                         if (!cancelled && oldest.items.length > 0) {
@@ -500,33 +580,27 @@ export default function ProgressGraph({
                                 const t = new Date(oldest.items[0].ts).getTime();
                                 if (t > 0) startTs = t;
                             }
-                            // Track stages from oldest events
-                            const { newSeen: oldSeen } = extractStageInfo(oldest.items, newSeen || {});
-                            if (oldSeen) setStagesSeen(oldSeen);
-                            // Look for pipeline manifest in oldest events
                             if (!pipeline) {
                                 pipeline = parsePipelineManifest(oldest.items);
                             }
-                            // Track counts from oldest events
-                            setStageCounts((prev) => {
-                                const delta = countByStage(oldest.items);
-                                const out = { ...prev };
-                                for (const [k, v] of Object.entries(delta)) out[k] = (out[k] || 0) + v;
-                                return out;
-                            });
-                            setMaxPctSeen((prev) => Math.max(prev, extractMaxPct(oldest.items)));
                         }
                     } catch {
-                        // Non-critical — use what we have
+                        // Non-critical
                     }
                 }
                 if (pipeline) setPipelineStages(pipeline);
                 if (startTs > 0) setScanStartTs(startTs);
 
-                setEventsDesc(first.items.slice(0, MAX_EVENTS));
+                // Group events by workflow stage
+                const grouped: Record<string, ProgressEvent[]> = {};
+                for (const e of first.items) {
+                    const ws = mapEventToWorkflowStage(e.stage, e.detail);
+                    if (!ws) continue;
+                    (grouped[ws] ||= []).push(e);
+                }
+                setStageEvents(grouped);
+
                 setTotalEvents(Number.isFinite(first.total) ? first.total : first.items.length);
-                setNextCursor(first.next_cursor);
-                setHasMore(first.has_more);
                 setLoading(false);
 
                 if (mode === "list") return;
@@ -574,38 +648,6 @@ export default function ProgressGraph({
         };
     }, [scanId, eventsPath, mode, fetchPage, queueEvent]);
 
-    const loadOlder = React.useCallback(async () => {
-        if (!hasMore || !nextCursor || loadingMore) return;
-        setLoadingMore(true);
-        try {
-            const page = await fetchPage(nextCursor);
-            // Track stages from older events too
-            setStagesSeen((prev) => {
-                const { newSeen } = extractStageInfo(page.items, prev);
-                return newSeen || prev;
-            });
-            setPipelineStages((prev) => prev ?? parsePipelineManifest(page.items));
-            setMaxPctSeen((prev) => Math.max(prev, extractMaxPct(page.items)));
-            setStageCounts((prev) => {
-                const delta = countByStage(page.items);
-                const out = { ...prev };
-                for (const [k, v] of Object.entries(delta)) out[k] = (out[k] || 0) + v;
-                return out;
-            });
-            setTotalErrorCount((prev) => prev + page.items.filter(isErrorEvent).length);
-            setEventsDesc((prev) => withUniqueById(prev, page.items));
-            setNextCursor(page.next_cursor);
-            setHasMore(page.has_more);
-            setTotalEvents((prev) => (prev == null ? page.total : Math.max(prev, page.total)));
-        } catch (e: unknown) {
-            setError(e instanceof Error ? e.message : String(e));
-        } finally {
-            setLoadingMore(false);
-        }
-    }, [fetchPage, hasMore, nextCursor, loadingMore]);
-
-    const eventsChrono = React.useMemo(() => [...eventsDesc].reverse(), [eventsDesc]);
-
     const progressCbRef = React.useRef<typeof onProgress | undefined>(undefined);
     React.useEffect(() => {
         progressCbRef.current = onProgress;
@@ -614,82 +656,43 @@ export default function ProgressGraph({
     const lastSentRef = React.useRef<{ pct: number; msg?: string }>({ pct: 0, msg: undefined });
     React.useEffect(() => {
         lastSentRef.current = { pct: 0, msg: undefined };
-        setSelectedTab("all");
     }, [scanId]);
 
     // Derive the overall percentage — use persistent maxPctSeen so it never decreases
     const overallPct = React.useMemo(() => {
-        let windowMax = 0;
-        for (let i = eventsChrono.length - 1; i >= 0; i--) {
-            const e = eventsChrono[i];
-            if (typeof e.pct === "number" && e.pct > windowMax) {
-                windowMax = e.pct;
-            }
-            if (isTerminalStage(e.stage)) {
-                windowMax = 100;
-                break;
-            }
-        }
-        return Math.max(0, Math.min(100, Math.max(maxPctSeen, windowMax)));
-    }, [eventsChrono, maxPctSeen]);
+        return Math.max(0, Math.min(100, maxPctSeen));
+    }, [maxPctSeen]);
 
     React.useEffect(() => {
-        if (!eventsChrono.length) return;
-
-        let latestPct = overallPct;
-        let latestMsg: string | undefined = undefined;
-
-        for (let i = eventsChrono.length - 1; i >= 0; i--) {
-            const e = eventsChrono[i];
-            if (!latestMsg && e.detail) { latestMsg = e.detail; break; }
-        }
-
-        if (latestPct >= 0) {
-            const prev = lastSentRef.current;
-            latestPct = Math.max(prev.pct, latestPct);
-            if (prev.pct !== latestPct || prev.msg !== latestMsg) {
-                lastSentRef.current = { pct: latestPct, msg: latestMsg };
-                try {
-                    progressCbRef.current?.(latestPct, latestMsg);
-                } catch {
-                    // noop
-                }
+        if (overallPct < 0) return;
+        const prev = lastSentRef.current;
+        const latestPct = Math.max(prev.pct, overallPct);
+        if (prev.pct !== latestPct) {
+            lastSentRef.current = { pct: latestPct, msg: prev.msg };
+            try {
+                progressCbRef.current?.(latestPct, prev.msg);
+            } catch {
+                // noop
             }
         }
-    }, [eventsChrono, overallPct]);
+    }, [overallPct]);
 
-    const grouped = React.useMemo(() => {
-        const out: Record<string, ProgressEvent[]> = {};
-        for (const e of eventsChrono) {
-            const stage = mapEventToWorkflowStage(e.stage, e.detail);
-            if (!stage) continue;
-            (out[stage] ||= []).push(e);
-        }
-        return out;
-    }, [eventsChrono]);
-
-    const errorCount = React.useMemo(() => eventsChrono.filter(isErrorEvent).length, [eventsChrono]);
-
-    const terminal = React.useMemo(() => {
-        return [...eventsChrono].reverse().find((e) => isTerminalStage(e.stage));
-    }, [eventsChrono]);
-
-    const terminalStage = String(terminal?.stage || "").toLowerCase();
+    const terminalStage = String(terminalEvent?.stage || "").toLowerCase();
     const isFailed = terminalStage === "scan.err" || terminalStage === "scan.error" || terminalStage === "worker.stale.fail";
     const isFinished = terminalStage === "scan.done" || terminalStage === "scan.summary";
+    const scanDone = isFailed || isFinished;
 
-    // Duration: use persistent scanStartTs instead of windowed events
-    const lastEvent = eventsChrono.length ? eventsChrono[eventsChrono.length - 1] : undefined;
-    const firstTs = scanStartTs || (eventsChrono[0]?.ts ? new Date(eventsChrono[0].ts).getTime() : 0);
-    const lastTs = lastEvent?.ts ? new Date(lastEvent.ts).getTime() : 0;
-    const effectiveLastTs = terminal ? lastTs : Math.max(lastTs, nowMs);
+    // Duration
+    const firstTs = scanStartTs;
+    const lastEventTs = terminalEvent?.ts ? new Date(terminalEvent.ts).getTime() : 0;
+    const effectiveLastTs = scanDone ? lastEventTs : Math.max(lastEventTs, nowMs);
     const durationSec = firstTs && effectiveLastTs >= firstTs ? Math.round((effectiveLastTs - firstTs) / 1000) : 0;
 
     React.useEffect(() => {
-        if (!eventsChrono.length || terminal) return;
+        if (scanDone || !firstTs) return;
         const timer = setInterval(() => setNowMs(Date.now()), 1000);
         return () => clearInterval(timer);
-    }, [eventsChrono.length, terminal]);
+    }, [scanDone, firstTs]);
 
     // Use dynamic stage order when pipeline manifest is available, else fallback
     const activeStageOrder: readonly WorkflowStageId[] = React.useMemo(() => {
@@ -703,17 +706,10 @@ export default function ProgressGraph({
         const failedIdx = activeStageOrder.indexOf("failed");
         const stageMeta = {} as Record<WorkflowStageId, { hasEvents: boolean; wasSeen: boolean; hasErr: boolean; hasExplicitSkip: boolean }>;
 
-        // Build seen indexes from persistent stagesSeen (survives event windowing)
+        // Build seen indexes from persistent stagesSeen
         const seenIndexes: number[] = [];
         for (const id of Object.keys(stagesSeen)) {
             const idx = activeStageOrder.indexOf(id as WorkflowStageId);
-            if (idx >= 0 && !seenIndexes.includes(idx)) seenIndexes.push(idx);
-        }
-        // Also include stages visible in the current event window
-        for (const e of eventsChrono) {
-            const stage = mapEventToWorkflowStage(e.stage, e.detail);
-            if (!stage) continue;
-            const idx = activeStageOrder.indexOf(stage);
             if (idx >= 0 && !seenIndexes.includes(idx)) seenIndexes.push(idx);
         }
 
@@ -722,7 +718,7 @@ export default function ProgressGraph({
 
         for (let i = 0; i < activeStageOrder.length; i++) {
             const id = activeStageOrder[i];
-            const eventsForStage = grouped[id] || [];
+            const eventsForStage = stageEvents[id] || [];
             const hasEvents = eventsForStage.length > 0;
             const wasSeen = !!stagesSeen[id] || hasEvents;
             const hasErr = eventsForStage.some(isErrorEvent);
@@ -742,14 +738,12 @@ export default function ProgressGraph({
             } else if (hasExplicitSkip && !wasSeen) {
                 status = "skipped";
             } else if (wasSeen) {
-                // Use stage ordering: stages before the last seen are done, last seen is active
-                if (terminal || i < lastSeenIndex) {
+                if (terminalEvent || i < lastSeenIndex) {
                     status = "done";
                 } else {
                     status = "active";
                 }
-            } else if (!terminal && i > firstSeenIndex && i < lastSeenIndex) {
-                // Between first and last seen but not explicitly seen — infer done from ordering
+            } else if (!terminalEvent && i > firstSeenIndex && i < lastSeenIndex) {
                 status = "done";
             }
 
@@ -757,7 +751,7 @@ export default function ProgressGraph({
         }
 
         let visibleIds: WorkflowStageId[] = [];
-        if (terminal) {
+        if (terminalEvent) {
             visibleIds = (activeStageOrder as readonly WorkflowStageId[]).filter((id) => {
                 if (id === "complete") return isFinished;
                 if (id === "failed") return isFailed;
@@ -797,49 +791,15 @@ export default function ProgressGraph({
             visibleIds,
             isFailed,
             isFinished,
-            finishedTs: terminal?.ts,
+            finishedTs: terminalEvent?.ts,
         };
-    }, [eventsChrono, grouped, terminal, isFailed, isFinished, stagesSeen, activeStageOrder]);
+    }, [stagesSeen, stageEvents, terminalEvent, isFailed, isFinished, activeStageOrder]);
 
     // Memoize column count — only changes when new stages appear
     const gridCols = React.useMemo(() => {
         const stageCount = flow.visibleIds.length;
-        // stages + arrows between them
         return Math.max(stageCount * 2 - 1, 1);
     }, [flow.visibleIds.length]);
-
-    const tabs = React.useMemo(() => {
-        const total = totalEvents ?? eventsChrono.length;
-        const out: Array<{ id: string; label: string; count: number }> = [
-            { id: "all", label: "All", count: total },
-        ];
-
-        // Use persistent stageCounts (survives event windowing) with windowed fallback
-        for (const id of activeStageOrder) {
-            const persistentCount = stageCounts[id] || 0;
-            const windowedCount = (grouped[id] || []).length;
-            const count = Math.max(persistentCount, windowedCount);
-            if (count > 0 || id === "complete" || id === "failed") {
-                out.push({ id, label: WORKFLOW_STAGE_LABELS[id] || id, count });
-            }
-        }
-
-        const errCount = Math.max(totalErrorCount, errorCount);
-        if (errCount > 0) {
-            out.push({ id: "errors", label: "Errors", count: errCount });
-        }
-
-        return out;
-    }, [eventsChrono.length, totalEvents, grouped, errorCount, stageCounts, totalErrorCount, activeStageOrder]);
-
-    React.useEffect(() => {
-        if (!tabs.find((t) => t.id === selectedTab)) setSelectedTab("all");
-    }, [tabs, selectedTab]);
-
-    // Reset visible count when tab changes
-    React.useEffect(() => {
-        setVisibleCount(VISIBLE_EVENTS);
-    }, [selectedTab]);
 
     // UIBF-01: Auto-scroll active pipeline stage into view
     const activeStageId = React.useMemo(() => {
@@ -863,7 +823,7 @@ export default function ProgressGraph({
         };
     }, []);
 
-    // UIBF-02: Detect badge container overflow (how many badges are hidden)
+    // UIBF-02: Detect badge container overflow (for pipeline stage pills overflow)
     React.useEffect(() => {
         const el = badgeContainerRef.current;
         if (!el || badgesExpanded) { setBadgeOverflowCount(0); return; }
@@ -876,18 +836,48 @@ export default function ProgressGraph({
         } else {
             setBadgeOverflowCount(0);
         }
-    }, [tabs.length, badgesExpanded]);
+    }, [flow.visibleIds.length, badgesExpanded]);
 
-    const selectedEvents = React.useMemo(() => {
-        if (selectedTab === "all") return eventsChrono;
-        if (selectedTab === "errors") return eventsChrono.filter(isErrorEvent);
-        return grouped[selectedTab] || [];
-    }, [eventsChrono, selectedTab, grouped]);
+    const totalErrorCount_val = totalErrorCount;
+    const total = totalEvents ?? 0;
 
-    // Only render up to visibleCount events
-    const visibleEvents = React.useMemo(() => {
-        return selectedEvents.slice(0, visibleCount);
-    }, [selectedEvents, visibleCount]);
+    /** Toggle accordion stage expand/collapse. */
+    function toggleStage(stageId: WorkflowStageId) {
+        setExpandedStages((prev) => {
+            const next = new Set(prev);
+            if (next.has(stageId)) {
+                next.delete(stageId);
+                setUserCollapsedStages((uc) => new Set(uc).add(stageId));
+            } else {
+                next.add(stageId);
+                setUserCollapsedStages((uc) => {
+                    const n = new Set(uc);
+                    n.delete(stageId);
+                    return n;
+                });
+            }
+            return next;
+        });
+    }
+
+    /** Handle pipeline stage bubble click — expand that stage and scroll to it. */
+    function handlePipelineStageClick(stageId: WorkflowStageId) {
+        setExpandedStages((prev) => new Set(prev).add(stageId));
+        setUserCollapsedStages((uc) => {
+            const n = new Set(uc);
+            n.delete(stageId);
+            return n;
+        });
+        // Scroll the section into view
+        sectionRefs.current[stageId]?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    // Compute accordion container height from prop
+    const accordionStyle = React.useMemo(() => {
+        if (height === "compact") return { maxHeight: "600px", overflowY: "auto" as const };
+        if (height === "viewport") return { height: "calc(100vh - 120px)", overflowY: "auto" as const };
+        return { height: `${height}px`, overflowY: "auto" as const };
+    }, [height]);
 
     if (loading) {
         return (
@@ -903,7 +893,7 @@ export default function ProgressGraph({
             </div>
         );
     }
-    if (!eventsChrono.length) {
+    if (Object.keys(stageEvents).length === 0 && !scanDone) {
         return (
             <div className="rounded-xl border border-black/10 dark:border-white/10 p-3 text-sm opacity-75">
                 No workflow events yet.
@@ -928,21 +918,6 @@ export default function ProgressGraph({
     };
 
     const workflowStateLabel = isFailed ? "Scan failed" : (isFinished ? "Scan finished" : "Scan running");
-
-    const stageTone = (id: string) => {
-        if (id === "errors") return "bg-red-600/90 text-white";
-        if (id === "all") return "bg-slate-800/90 text-white";
-        const subs = grouped[id] || [];
-        if (!subs.length) return "bg-gray-500/80 text-white";
-        const hasStart = subs.some((e) => /\.start$/i.test(e.stage) || e.stage === "scan.start");
-        const done = subs.some((e) => isTerminalStage(e.stage));
-        if (hasStart && !done) return "bg-cyan-600 text-white";
-        if (done || subs.length > 0) return "bg-emerald-600 text-white";
-        return "bg-gray-500 text-white";
-    };
-
-    const loadedEvents = eventsDesc.length;
-    const total = totalEvents ?? loadedEvents;
 
     return (
         <div className="relative rounded-2xl border border-black/10 dark:border-white/10 overflow-hidden" style={BACKDROP}>
@@ -974,7 +949,6 @@ export default function ProgressGraph({
                     <div className="rounded-lg border border-black/10 dark:border-white/10 bg-white/75 dark:bg-black/45 px-3 py-2 min-w-0">
                         <div className="text-[11px] uppercase tracking-wide opacity-70">Events</div>
                         <div className="text-xl font-semibold">{total}</div>
-                        <div className="text-[11px] opacity-70">loaded {loadedEvents} of {total}</div>
                     </div>
                     <div className="rounded-lg border border-black/10 dark:border-white/10 bg-white/75 dark:bg-black/45 px-3 py-2 min-w-0">
                         <div className="text-[11px] uppercase tracking-wide opacity-70">Duration</div>
@@ -982,7 +956,7 @@ export default function ProgressGraph({
                     </div>
                     <div className="rounded-lg border border-black/10 dark:border-white/10 bg-white/75 dark:bg-black/45 px-3 py-2 min-w-0">
                         <div className="text-[11px] uppercase tracking-wide opacity-70">Errors</div>
-                        <div className="text-xl font-semibold">{errorCount}</div>
+                        <div className="text-xl font-semibold">{totalErrorCount_val}</div>
                     </div>
                     <div className="rounded-lg border border-black/10 dark:border-white/10 bg-white/75 dark:bg-black/45 px-3 py-2 min-w-0">
                         <div className="text-[11px] uppercase tracking-wide opacity-70">Status</div>
@@ -996,6 +970,7 @@ export default function ProgressGraph({
                     </div>
                 </div>
 
+                {/* Pipeline strip */}
                 <div className="rounded-xl border border-black/10 dark:border-white/10 bg-white/75 dark:bg-black/45 p-3 min-w-0">
                     <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
                         <span className="text-[11px] uppercase tracking-wide opacity-70">Workflow Flow</span>
@@ -1028,7 +1003,12 @@ export default function ProgressGraph({
                                     const nextState = nextId ? (flow.stageStatus[nextId] || "pending") : "pending";
                                     return (
                                         <React.Fragment key={id}>
-                                            <div ref={isActive ? activeStageRef : undefined} className="min-w-0 text-center">
+                                            <div
+                                                ref={isActive ? activeStageRef : undefined}
+                                                className="min-w-0 text-center cursor-pointer"
+                                                onClick={() => handlePipelineStageClick(id)}
+                                                title={`Click to expand ${WORKFLOW_STAGE_LABELS[id] || id}`}
+                                            >
                                                 <div className={`mx-auto h-8 w-8 rounded-full border flex items-center justify-center ${flowTone(state)} ${isActive ? "stage-pulse" : ""}`}>
                                                     <StageIcon stage={id} className="h-4 w-4" />
                                                 </div>
@@ -1050,6 +1030,7 @@ export default function ProgressGraph({
                     </div>
                 </div>
 
+                {/* UIBF-02: Stage pill overflow toggle (for pipeline status pills) */}
                 <div className="flex items-center justify-between gap-2">
                     <div className="flex-1 min-w-0">
                         <div
@@ -1057,17 +1038,29 @@ export default function ProgressGraph({
                             className="flex flex-wrap items-center gap-2 pb-1"
                             style={!badgesExpanded ? { maxHeight: "4.5rem", overflow: "hidden" } : undefined}
                         >
-                            {tabs.map((t) => (
-                                <button
-                                    key={t.id}
-                                    onClick={() => setSelectedTab(t.id)}
-                                    className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap border border-black/10 dark:border-white/10 transition ${selectedTab === t.id ? stageTone(t.id) : "bg-white/80 dark:bg-black/45 hover:bg-white dark:hover:bg-black/55"}`}
-                                >
-                                    <StageIcon stage={t.id} className="h-3.5 w-3.5" />
-                                    <span>{t.label}</span>
-                                    <span className={`px-1.5 py-0.5 rounded-full ${selectedTab === t.id ? "bg-white/20" : "bg-black/10 dark:bg-white/10"}`}>{t.count}</span>
-                                </button>
-                            ))}
+                            {activeStageOrder.filter((id) => (stageCounts[id] || 0) > 0).map((id) => {
+                                const count = stageCounts[id] || 0;
+                                const errCount = stageErrorCounts[id] || 0;
+                                const isExpanded = expandedStages.has(id);
+                                return (
+                                    <button
+                                        key={id}
+                                        onClick={() => toggleStage(id)}
+                                        className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap border border-black/10 dark:border-white/10 transition ${
+                                            isExpanded
+                                                ? "bg-slate-800 text-white dark:bg-white dark:text-black"
+                                                : "bg-white/80 dark:bg-black/45 hover:bg-white dark:hover:bg-black/55"
+                                        }`}
+                                    >
+                                        <StageIcon stage={id} className="h-3.5 w-3.5" />
+                                        <span>{WORKFLOW_STAGE_LABELS[id] || id}</span>
+                                        <span className={`px-1.5 py-0.5 rounded-full ${isExpanded ? "bg-white/20" : "bg-black/10 dark:bg-white/10"}`}>{count}</span>
+                                        {errCount > 0 && (
+                                            <span className="px-1.5 py-0.5 rounded-full bg-red-600 text-white text-[10px]">{errCount} err</span>
+                                        )}
+                                    </button>
+                                );
+                            })}
                         </div>
                         {badgeOverflowCount > 0 && (
                             <button
@@ -1078,68 +1071,39 @@ export default function ProgressGraph({
                             </button>
                         )}
                     </div>
-                    {hasMore ? (
-                        <button
-                            onClick={loadOlder}
-                            disabled={loadingMore}
-                            className="shrink-0 rounded-md border border-black/20 dark:border-white/20 px-3 py-1.5 text-xs font-semibold bg-white/80 dark:bg-black/45 hover:bg-white dark:hover:bg-black/55 disabled:opacity-60"
-                        >
-                            {loadingMore ? "Loading..." : "Load older"}
-                        </button>
-                    ) : null}
                 </div>
 
-                <div className="rounded-xl border border-black/10 dark:border-white/10 bg-white/75 dark:bg-black/45 overflow-hidden">
-                    <div className="px-3 py-2 text-xs font-semibold border-b border-black/10 dark:border-white/10 flex items-center justify-between">
-                        <span>{tabs.find((t) => t.id === selectedTab)?.label || "Events"}</span>
-                        <span className="opacity-70">{selectedEvents.length} events ({visibleEvents.length} shown)</span>
+                {/* Stage-grouped accordion */}
+                <div className="rounded-xl border border-black/10 dark:border-white/10 bg-white/75 dark:bg-black/45 overflow-hidden" style={accordionStyle}>
+                    <div className="px-3 py-2 text-xs font-semibold border-b border-black/10 dark:border-white/10 flex items-center justify-between sticky top-0 bg-white/90 dark:bg-black/70 backdrop-blur z-10">
+                        <span>Scan Log</span>
+                        <span className="opacity-70">{total.toLocaleString()} events</span>
                     </div>
-                    <div className="max-h-80 overflow-auto">
-                        <table className="w-full text-xs">
-                            <thead className="sticky top-0 bg-black/[.06] dark:bg-white/[.06] backdrop-blur">
-                                <tr>
-                                    <th className="p-2 text-left w-[90px]">ID</th>
-                                    <th className="p-2 text-left w-[125px]">Time</th>
-                                    <th className="p-2 text-left w-[280px]">Stage</th>
-                                    <th className="p-2 text-left w-[70px]">Pct</th>
-                                    <th className="p-2 text-left">Detail</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {visibleEvents.map((e, idx) => {
-                                    const errRow = isErrorEvent(e);
-                                    const mappedStage = mapEventToWorkflowStage(e.stage, e.detail) || "all";
-                                    return (
-                                        <tr key={`${e.id || 0}-${e.ts || idx}-${idx}`} className={`border-t border-black/5 dark:border-white/5 ${errRow ? "bg-red-500/10" : ""}`}>
-                                            <td className="p-2 font-mono text-[11px] opacity-75">{e.id || ""}</td>
-                                            <td className="p-2 whitespace-nowrap opacity-75">{e.ts ? new Date(e.ts).toLocaleTimeString() : ""}</td>
-                                            <td className="p-2 font-medium">
-                                                <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md border border-black/10 dark:border-white/10 ${errRow ? "bg-red-600/20" : "bg-black/5 dark:bg-white/10"}`}>
-                                                    <StageIcon stage={mappedStage} className="h-3.5 w-3.5" />
-                                                    {e.stage}
-                                                </span>
-                                            </td>
-                                            <td className="p-2 opacity-80">{typeof e.pct === "number" ? `${e.pct}%` : ""}</td>
-                                            <td className="p-2 opacity-90 break-words">{e.detail || ""}</td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                        {visibleEvents.length === 0 && (
-                            <div className="px-3 py-6 text-sm opacity-70">No events in this tab.</div>
-                        )}
-                        {visibleEvents.length < selectedEvents.length && (
-                            <div className="px-3 py-3 text-center">
-                                <button
-                                    onClick={() => setVisibleCount((c) => c + VISIBLE_EVENTS)}
-                                    className="text-xs font-semibold px-4 py-1.5 rounded-md border border-black/20 dark:border-white/20 bg-white/80 dark:bg-black/45 hover:bg-white dark:hover:bg-black/55"
-                                >
-                                    Show more ({selectedEvents.length - visibleEvents.length} remaining)
-                                </button>
+                    {activeStageOrder
+                        .filter((id) => (stageCounts[id] || 0) > 0)
+                        .map((id) => (
+                            <div
+                                key={id}
+                                ref={(el) => { sectionRefs.current[id] = el; }}
+                            >
+                                <StageAccordionSection
+                                    stageId={id}
+                                    label={WORKFLOW_STAGE_LABELS[id] || id}
+                                    totalCount={stageCounts[id] || 0}
+                                    errorCount={stageErrorCounts[id] || 0}
+                                    firstTs={stageFirstTs[id]}
+                                    lastTs={stageLastTs[id]}
+                                    scanId={scanId}
+                                    expanded={expandedStages.has(id)}
+                                    onToggle={() => toggleStage(id)}
+                                    initialEvents={stageEvents[id] || []}
+                                    isLive={!scanDone && activeStage === id}
+                                />
                             </div>
-                        )}
-                    </div>
+                        ))}
+                    {Object.keys(stageEvents).length === 0 && (
+                        <div className="px-3 py-6 text-sm opacity-70 text-center">No workflow events yet.</div>
+                    )}
                 </div>
             </div>
         </div>
