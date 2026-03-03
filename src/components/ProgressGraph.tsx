@@ -475,25 +475,42 @@ export default function ProgressGraph({
                 setStageCounts(countByStage(first.items));
                 setTotalErrorCount(first.items.filter(isErrorEvent).length);
 
-                // If we have all events, use the earliest. Otherwise fetch the first event.
+                // If we have all events, use the earliest. Otherwise fetch the oldest batch
+                // to find the scan.pipeline manifest and earliest timestamp.
                 let startTs = earliestTs < Infinity ? earliestTs : 0;
+                let pipeline = parsePipelineManifest(first.items);
                 if (first.has_more && first.items.length > 0) {
-                    // The initial page doesn't contain the oldest events — fetch event #1
+                    // The initial page (newest-first) won't contain the scan.pipeline event
+                    // which is emitted near the start. Fetch the first 50 events (ascending)
+                    // to capture it.
                     try {
-                        const oldest = await fetchPage(null, 1, "asc");
-                        if (!cancelled && oldest.items.length > 0 && oldest.items[0].ts) {
-                            const t = new Date(oldest.items[0].ts).getTime();
-                            if (t > 0) startTs = t;
-                        }
-                        // Also track stages from the oldest event
+                        const oldest = await fetchPage(null, 50, "asc");
                         if (!cancelled && oldest.items.length > 0) {
+                            if (oldest.items[0].ts) {
+                                const t = new Date(oldest.items[0].ts).getTime();
+                                if (t > 0) startTs = t;
+                            }
+                            // Track stages from oldest events
                             const { newSeen: oldSeen } = extractStageInfo(oldest.items, newSeen || {});
                             if (oldSeen) setStagesSeen(oldSeen);
+                            // Look for pipeline manifest in oldest events
+                            if (!pipeline) {
+                                pipeline = parsePipelineManifest(oldest.items);
+                            }
+                            // Track counts from oldest events
+                            setStageCounts((prev) => {
+                                const delta = countByStage(oldest.items);
+                                const out = { ...prev };
+                                for (const [k, v] of Object.entries(delta)) out[k] = (out[k] || 0) + v;
+                                return out;
+                            });
+                            setMaxPctSeen((prev) => Math.max(prev, extractMaxPct(oldest.items)));
                         }
                     } catch {
                         // Non-critical — use what we have
                     }
                 }
+                if (pipeline) setPipelineStages(pipeline);
                 if (startTs > 0) setScanStartTs(startTs);
 
                 setEventsDesc(first.items.slice(0, MAX_EVENTS));
