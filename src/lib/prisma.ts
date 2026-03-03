@@ -829,6 +829,36 @@ END$$;
     await ensureDefaultOrgAndBackfill();
     await ensureAdminContentSeeds();
     await ensureStarterTargetAccounts();
+
+    // ---------------------------------------------------------------
+    // pg_cron retention — removes scan_events older than 30 days for
+    // completed jobs. Runs daily at 03:00 UTC. Safe to re-run:
+    // cron.schedule() with same name updates the existing job.
+    //
+    // Observability: run this query to check scan_events table size:
+    // SELECT pg_size_pretty(pg_total_relation_size('scan_events')) AS table_size,
+    //        COUNT(*) AS row_count FROM scan_events;
+    // ---------------------------------------------------------------
+    try {
+        await prisma.$executeRawUnsafe(`CREATE EXTENSION IF NOT EXISTS pg_cron;`);
+        await prisma.$executeRawUnsafe(`
+            SELECT cron.schedule(
+                'scan-events-retention',
+                '0 3 * * *',
+                $$
+                    DELETE FROM scan_events
+                    WHERE ts < now() - INTERVAL '30 days'
+                      AND job_id IN (
+                        SELECT id FROM scan_jobs
+                        WHERE status IN ('done', 'failed')
+                      )
+                $$
+            );
+        `);
+    } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : String(e);
+        console.warn('[prisma] pg_cron not available — retention job not scheduled:', msg);
+    }
 }
 
 export async function ensurePlatformSchema() {
