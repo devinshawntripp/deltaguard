@@ -1051,18 +1051,32 @@ export default function ProgressGraph({
                 </div>
 
                 <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 overflow-x-auto pb-1">
-                        {tabs.map((t) => (
+                    <div className="flex-1 min-w-0">
+                        <div
+                            ref={badgeContainerRef}
+                            className="flex flex-wrap items-center gap-2 pb-1"
+                            style={!badgesExpanded ? { maxHeight: "4.5rem", overflow: "hidden" } : undefined}
+                        >
+                            {tabs.map((t) => (
+                                <button
+                                    key={t.id}
+                                    onClick={() => setSelectedTab(t.id)}
+                                    className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap border border-black/10 dark:border-white/10 transition ${selectedTab === t.id ? stageTone(t.id) : "bg-white/80 dark:bg-black/45 hover:bg-white dark:hover:bg-black/55"}`}
+                                >
+                                    <StageIcon stage={t.id} className="h-3.5 w-3.5" />
+                                    <span>{t.label}</span>
+                                    <span className={`px-1.5 py-0.5 rounded-full ${selectedTab === t.id ? "bg-white/20" : "bg-black/10 dark:bg-white/10"}`}>{t.count}</span>
+                                </button>
+                            ))}
+                        </div>
+                        {badgeOverflowCount > 0 && (
                             <button
-                                key={t.id}
-                                onClick={() => setSelectedTab(t.id)}
-                                className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap border border-black/10 dark:border-white/10 transition ${selectedTab === t.id ? stageTone(t.id) : "bg-white/80 dark:bg-black/45 hover:bg-white dark:hover:bg-black/55"}`}
+                                onClick={() => setBadgesExpanded((e) => !e)}
+                                className="mt-1 text-xs font-semibold px-2.5 py-1 rounded-full border border-black/20 dark:border-white/20 bg-white/80 dark:bg-black/45 hover:bg-white dark:hover:bg-black/55"
                             >
-                                <StageIcon stage={t.id} className="h-3.5 w-3.5" />
-                                <span>{t.label}</span>
-                                <span className={`px-1.5 py-0.5 rounded-full ${selectedTab === t.id ? "bg-white/20" : "bg-black/10 dark:bg-white/10"}`}>{t.count}</span>
+                                {badgesExpanded ? "Show less" : `+${badgeOverflowCount} more`}
                             </button>
-                        ))}
+                        )}
                     </div>
                     {hasMore ? (
                         <button

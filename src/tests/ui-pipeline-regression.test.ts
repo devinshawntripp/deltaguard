@@ -28,3 +28,18 @@ test("UIBF-01: Pipeline grid columns have minimum width", () => {
     "Pipeline grid columns must use minmax(60px, ...) to prevent text collapse"
   );
 });
+
+test("UIBF-02: Badge container uses flex-wrap (not overflow-x-auto for badges)", () => {
+  // The badge section should use flex-wrap, and the only overflow-x-auto should be on the pipeline
+  assert.ok(
+    progressGraphSrc.includes("flex-wrap"),
+    "ProgressGraph must use flex-wrap for badge/tab container"
+  );
+});
+
+test("UIBF-02: Badge container has collapse toggle", () => {
+  assert.ok(
+    progressGraphSrc.includes("more") && progressGraphSrc.includes("badgesExpanded"),
+    "ProgressGraph must have a +N more / Show less collapse toggle for badges"
+  );
+});
