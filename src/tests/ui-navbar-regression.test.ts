@@ -18,6 +18,11 @@ const docsLayoutSrc = readFileSync(
     "utf-8"
 );
 
+const dashboardLayoutSrc = readFileSync(
+    path.join(process.cwd(), "src/app/(dashboard)/layout.tsx"),
+    "utf-8"
+);
+
 test("UIBF-04: PublicSiteShell calls getServerSession for auth-aware navbar", () => {
     assert.ok(
         publicShellSrc.includes("getServerSession"),
@@ -58,5 +63,12 @@ test("UIBF-03/04: DocsLayout is NOT a client component (allows server PublicSite
     assert.ok(
         !docsLayoutSrc.includes('"use client"'),
         "DocsLayout must be a server component so PublicSiteShell can call getServerSession"
+    );
+});
+
+test("UIBF-03: Dashboard layout uses DashboardNavClient", () => {
+    assert.ok(
+        dashboardLayoutSrc.includes("DashboardNavClient"),
+        "Dashboard layout must use DashboardNavClient component for mobile nav"
     );
 });
