@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import ProgressGraph from "@/components/ProgressGraph";
 import JobLiveStatus from "@/components/JobLiveStatus";
+import LogViewerSection from "./LogViewerSection";
 import { getJob } from "@/lib/jobs";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
@@ -27,13 +27,11 @@ export default async function PackageDetails({ params }: { params: Promise<{ id:
     }
     return (
         <div className="grid gap-6">
-            <div className="grid gap-2">
-                <div className="font-medium">Workflow</div>
-                <ProgressGraph scanId={id} eventsPath={`/api/jobs/${id}/events`} />
-            </div>
+            <LogViewerSection scanId={id} />
             <div className="flex items-center justify-between">
                 <Link href="/dashboard" className="text-sm underline">← Back</Link>
                 <div className="flex items-center gap-3 text-sm">
+                    <Link href={`/dashboard/${id}/logs`} className="underline">Logs</Link>
                     <Link href={`/dashboard/${id}/findings`} className="underline">Findings</Link>
                     <Link href={`/dashboard/${id}/files`} className="underline">File tree</Link>
                 </div>

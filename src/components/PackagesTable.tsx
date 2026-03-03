@@ -219,6 +219,7 @@ export default function PackagesTable() {
                           scanId={j.id}
                           eventsPath={`/api/jobs/${j.id}/events`}
                           mode={isActive ? "stream" : "list"}
+                          height={250}
                           onProgress={(p, m) => {
                             setList((prev) => prev.map((x) => x.id === j.id ? { ...x, progress_pct: Math.max(x.progress_pct || 0, p), progress_msg: m || x.progress_msg } : x));
                           }}
