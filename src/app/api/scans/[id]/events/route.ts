@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { JOB_READ_ROLES, requireRequestActor } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
+import { jobEventsBus } from "@/lib/jobEventsBus";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -13,8 +14,6 @@ function sseHeaders() {
         "X-Accel-Buffering": "no",
     });
 }
-
-type EventRow = { id: number | bigint; ts: string; stage: string; detail?: string | null; pct?: number | null };
 
 const TERMINAL_STAGES = new Set(["scan.done", "scan.summary", "scan.error", "scan.err", "worker.stale.fail"]);
 
@@ -45,79 +44,41 @@ LIMIT 1
 
     const encoder = new TextEncoder();
     let closed = false;
-    let pgClient: any = null;
+    let unsubscribe: (() => void) | null = null;
+
+    const lastEventId = req.headers.get("Last-Event-ID");
+    const sinceId = lastEventId ? parseInt(lastEventId, 10) : undefined;
 
     const stream = new ReadableStream<Uint8Array>({
-        start: async (controller) => {
-            let lastId = 0;
-
-            const sendBacklog = async () => {
-                try {
-                    const backlog = await prisma.$queryRaw<EventRow[]>`
-SELECT id, ts::text, stage, detail, pct
-FROM scan_events
-WHERE job_id=${scanId}::uuid AND id > ${lastId}::bigint
-ORDER BY id ASC
-LIMIT 500
-                    `;
-                    for (const r of backlog) {
-                        const rowId = typeof r.id === "bigint" ? Number(r.id) : Number(r.id);
-                        if (rowId > lastId) lastId = rowId;
-                        controller.enqueue(encoder.encode(`data: ${JSON.stringify(r)}\n\n`));
-                        if (TERMINAL_STAGES.has(String(r.stage).toLowerCase().trim())) {
-                            closed = true;
-                            controller.close();
-                            return;
-                        }
-                    }
-                } catch { }
-            };
-
+        async start(controller) {
             controller.enqueue(encoder.encode(`: ping\n\n`));
-            await sendBacklog();
-            if (closed) return;
 
-            // Listen for new scan_events via PG NOTIFY
-            try {
-                const pg = await import("pg");
-                pgClient = new pg.Client({ connectionString: process.env.DATABASE_URL });
-                await pgClient.connect();
-                await pgClient.query("LISTEN scan_events");
+            unsubscribe = await jobEventsBus.subscribe(scanId, (row) => {
+                if (closed) return;
+                try {
+                    controller.enqueue(encoder.encode(
+                        `id: ${row.id}\ndata: ${JSON.stringify(row)}\n\n`
+                    ));
+                } catch {
+                    closed = true;
+                }
+                if (TERMINAL_STAGES.has(String(row.stage).toLowerCase().trim())) {
+                    closed = true;
+                    try { controller.close(); } catch {}
+                    unsubscribe?.();
+                }
+            }, { sinceId });
 
-                pgClient.on("notification", (msg: any) => {
-                    if (closed) return;
-                    if (msg.channel === "scan_events" && msg.payload === scanId) {
-                        sendBacklog().catch(() => {});
-                    }
-                });
-
-                pgClient.on("error", () => {
-                    if (!closed) {
-                        closed = true;
-                        try { controller.close(); } catch { }
-                    }
-                });
-            } catch {
-                // If PG LISTEN fails, close the stream — client will reconnect
-                closed = true;
-                try { controller.close(); } catch { }
-            }
-
-            // Heartbeat to keep connection alive
+            // Heartbeat (15s interval — keeps connection alive through proxies)
             const hb = setInterval(() => {
                 if (closed) { clearInterval(hb); return; }
-                try { controller.enqueue(encoder.encode(`: ping\n\n`)); } catch { closed = true; clearInterval(hb); }
+                try { controller.enqueue(encoder.encode(`: ping\n\n`)); }
+                catch { closed = true; clearInterval(hb); }
             }, 15000);
-
-            (controller as any).onCancel = () => {
-                closed = true;
-                clearInterval(hb);
-                try { pgClient?.end(); } catch { }
-            };
         },
         cancel() {
             closed = true;
-            try { pgClient?.end(); } catch { }
+            unsubscribe?.();
         },
     });
 
