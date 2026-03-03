@@ -865,16 +865,27 @@ export default function ProgressGraph({
         });
     }
 
-    /** Handle pipeline stage bubble click — expand that stage and scroll to it. */
+    /** Handle pipeline stage bubble click — single-select: collapse others, expand clicked, scroll to tail. */
     function handlePipelineStageClick(stageId: WorkflowStageId) {
-        setExpandedStages((prev) => new Set(prev).add(stageId));
+        // Single-select: collapse all others, only expand clicked stage
+        setExpandedStages(new Set([stageId]));
         setUserCollapsedStages((uc) => {
             const n = new Set(uc);
             n.delete(stageId);
             return n;
         });
-        // Scroll the section into view
-        sectionRefs.current[stageId]?.scrollIntoView({ behavior: "smooth", block: "start" });
+        // After React renders the expanded section, scroll into view and show tail end of logs
+        setTimeout(() => {
+            const sectionEl = sectionRefs.current[stageId];
+            if (sectionEl) {
+                sectionEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+                // Scroll inner events container to bottom to show latest logs
+                const eventsContainer = sectionEl.querySelector<HTMLDivElement>("[data-events-scroll]");
+                if (eventsContainer) {
+                    eventsContainer.scrollTop = eventsContainer.scrollHeight;
+                }
+            }
+        }, 150);
     }
 
     // Compute accordion container height from prop

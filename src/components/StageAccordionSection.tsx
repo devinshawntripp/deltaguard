@@ -320,6 +320,7 @@ export default function StageAccordionSection({
             {expanded && (
                 <div
                     ref={parentRef}
+                    data-events-scroll
                     className="overflow-y-auto"
                     style={{ height: "300px" }}
                     onScroll={handleScroll}
