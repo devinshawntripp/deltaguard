@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.10
 milestone_name: milestone
 status: executing
-stopped_at: Completed 07-03-PLAN.md (blog related posts sidebar)
-last_updated: "2026-03-04T16:26:39.848Z"
+stopped_at: Completed 07-04-PLAN.md (benchmark data updated)
+last_updated: "2026-03-04T16:40:16.614Z"
 last_activity: 2026-03-04 — Plan 05-02 complete (vulndb-pg-import.py schema verification)
 progress:
   total_phases: 9
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 22
-  completed_plans: 14
+  completed_plans: 15
   percent: 90
 ---
 
@@ -63,6 +63,7 @@ Progress: [###########░] 90%
 | Phase 07-testing-docs-benchmarks P02 | 3 | 2 tasks | 4 files |
 | Phase 07-testing-docs-benchmarks P01 | 4 | 2 tasks | 9 files |
 | Phase 07-testing-docs-benchmarks P03 | 5 | 2 tasks | 5 files |
+| Phase 07-testing-docs-benchmarks P04 | 19 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -115,6 +116,8 @@ Recent decisions affecting current work:
 - [Phase 07-01]: Playwright auth uses input[name] selectors (more reliable than getByLabel for SignInForm's non-labelled inputs)
 - [Phase 07-testing-docs-benchmarks]: Split BlogRelatedPosts into mobile/desktop exports for DOM order control in blog layout
 - [Phase 07-testing-docs-benchmarks]: BlogLayoutClient uses usePathname() to look up current post category from shared posts array for sidebar wiring
+- [Phase 07-testing-docs-benchmarks]: Use warm-cache (second-run) timings for published benchmarks — matches methodology section of docs/benchmarks page
+- [Phase 07-testing-docs-benchmarks]: Benchmark pages: rocky linux 9 findings decrease from 481 to 436 is RHEL dedup improvement (Phase 4), not a regression
 
 ### Pending Todos
 
@@ -129,6 +132,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-04T16:26:39.846Z
-Stopped at: Completed 07-03-PLAN.md (blog related posts sidebar)
+Last session: 2026-03-04T16:40:16.612Z
+Stopped at: Completed 07-04-PLAN.md (benchmark data updated)
 Resume file: None
