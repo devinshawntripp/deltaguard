@@ -33,7 +33,7 @@ spec:
             value: "1"
       containers:
         - name: worker
-          image: devintripp/rust-scanner-worker:v1.9.2
+          image: devintripp/rust-scanner-worker:v1.10.2
           imagePullPolicy: Always
           securityContext:
             allowPrivilegeEscalation: false
@@ -57,7 +57,7 @@ spec:
             - name: SCRATCH_DIR
               value: /scratch
             - name: SCANNER_PATH
-              value: /usr/local/bin/scanner
+              value: /usr/local/bin/scanrook
             - name: SCANNER_FORCE_IPV4
               value: "true"
             - name: SCANNER_OSV_TIMEOUT_SECS
