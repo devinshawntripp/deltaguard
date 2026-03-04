@@ -103,7 +103,11 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. `scanrook db fetch` downloads and opens the vulndb SQLite file without errors — auto-detects gzip vs raw SQLite by checking magic bytes
   2. The scanner can query the fetched database for vulnerability lookups after download
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 06-01-PLAN.md — Scanner v1.10.2 release (version bump, CHANGELOG, tag, CI) (INFR-02)
+- [ ] 06-02-PLAN.md — Docker image builds + K8s deployment + manifest updates (INFR-02)
+- [ ] 06-03-PLAN.md — Scanner version verification + API-driven smoke test + user verification (INFR-03)
 
 ### Phase 5.2: UI Navigation Regressions
 **Goal**: Public site navigation works correctly for both authenticated and unauthenticated users without unexpected redirects
@@ -119,14 +123,18 @@ Plans:
 - [ ] 05.2-01-PLAN.md — Remove home page auth redirect + conditional CTA + public page audit
 
 ### Phase 6: Cluster Deployment
-**Goal**: The updated scanner, worker, and database changes are deployed to the Kubernetes cluster and the v1.10.0 release is verified running in production
+**Goal**: The updated scanner, worker, and UI are deployed to the Kubernetes cluster as a unified v1.10.2 release and verified end-to-end
 **Depends on**: Phases 1, 4, 5 (all backend changes must be complete before deployment)
 **Requirements**: INFR-02, INFR-03
 **Success Criteria** (what must be TRUE):
-  1. New worker and scanner images are deployed to the deltaguard namespace — `kubectl rollout status` reports all pods healthy
-  2. Running `kubectl exec` against a worker pod and invoking the scanner binary outputs `1.10.0` — version skew confirmed absent
+  1. New worker and UI images are deployed to the scanrook namespace — `kubectl rollout status` reports all pods healthy
+  2. Running `kubectl exec` against a worker pod and invoking the scanner binary outputs `1.10.2` — version skew confirmed absent
   3. A real scan job submitted via the UI completes end-to-end (upload → progress stream → findings) without errors in a post-deployment smoke test
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 06-01-PLAN.md — Scanner v1.10.2 release (version bump, CHANGELOG, tag, CI) (INFR-02)
+- [ ] 06-02-PLAN.md — Docker image builds + K8s deployment + manifest updates (INFR-02)
+- [ ] 06-03-PLAN.md — Scanner version verification + API-driven smoke test + user verification (INFR-03)
 
 ### Phase 7: Testing, Docs & Benchmarks
 **Goal**: Critical user paths are protected by Playwright E2E tests, CPE documentation is published, the blog sidebar is live, and end-to-end benchmarks confirm no regressions
@@ -160,5 +168,5 @@ Note: Phase 2 can begin immediately. Phases 1, 2, and 4 can run in parallel wher
 | 5. Worker Hardening | 2/2 | Complete   | 2026-03-04 |
 | 5.1 Scanner DB Fetch Fix | 0/TBD | Not started | - |
 | 5.2 UI Navigation Regressions | 0/1 | Not started | - |
-| 6. Cluster Deployment | 0/TBD | Not started | - |
+| 6. Cluster Deployment | 0/3 | Not started | - |
 | 7. Testing, Docs & Benchmarks | 4/4 | Complete   | 2026-03-04 |
