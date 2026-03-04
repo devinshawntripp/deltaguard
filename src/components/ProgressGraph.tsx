@@ -978,7 +978,7 @@ export default function ProgressGraph({
                         <div className="text-[11px] uppercase tracking-wide opacity-70">Status</div>
                         <div className="flex items-center gap-1.5 text-base font-semibold min-w-0">
                             <StageIcon stage={isFailed ? "failed" : "complete"} className="h-4 w-4" />
-                            <span className="truncate">{workflowStateLabel}</span>
+                            <span className="truncate" title={workflowStateLabel}>{workflowStateLabel}</span>
                         </div>
                         <div className="text-[11px] opacity-70 truncate">
                             {flow.finishedTs ? `Updated ${new Date(flow.finishedTs).toLocaleTimeString()}` : "Awaiting completion event"}
@@ -998,7 +998,7 @@ export default function ProgressGraph({
                                     : "bg-cyan-600 text-white border-cyan-700"
                         }`}>
                             <StageIcon stage={isFailed ? "failed" : "complete"} className="h-3.5 w-3.5" />
-                            <span className="truncate">{workflowStateLabel}</span>
+                            <span className="truncate" title={workflowStateLabel}>{workflowStateLabel}</span>
                             {flow.finishedTs ? <span className="opacity-85 truncate">{new Date(flow.finishedTs).toLocaleTimeString()}</span> : null}
                         </span>
                     </div>
@@ -1030,7 +1030,7 @@ export default function ProgressGraph({
                                                 </div>
                                                 <div className="text-[9px] uppercase opacity-60 mt-1">Step {idx + 1}</div>
                                                 <div className="mt-1 text-[10px] font-semibold leading-tight break-words px-1">{WORKFLOW_STAGE_LABELS[id]}</div>
-                                                <div className="text-[9px] opacity-70 truncate px-1">{flowLabel(state)}</div>
+                                                <div className="text-[9px] opacity-70 truncate px-1" title={flowLabel(state)}>{flowLabel(state)}</div>
                                             </div>
                                             {idx < flow.visibleIds.length - 1 && (
                                                 <ArrowConnector from={state} to={nextState} />

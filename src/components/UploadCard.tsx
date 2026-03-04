@@ -22,6 +22,11 @@ export default function UploadCard() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!file) return;
+    const MAX_SIZE = 15 * 1024 * 1024 * 1024; // 15 GiB
+    if (file.size > MAX_SIZE) {
+      setMessage("File exceeds 15 GB limit");
+      return;
+    }
     setLoading(true);
     setMessage(null);
 
@@ -163,6 +168,7 @@ export default function UploadCard() {
           onChange={(e) => setFile(e.target.files?.[0] ?? null)}
           className="block w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-md file:border file:border-transparent file:text-sm file:font-semibold file:bg-teal-700 file:text-white hover:file:bg-teal-800"
         />
+        <span className="text-[11px] muted mt-1 block">Max file size: 15 GB</span>
       </label>
       <div className="flex items-center gap-3">
         <button disabled={!file || loading} className="btn-primary inline-flex items-center justify-center gap-2 disabled:pointer-events-none">

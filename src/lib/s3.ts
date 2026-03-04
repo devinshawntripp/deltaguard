@@ -42,7 +42,7 @@ export async function uploadBufferToS3(args: {
     await s3.send(cmd);
 }
 
-const MAX_UPLOAD_BYTES = 10 * 1024 * 1024 * 1024; // 10 GiB
+const MAX_UPLOAD_BYTES = 15 * 1024 * 1024 * 1024; // 15 GiB
 
 export async function presignPost(args: { bucket: string; key: string; contentType?: string; expiresSeconds?: number }) {
     const conditions: any[] = [["content-length-range", 0, MAX_UPLOAD_BYTES]];

@@ -293,7 +293,7 @@ export default function StageAccordionSection({
                 aria-expanded={expanded}
             >
                 <ChevronIcon expanded={expanded} />
-                <span className="font-semibold text-sm truncate flex-1">
+                <span className="font-semibold text-sm truncate flex-1" title={label}>
                     {label}
                 </span>
                 <span className="text-xs opacity-60 shrink-0">
@@ -406,12 +406,12 @@ export default function StageAccordionSection({
                                             </button>
                                         ) : (
                                             <>
-                                                <span className="font-mono text-[10px] opacity-40 w-[60px] shrink-0 truncate">
+                                                <span className="font-mono text-[10px] opacity-40 w-[60px] shrink-0 truncate" title={row.event.ts ? formatTs(row.event.ts) : ""}>
                                                     {row.event.ts
                                                         ? formatTs(row.event.ts)
                                                         : ""}
                                                 </span>
-                                                <span className="font-mono text-[11px] opacity-70 w-[140px] shrink-0 truncate">
+                                                <span className="font-mono text-[11px] opacity-70 w-[140px] shrink-0 truncate" title={row.event.stage}>
                                                     {row.event.stage}
                                                 </span>
                                                 {typeof row.event.pct ===
