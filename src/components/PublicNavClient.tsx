@@ -10,7 +10,6 @@ export default function PublicNavClient({ isSignedIn }: { isSignedIn: boolean })
 
     const navLinks = (
         <>
-            <Link href="/" className="app-nav-link">Home</Link>
             <Link href="/docs" className="app-nav-link">Docs</Link>
             <Link href="/roadmap" className="app-nav-link">Roadmap</Link>
             <Link href="/blog" className="app-nav-link">Blog</Link>
