@@ -59,7 +59,7 @@ spec:
             - name: SCANNER_PATH
               value: /usr/local/bin/scanrook
             - name: SCANROOK_VERSION
-              value: "v1.10.2"
+              value: "1.10.2"
             - name: SCANNER_FORCE_IPV4
               value: "true"
             - name: SCANNER_OSV_TIMEOUT_SECS
