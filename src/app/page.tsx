@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { APP_DESCRIPTION } from "@/lib/brand";
@@ -11,9 +10,7 @@ export const dynamic = "force-dynamic";
 
 export default async function Home() {
   const session = await getServerSession(authOptions);
-  if (session?.user?.id && !session.revoked) {
-    redirect("/dashboard");
-  }
+  const isSignedIn = !!(session?.user?.id && !session.revoked);
 
   const installCmd = "curl -fsSL https://scanrook.sh/install | bash";
   const authCmd = "scanrook auth login --base https://scanrook.io";
@@ -31,7 +28,11 @@ export default async function Home() {
           </h1>
           <p className="text-base muted max-w-3xl">{APP_DESCRIPTION}</p>
           <div className="flex flex-wrap gap-3 pt-1">
-            <Link href="/signin" className="btn-primary">Sign in</Link>
+            {isSignedIn ? (
+              <Link href="/dashboard" className="btn-primary">Go to Dashboard</Link>
+            ) : (
+              <Link href="/signin" className="btn-primary">Sign in</Link>
+            )}
             <Link href="/docs" className="btn-secondary">Docs</Link>
             <Link href="/blog/what-is-sbom-and-how-scanrook-uses-it" className="btn-secondary">SBOM guide</Link>
             <a href="https://scanrook.sh" className="btn-secondary">CLI home</a>
@@ -73,4 +74,3 @@ export default async function Home() {
     </PublicSiteShell>
   );
 }
-
