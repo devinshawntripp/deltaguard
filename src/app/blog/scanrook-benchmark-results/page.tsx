@@ -137,7 +137,7 @@ export default function ScanRookBenchmarkResultsPage() {
                   <td className="py-3 pr-4 text-xs">7</td>
                   <td className="py-3 pr-4 text-xs">0.1s</td>
                   <td className="py-3 pr-4 text-xs">0</td>
-                  <td className="py-3 pr-4 text-xs">1.1s</td>
+                  <td className="py-3 pr-4 text-xs">1.3s</td>
                   <td className="py-3 pr-4 text-xs">4</td>
                 </tr>
                 <tr className="border-b border-black/5 dark:border-white/5">
