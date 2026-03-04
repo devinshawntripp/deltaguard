@@ -45,3 +45,6 @@ next-env.d.ts
 
 /var/uploads
 /tmp/deltaguardCLAUDE.md
+
+# Python cache
+__pycache__/
