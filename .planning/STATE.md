@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.10
 milestone_name: milestone
 status: executing
-stopped_at: Completed 07-04-PLAN.md (benchmark data updated)
-last_updated: "2026-03-04T16:40:16.614Z"
+stopped_at: Completed 06-03-PLAN.md (v1.10.2 smoke test acceptance)
+last_updated: "2026-03-04T18:21:54.566Z"
 last_activity: 2026-03-04 — Plan 05-02 complete (vulndb-pg-import.py schema verification)
 progress:
   total_phases: 9
-  completed_phases: 5
-  total_plans: 22
-  completed_plans: 15
+  completed_phases: 1
+  total_plans: 4
+  completed_plans: 5
   percent: 90
 ---
 
@@ -64,6 +64,7 @@ Progress: [###########░] 90%
 | Phase 07-testing-docs-benchmarks P01 | 4 | 2 tasks | 9 files |
 | Phase 07-testing-docs-benchmarks P03 | 5 | 2 tasks | 5 files |
 | Phase 07-testing-docs-benchmarks P04 | 19 | 2 tasks | 2 files |
+| Phase 06-cluster-deployment P03 | 7 | 2 tasks | 0 files |
 
 ## Accumulated Context
 
@@ -118,6 +119,9 @@ Recent decisions affecting current work:
 - [Phase 07-testing-docs-benchmarks]: BlogLayoutClient uses usePathname() to look up current post category from shared posts array for sidebar wiring
 - [Phase 07-testing-docs-benchmarks]: Use warm-cache (second-run) timings for published benchmarks — matches methodology section of docs/benchmarks page
 - [Phase 07-testing-docs-benchmarks]: Benchmark pages: rocky linux 9 findings decrease from 481 to 436 is RHEL dedup improvement (Phase 4), not a regression
+- [Phase 06-cluster-deployment]: DB insert for smoke test API key used web pod node.js since pg-shared-rw connection timed out from bastion
+- [Phase 06-cluster-deployment]: debian:buster image tar used for smoke test — produces 1127 findings proving full scan pipeline in ~25 seconds
+- [Phase 06-cluster-deployment]: Task 2 human-verify checkpoint auto-approved per --auto mode — API smoke test comprehensively proved end-to-end pipeline
 
 ### Pending Todos
 
@@ -132,6 +136,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-04T16:40:16.612Z
-Stopped at: Completed 07-04-PLAN.md (benchmark data updated)
+Last session: 2026-03-04T18:21:54.564Z
+Stopped at: Completed 06-03-PLAN.md (v1.10.2 smoke test acceptance)
 Resume file: None
