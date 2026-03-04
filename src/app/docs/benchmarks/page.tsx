@@ -8,16 +8,16 @@ export const metadata: Metadata = {
 };
 
 const benchmarks = [
-  { image: "alpine:3.20", size: "8.7 MB", sr: { time: "0.04s", findings: 7 }, trivy: { time: "0.1s", findings: 0 }, grype: { time: "1.3s", findings: 4 } },
-  { image: "debian:12", size: "137 MB", sr: { time: "1.4s", findings: 196 }, trivy: { time: "0.2s", findings: 92 }, grype: { time: "1.2s", findings: 86 } },
-  { image: "ubuntu:24.04", size: "98 MB", sr: { time: "1.3s", findings: 174 }, trivy: { time: "0.1s", findings: 13 }, grype: { time: "1.0s", findings: 26 } },
-  { image: "rockylinux:9", size: "189 MB", sr: { time: "1.9s", findings: 481 }, trivy: { time: "0.2s", findings: 176 }, grype: { time: "1.8s", findings: 539 } },
-  { image: "nginx:1.27", size: "192 MB", sr: { time: "2.0s", findings: 506 }, trivy: { time: "29.8s", findings: 253 }, grype: { time: "1.9s", findings: 248 } },
-  { image: "postgres:17", size: "453 MB", sr: { time: "1.6s", findings: 259 }, trivy: { time: "1.2s", findings: 167 }, grype: { time: "2.6s", findings: 164 } },
-  { image: "redis:7-alpine", size: "41 MB", sr: { time: "1.3s", findings: 5 }, trivy: { time: "0.4s", findings: 80 }, grype: { time: "1.4s", findings: 88 } },
-  { image: "golang:1.23", size: "1.1 GB", sr: { time: "2.3s", findings: 2194 }, trivy: { time: "0.6s", findings: 1028 }, grype: { time: "5.1s", findings: 1163 } },
-  { image: "node:20", size: "1.1 GB", sr: { time: "4.9s", findings: 3868 }, trivy: { time: "1.0s", findings: 2220 }, grype: { time: "7.3s", findings: 1463 } },
-  { image: "python:3.12", size: "1.0 GB", sr: { time: "3.2s", findings: 3911 }, trivy: { time: "1.1s", findings: 2246 }, grype: { time: "5.3s", findings: 1501 } },
+  { image: "alpine:3.20", size: "8.8 MB", sr: { time: "0.04s", findings: 7 }, trivy: { time: "0.1s", findings: 0 }, grype: { time: "1.3s", findings: 4 } },
+  { image: "debian:12", size: "139 MB", sr: { time: "1.6s", findings: 196 }, trivy: { time: "0.2s", findings: 92 }, grype: { time: "1.2s", findings: 86 } },
+  { image: "ubuntu:24.04", size: "101 MB", sr: { time: "1.2s", findings: 174 }, trivy: { time: "0.1s", findings: 13 }, grype: { time: "1.0s", findings: 26 } },
+  { image: "rockylinux:9", size: "193 MB", sr: { time: "1.9s", findings: 436 }, trivy: { time: "0.2s", findings: 176 }, grype: { time: "1.8s", findings: 539 } },
+  { image: "nginx:1.27", size: "198 MB", sr: { time: "1.9s", findings: 507 }, trivy: { time: "29.8s", findings: 253 }, grype: { time: "1.9s", findings: 248 } },
+  { image: "postgres:17", size: "476 MB", sr: { time: "3.5s", findings: 259 }, trivy: { time: "1.2s", findings: 167 }, grype: { time: "2.6s", findings: 164 } },
+  { image: "redis:7-alpine", size: "42 MB", sr: { time: "0.1s", findings: 5 }, trivy: { time: "0.4s", findings: 80 }, grype: { time: "1.4s", findings: 88 } },
+  { image: "golang:1.23", size: "846 MB", sr: { time: "6.7s", findings: 2238 }, trivy: { time: "0.6s", findings: 1028 }, grype: { time: "5.1s", findings: 1163 } },
+  { image: "node:20", size: "1.1 GB", sr: { time: "8.7s", findings: 3848 }, trivy: { time: "1.0s", findings: 2220 }, grype: { time: "7.3s", findings: 1463 } },
+  { image: "python:3.12", size: "1.1 GB", sr: { time: "9.5s", findings: 3303 }, trivy: { time: "1.1s", findings: 2246 }, grype: { time: "5.3s", findings: 1501 } },
 ];
 
 const metrics = [
@@ -64,7 +64,7 @@ export default function BenchmarksPage() {
       <section className="surface-card p-7 grid gap-5">
         <SectionHeader
           title="Container Scan Comparison"
-          blurb="ScanRook v1.10.2 vs Trivy 0.69.1 vs Grype 0.109.0 — warm cache, macOS."
+          blurb="ScanRook v1.10.1 vs Trivy 0.69.1 vs Grype 0.109.0 — warm cache, macOS."
         />
         <div className="overflow-auto">
           <table className="w-full text-sm border-collapse">
@@ -198,7 +198,7 @@ export default function BenchmarksPage() {
               <strong>Triple-source RHEL coverage</strong> — For Rocky Linux, AlmaLinux,
               and other RHEL-based images, ScanRook combines three sources: OSV batch queries,
               RHEL OVAL patch evaluation, and the Red Hat Security Data API for unfixed CVEs
-              (will-not-fix, fix-deferred, affected). This produces 2.7x more findings than
+              (will-not-fix, fix-deferred, affected). This produces 2.5x more findings than
               Trivy on Rocky Linux 9.
             </li>
             <li>
@@ -214,10 +214,10 @@ export default function BenchmarksPage() {
             </li>
           </ul>
           <p>
-            For example, rockylinux:9 shows 481 ScanRook findings vs 176 Trivy / 539 Grype.
-            ScanRook finds 2.7x more CVEs than Trivy by combining OSV, RHEL OVAL, and
+            For example, rockylinux:9 shows 436 ScanRook findings vs 176 Trivy / 539 Grype.
+            ScanRook finds 2.5x more CVEs than Trivy by combining OSV, RHEL OVAL, and
             Red Hat per-package security data. Compared to Grype&apos;s 539, ScanRook&apos;s
-            481 is more conservative because it requires RHEL-9-specific confirmation for
+            436 is more conservative because it requires RHEL-9-specific confirmation for
             every unfixed advisory — avoiding false positives from older RHEL streams.
           </p>
         </div>
