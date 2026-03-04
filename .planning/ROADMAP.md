@@ -138,7 +138,12 @@ Plans:
   3. Blog post pages show a related content sidebar linking to posts with matching tags
   4. The `/home` route is removed — navigating to it redirects to `/install` — and no duplicate landing page content exists
   5. End-to-end benchmark run completes without performance regressions compared to pre-milestone baseline
-**Plans**: TBD
+**Plans**: 4 plans
+Plans:
+- [ ] 07-01-PLAN.md — Playwright E2E setup + tests for upload, progress, findings, auth (TEST-01, TEST-02)
+- [ ] 07-02-PLAN.md — CPE docs page with interactive parser widget + docs audit + /home verification (DOCS-01, DOCS-03)
+- [ ] 07-03-PLAN.md — Blog related content sidebar by category (DOCS-02)
+- [ ] 07-04-PLAN.md — Scanner benchmarks run + update docs/blog benchmark data (BNCH-01)
 
 ## Progress
 
@@ -156,4 +161,4 @@ Note: Phase 2 can begin immediately. Phases 1, 2, and 4 can run in parallel wher
 | 5.1 Scanner DB Fetch Fix | 0/TBD | Not started | - |
 | 5.2 UI Navigation Regressions | 0/1 | Not started | - |
 | 6. Cluster Deployment | 0/TBD | Not started | - |
-| 7. Testing, Docs & Benchmarks | 0/TBD | Not started | - |
+| 7. Testing, Docs & Benchmarks | 2/4 | In Progress|  |
