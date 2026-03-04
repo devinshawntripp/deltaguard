@@ -64,7 +64,7 @@ export default function BenchmarksPage() {
       <section className="surface-card p-7 grid gap-5">
         <SectionHeader
           title="Container Scan Comparison"
-          blurb="ScanRook v1.6.1 vs Trivy 0.69.1 vs Grype 0.109.0 — warm cache, macOS."
+          blurb="ScanRook v1.10.2 vs Trivy 0.69.1 vs Grype 0.109.0 — warm cache, macOS."
         />
         <div className="overflow-auto">
           <table className="w-full text-sm border-collapse">

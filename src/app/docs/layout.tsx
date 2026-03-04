@@ -23,6 +23,7 @@ const navItems: NavItem[] = [
         href: "/docs/concepts",
         label: "Concepts",
         children: [
+            { href: "/docs/concepts/cpe", label: "CPE" },
             { href: "/docs/concepts/enrichment", label: "Enrichment" },
             { href: "/docs/concepts/caching", label: "Caching" },
             { href: "/docs/concepts/confidence-tiers", label: "Confidence Tiers" },
@@ -52,6 +53,7 @@ const breadcrumbLabels: Record<string, string> = {
     "jobs-and-progress": "Jobs & Progress",
     "findings-and-reports": "Findings & Reports",
     concepts: "Concepts",
+    cpe: "CPE",
     enrichment: "Enrichment",
     caching: "Caching",
     "confidence-tiers": "Confidence Tiers",
