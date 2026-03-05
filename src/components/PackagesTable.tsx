@@ -12,6 +12,7 @@ type Job = {
   finished_at?: string | null;
   progress_pct: number;
   progress_msg?: string | null;
+  error_msg?: string | null;
 };
 
 const STATUS_RANK: Record<Job["status"], number> = {
@@ -176,7 +177,7 @@ export default function PackagesTable() {
                       <div className={`h-2 rounded ${j.status === "failed" ? "bg-red-600" : j.status === "done" ? "bg-green-600" : "bg-blue-600"}`} style={{ width: `${pct}%` }} />
                     </div>
                     <div className="text-xs opacity-70 mt-1">
-                      <span className="inline-block w-full min-w-full max-w-full truncate align-middle" title={j.progress_msg || ""}>{j.progress_msg || ""}</span>
+                      <span className="inline-block w-full min-w-full max-w-full truncate align-middle" title={j.status === "failed" && j.error_msg ? j.error_msg : j.progress_msg || ""}>{j.status === "failed" && j.error_msg ? j.error_msg : j.progress_msg || ""}</span>
                     </div>
                   </td>
                   <td className="p-3 opacity-70 text-xs min-w-0">
