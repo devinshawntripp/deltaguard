@@ -15,6 +15,7 @@ type JobState = {
     scan_status?: string | null;
     inventory_status?: string | null;
     inventory_reason?: string | null;
+    error_msg?: string | null;
 };
 
 const STATUS_RANK: Record<JobStatus, number> = {
@@ -34,6 +35,7 @@ function mergeMonotonic(cur: JobState, next: Partial<JobState>): JobState {
     }
     merged.progress_pct = Math.max(cur.progress_pct || 0, merged.progress_pct || 0);
     if (!merged.progress_msg) merged.progress_msg = cur.progress_msg;
+    if (!merged.error_msg) merged.error_msg = cur.error_msg;
     return merged;
 }
 
@@ -68,6 +70,11 @@ export default function JobLiveStatus({ initial }: { initial: JobState }) {
             {job.started_at && <div>Started: {new Date(job.started_at).toLocaleString()}</div>}
             {job.finished_at && <div>Finished: {new Date(job.finished_at).toLocaleString()}</div>}
             {job.progress_msg && <div className="opacity-80">{job.progress_msg}</div>}
+            {job.status === "failed" && job.error_msg && (
+                <div className="rounded-md bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 px-3 py-2 text-red-800 dark:text-red-200">
+                    <span className="font-medium">Error:</span> {job.error_msg}
+                </div>
+            )}
             {job.scan_status && <div className="opacity-80">scan_status: {job.scan_status}</div>}
             {job.inventory_status && <div className="opacity-80">inventory_status: {job.inventory_status}</div>}
             {job.inventory_reason && <div className="opacity-80">inventory_reason: {job.inventory_reason}</div>}
