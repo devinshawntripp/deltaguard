@@ -33,7 +33,7 @@ spec:
             value: "1"
       containers:
         - name: worker
-          image: devintripp/rust-scanner-worker:v1.10.3
+          image: devintripp/rust-scanner-worker:v1.10.4-hfs
           imagePullPolicy: Always
           securityContext:
             allowPrivilegeEscalation: false
