@@ -52,6 +52,7 @@ export default async function PackageDetails({ params }: { params: Promise<{ id:
                     scan_status: data.scan_status,
                     inventory_status: data.inventory_status,
                     inventory_reason: data.inventory_reason,
+                    error_msg: data.error_msg,
                 }}
             />
             {data.summary_json && (
