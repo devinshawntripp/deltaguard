@@ -116,6 +116,45 @@ export default function BenchmarksPage() {
         </p>
       </section>
 
+
+      {/* Native Archive Scanning */}
+      <section className="surface-card p-7 grid gap-5">
+        <SectionHeader
+          title="Native Archive Scanning (ScanRook Only)"
+          blurb="ScanRook v1.10.3 — formats not supported by Trivy or Grype."
+        />
+        <div className="overflow-auto">
+          <table className="w-full text-sm border-collapse">
+            <thead>
+              <tr className="border-b border-black/10 dark:border-white/10 text-left">
+                <th className="py-2 pr-3 font-semibold">File</th>
+                <th className="py-2 pr-3 font-semibold text-right">Size</th>
+                <th className="py-2 pr-3 font-semibold text-right">Format</th>
+                <th className="py-2 pr-3 font-semibold text-right">Components</th>
+                <th className="py-2 pr-3 font-semibold text-right">Findings</th>
+                <th className="py-2 font-semibold text-right">Scan Time</th>
+              </tr>
+            </thead>
+            <tbody className="muted">
+              <tr className="border-b border-black/5 dark:border-white/5">
+                <td className="py-2 pr-3 font-mono text-xs">Firefox.dmg</td>
+                <td className="py-2 pr-3 text-right text-xs">142 MB</td>
+                <td className="py-2 pr-3 text-right text-xs">DMG (HFS+)</td>
+                <td className="py-2 pr-3 text-right font-semibold">9</td>
+                <td className="py-2 pr-3 text-right font-semibold">270</td>
+                <td className="py-2 text-right font-mono text-xs">304s</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p className="text-xs muted">
+          DMG scan uses hdiutil extraction on macOS or dmgwiz+hfsutils on Linux. Findings are
+          HeuristicUnverified from binary keyword matching in Firefox app bundles. Trivy and Grype
+          do not support DMG scanning. Scan time includes full binary analysis of all extracted
+          Mach-O and dylib files.
+        </p>
+      </section>
+
       {/* Visual Charts */}
       <section className="surface-card p-7 grid gap-6">
         <SectionHeader

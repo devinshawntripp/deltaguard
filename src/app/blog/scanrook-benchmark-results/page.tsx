@@ -176,9 +176,26 @@ export default function ScanRookBenchmarkResultsPage() {
                   <td className="py-3 pr-4 text-xs">1.9s</td>
                   <td className="py-3 pr-4 text-xs">539</td>
                 </tr>
+                <tr className="border-b border-black/5 dark:border-white/5">
+                  <td className="py-3 pr-4 text-xs font-mono">
+                    Firefox.dmg
+                  </td>
+                  <td className="py-3 pr-4 text-xs">142 MB</td>
+                  <td className="py-3 pr-4 text-xs">304s</td>
+                  <td className="py-3 pr-4 text-xs">270</td>
+                  <td className="py-3 pr-4 text-xs">N/A</td>
+                  <td className="py-3 pr-4 text-xs">N/A</td>
+                  <td className="py-3 pr-4 text-xs">N/A</td>
+                  <td className="py-3 pr-4 text-xs">N/A</td>
+                </tr>
               </tbody>
             </table>
           </div>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+            Firefox.dmg: ScanRook v1.10.3 with DMG extraction (hdiutil on macOS, dmgwiz+hfsutils on Linux).
+            270 findings are HeuristicUnverified from binary keyword matching. Trivy and Grype do not support
+            DMG format scanning (N/A).
+          </p>
         </section>
 
         <section className="grid gap-2">
