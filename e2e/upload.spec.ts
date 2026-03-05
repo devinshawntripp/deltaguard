@@ -13,11 +13,13 @@ test.describe('Upload flow', () => {
 
   test.afterEach(async ({ page }) => {
     if (jobId) {
-      // Clean up the scan job created during the test
       try {
-        await page.request.delete(`/api/jobs/${jobId}`);
-      } catch {
-        // Best-effort cleanup — ignore errors
+        const resp = await page.request.delete(`/api/jobs/${jobId}`);
+        if (!resp.ok()) {
+          console.warn(`[E2E cleanup] DELETE /api/jobs/${jobId} returned HTTP ${resp.status()}`);
+        }
+      } catch (err) {
+        console.warn(`[E2E cleanup] DELETE /api/jobs/${jobId} threw: ${err}`);
       }
       jobId = null;
     }

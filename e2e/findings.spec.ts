@@ -70,13 +70,22 @@ test.describe('Findings filters', () => {
     await waitForJobDone(request, jobId);
   });
 
-  test.afterAll(async ({ request }) => {
-    if (jobId) {
-      try {
-        await request.delete(`/api/jobs/${jobId}`);
-      } catch {
-        // Best-effort cleanup
+  test.afterAll(async ({ browser }) => {
+    if (!jobId) return;
+    const context = await browser.newContext({
+      storageState: 'playwright/.auth/user.json',
+      baseURL: process.env.E2E_BASE_URL || 'https://scanrook.io',
+    });
+    const page = await context.newPage();
+    try {
+      const resp = await page.request.delete(`/api/jobs/${jobId}`);
+      if (!resp.ok()) {
+        console.warn(`[E2E cleanup] DELETE /api/jobs/${jobId} returned HTTP ${resp.status()}`);
       }
+    } catch (err) {
+      console.warn(`[E2E cleanup] DELETE /api/jobs/${jobId} threw: ${err}`);
+    } finally {
+      await context.close();
     }
   });
 
