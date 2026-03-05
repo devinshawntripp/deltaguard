@@ -43,9 +43,13 @@ test.describe('Findings filters', () => {
     const page = await context.newPage();
 
     await page.goto('/dashboard');
-    await page.waitForLoadState('networkidle');
 
-    await page.locator('input[type="file"]').setInputFiles(tinyBin);
+    // Wait for the upload input to be ready (dashboard has persistent SSE
+    // connections so networkidle never fires)
+    const fileInput = page.locator('input[type="file"]');
+    await fileInput.waitFor({ state: 'attached', timeout: 15_000 });
+
+    await fileInput.setInputFiles(tinyBin);
     await page.getByRole('button', { name: /upload & scan/i }).click();
 
     const messageLocator = page.locator('text=/Job queued:/');
@@ -80,10 +84,10 @@ test.describe('Findings filters', () => {
     expect(jobId).toBeTruthy();
 
     await page.goto(`/dashboard/${jobId}/findings`);
-    await page.waitForLoadState('networkidle');
 
-    // Wait for findings component to finish loading
-    await page.waitForTimeout(1_000);
+    // Wait for the findings page to render
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(2_000);
 
     // Count rows in the findings table body
     const rows = page.locator('table tbody tr');

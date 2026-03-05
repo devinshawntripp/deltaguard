@@ -25,10 +25,14 @@ test.describe('Upload flow', () => {
 
   test('upload flow creates a scan job', async ({ page }) => {
     await page.goto('/dashboard');
-    await page.waitForLoadState('networkidle');
+
+    // Wait for the upload input to be ready (dashboard has persistent SSE
+    // connections so networkidle never fires)
+    const fileInput = page.locator('input[type="file"]');
+    await fileInput.waitFor({ state: 'attached', timeout: 15_000 });
 
     // Select the test binary file
-    await page.locator('input[type="file"]').setInputFiles(tinyBin);
+    await fileInput.setInputFiles(tinyBin);
 
     // Click the "Upload & Scan" button
     await page.getByRole('button', { name: /upload & scan/i }).click();

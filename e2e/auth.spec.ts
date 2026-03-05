@@ -9,11 +9,13 @@ test.describe('Auth', () => {
     // storageState from auth setup already applied via playwright.config.ts
     await page.goto('/dashboard');
 
-    // Wait for page to load (nav is rendered client-side)
-    await page.waitForLoadState('networkidle');
+    // Wait for the sign-out button to appear (dashboard has persistent SSE
+    // connections so networkidle never fires)
+    const signOutBtn = page.getByRole('button', { name: /sign out/i });
+    await signOutBtn.waitFor({ state: 'visible', timeout: 15_000 });
 
     // Click sign-out button
-    await page.getByRole('button', { name: /sign out/i }).click();
+    await signOutBtn.click();
 
     await page.waitForURL('**/signin');
     await expect(page).toHaveURL(/\/signin/);

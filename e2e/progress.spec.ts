@@ -22,9 +22,13 @@ test.describe('Scan progress', () => {
     const page = await context.newPage();
 
     await page.goto('/dashboard');
-    await page.waitForLoadState('networkidle');
 
-    await page.locator('input[type="file"]').setInputFiles(tinyBin);
+    // Wait for the upload input to be ready (dashboard has persistent SSE
+    // connections so networkidle never fires)
+    const fileInput = page.locator('input[type="file"]');
+    await fileInput.waitFor({ state: 'attached', timeout: 15_000 });
+
+    await fileInput.setInputFiles(tinyBin);
     await page.getByRole('button', { name: /upload & scan/i }).click();
 
     const messageLocator = page.locator('text=/Job queued:/');
@@ -53,17 +57,13 @@ test.describe('Scan progress', () => {
     expect(jobId).toBeTruthy();
 
     await page.goto(`/dashboard/${jobId}`);
-    await page.waitForLoadState('networkidle');
 
     // The job detail page renders JobLiveStatus — look for the status area
     // or the pipeline/log viewer component.
-    // We verify that progress-related content is visible.
     // Accept any of: a progress indicator, status badge, or the log viewer section.
-    const progressIndicators = page.locator([
-      '[data-testid="job-live-status"]',
-      'text=/queued|running|done|failed/i',
-      'text=/Live status/i',
-    ].join(', '));
+    const progressIndicators = page.locator('[data-testid="job-live-status"]')
+      .or(page.getByText(/queued|running|done|failed/i).first())
+      .or(page.getByText(/Live status/i));
 
     await expect(progressIndicators.first()).toBeVisible({ timeout: 30_000 });
   });

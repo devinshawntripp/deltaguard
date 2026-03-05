@@ -29,7 +29,19 @@ export default defineConfig({
         ...devices['Desktop Chrome'],
         storageState: 'playwright/.auth/user.json',
       },
+      testIgnore: /auth\.spec\.ts/,
       dependencies: ['setup'],
+    },
+    {
+      // Auth sign-out test revokes the JWT SID in Redis, so it must run
+      // after all other tests that rely on the stored auth state.
+      name: 'auth-teardown',
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: 'playwright/.auth/user.json',
+      },
+      testMatch: /auth\.spec\.ts/,
+      dependencies: ['chromium'],
     },
   ],
 });
