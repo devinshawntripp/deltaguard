@@ -1,3 +1,4 @@
+import JobActions from "@/components/JobActions";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import JobLiveStatus from "@/components/JobLiveStatus";
@@ -40,7 +41,10 @@ export default async function PackageDetails({ params }: { params: Promise<{ id:
             </div>
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-semibold tracking-tight">Job {data.id}</h1>
-                <span className="text-sm muted">Live status</span>
+                <div className="flex items-center gap-3">
+                    <JobActions jobId={data.id} status={data.status} />
+                    <span className="text-sm muted">Live status</span>
+                </div>
             </div>
             <JobLiveStatus
                 initial={{
