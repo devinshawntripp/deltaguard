@@ -1,5 +1,5 @@
 "use client";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useUploadStore } from "@/store/useUploadStore";
 
 export default function UploadCard() {
@@ -7,6 +7,7 @@ export default function UploadCard() {
   const [mode, setMode] = useState<"light" | "deep">("light");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const activeUploadId = useRef<string | null>(null);
 
   const addUpload = useUploadStore((s) => s.addUpload);
   const updateUpload = useUploadStore((s) => s.updateUpload);
@@ -18,6 +19,17 @@ export default function UploadCard() {
     while (x >= 1024 && i < u.length - 1) { x /= 1024; i++; }
     return `${x.toFixed(1)} ${u[i]}`;
   }, []);
+
+  function handleCancel() {
+    const id = activeUploadId.current;
+    if (!id) return;
+    const entry = useUploadStore.getState().uploads.get(id);
+    if (entry) entry.abort();
+    updateUpload(id, { phase: "cancelled" });
+    setLoading(false);
+    setMessage("Upload cancelled");
+    activeUploadId.current = null;
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -31,6 +43,7 @@ export default function UploadCard() {
     setMessage(null);
 
     const uploadId = crypto.randomUUID();
+    activeUploadId.current = uploadId;
 
     const uploadViaXhr = async (p: any, abortRef: { abort: () => void }) => {
       await new Promise<void>((resolve, reject) => {
@@ -61,7 +74,7 @@ export default function UploadCard() {
             lastTs = now;
           };
           xhr.onerror = () => reject(new Error(`S3 upload failed${xhr.status ? ` (${xhr.status})` : ""}`));
-          xhr.onabort = () => reject(new Error("Upload canceled"));
+          xhr.onabort = () => reject(new Error("Upload cancelled"));
           xhr.ontimeout = () => reject(new Error("Upload timed out"));
           xhr.onload = () => {
             if (xhr.status >= 200 && xhr.status < 300) {
@@ -115,7 +128,8 @@ export default function UploadCard() {
       // 2) Upload with fallback
       try {
         await uploadViaXhr(putPayload, abortRef);
-      } catch {
+      } catch (err: any) {
+        if (err.message === "Upload cancelled") throw err;
         const presignPost = await fetch("/api/uploads/presign", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -139,11 +153,18 @@ export default function UploadCard() {
 
       updateUpload(uploadId, { phase: "done" });
       setMessage("Job queued: " + d.id);
+      activeUploadId.current = null;
       try { window.dispatchEvent(new CustomEvent('jobs-refresh')); } catch {}
     } catch (err: any) {
       const msg = err.message || String(err);
-      updateUpload(uploadId, { phase: "error", error: msg });
-      setMessage(msg);
+      if (msg === "Upload cancelled") {
+        updateUpload(uploadId, { phase: "cancelled" });
+        setMessage("Upload cancelled");
+      } else {
+        updateUpload(uploadId, { phase: "error", error: msg });
+        setMessage(msg);
+      }
+      activeUploadId.current = null;
     } finally {
       setLoading(false);
     }
@@ -179,6 +200,15 @@ export default function UploadCard() {
         <button disabled={!file || loading} className="btn-primary inline-flex items-center justify-center gap-2 disabled:pointer-events-none">
           {loading ? "Uploading\u2026" : "Upload & Scan"}
         </button>
+        {loading && (
+          <button
+            type="button"
+            onClick={handleCancel}
+            className="text-sm text-red-500 hover:text-red-600 font-medium transition-colors"
+          >
+            Cancel
+          </button>
+        )}
       </div>
       {message && <div className="text-sm muted">{message}</div>}
     </form>

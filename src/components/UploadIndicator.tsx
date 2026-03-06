@@ -9,8 +9,8 @@ export default function UploadIndicator() {
   const [expanded, setExpanded] = useState(false);
 
   const entries = Array.from(uploads.values());
-  const active = entries.filter((u) => u.phase !== "done" && u.phase !== "error");
-  const done = entries.filter((u) => u.phase === "done");
+  const active = entries.filter((u) => u.phase !== "done" && u.phase !== "error" && u.phase !== "cancelled");
+  const done = entries.filter((u) => u.phase === "done" || u.phase === "cancelled");
 
   // Auto-dismiss completed uploads after 3 seconds
   useEffect(() => {

@@ -6,7 +6,7 @@ export type UploadEntry = {
   filename: string;
   pct: number;
   speed: string;
-  phase: "uploading" | "creating-job" | "done" | "error";
+  phase: "uploading" | "creating-job" | "done" | "error" | "cancelled";
   error?: string;
   abort: () => void;
 };
