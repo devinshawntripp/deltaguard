@@ -70,9 +70,11 @@ ORDER BY m.created_at ASC
     org,
     members,
     permissions: {
-      can_edit_roles: actor.rolesMask === ADMIN_OVERRIDE,
-      can_manage_members: true,
-      can_invite: true,
+      can_edit_roles: actor.rolesMask === ADMIN_OVERRIDE || hasRole(actor.rolesMask, ROLE_ORG_OWNER),
+      can_manage_members: actor.rolesMask === ADMIN_OVERRIDE || hasRole(actor.rolesMask, ROLE_ORG_OWNER),
+      can_invite: actor.rolesMask === ADMIN_OVERRIDE || hasRole(actor.rolesMask, ROLE_ORG_OWNER),
+      is_super_admin: actor.rolesMask === ADMIN_OVERRIDE,
+      max_assignable_role_bit: actor.rolesMask === ADMIN_OVERRIDE ? 128 : hasRole(actor.rolesMask, ROLE_ORG_OWNER) ? 64 : 0,
     },
   });
 }

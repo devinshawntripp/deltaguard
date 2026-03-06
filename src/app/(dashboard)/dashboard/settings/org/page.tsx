@@ -21,6 +21,8 @@ type OrgPermissions = {
   can_edit_roles: boolean;
   can_manage_members: boolean;
   can_invite: boolean;
+  is_super_admin?: boolean;
+  max_assignable_role_bit?: number;
 };
 
 type OrgResponse = {
