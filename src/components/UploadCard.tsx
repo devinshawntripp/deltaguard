@@ -1,5 +1,6 @@
 "use client";
 import { useState, useCallback, useRef } from "react";
+import { useDropzone } from "react-dropzone";
 import { useUploadStore } from "@/store/useUploadStore";
 
 export default function UploadCard() {
@@ -11,6 +12,20 @@ export default function UploadCard() {
 
   const addUpload = useUploadStore((s) => s.addUpload);
   const updateUpload = useUploadStore((s) => s.updateUpload);
+
+  const onDrop = useCallback((accepted: File[]) => {
+    if (accepted.length > 0) {
+      setFile(accepted[0]);
+      setMessage(null);
+    }
+  }, []);
+
+  const { getRootProps, getInputProps, isDragActive, isDragReject } = useDropzone({
+    onDrop,
+    multiple: false,
+    noClick: false,
+    noKeyboard: false,
+  });
 
   const human = useCallback((n: number) => {
     const u = ["B/s", "KB/s", "MB/s", "GB/s"];
@@ -34,7 +49,7 @@ export default function UploadCard() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!file) return;
-    const MAX_SIZE = 15 * 1024 * 1024 * 1024; // 15 GiB
+    const MAX_SIZE = 15 * 1024 * 1024 * 1024;
     if (file.size > MAX_SIZE) {
       setMessage("File exceeds 15 GB limit");
       return;
@@ -104,8 +119,6 @@ export default function UploadCard() {
 
     try {
       const abortRef = { abort: () => {} };
-
-      // Register in global store
       addUpload({
         id: uploadId,
         filename: file.name,
@@ -115,7 +128,6 @@ export default function UploadCard() {
         abort: () => abortRef.abort(),
       });
 
-      // 1) Presign PUT
       const presignPut = await fetch("/api/uploads/presign", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -125,7 +137,6 @@ export default function UploadCard() {
       if (!presignPut.ok) throw new Error(putPayload.error || "Presign failed");
       if (!putPayload?.url || !putPayload?.key || !putPayload?.bucket) throw new Error("Presign response missing url/key/bucket");
 
-      // 2) Upload with fallback
       try {
         await uploadViaXhr(putPayload, abortRef);
       } catch (err: any) {
@@ -141,7 +152,6 @@ export default function UploadCard() {
         putPayload.key = postPayload.key;
       }
 
-      // 3) Create job
       updateUpload(uploadId, { phase: "creating-job", pct: 100 });
       const start = await fetch("/api/jobs", {
         method: "POST",
@@ -183,14 +193,35 @@ export default function UploadCard() {
           </label>
         </div>
       </div>
-      <label className="block">
-        <input
-          type="file"
-          onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-          className="block w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-md file:border file:border-transparent file:text-sm file:font-semibold file:bg-teal-700 file:text-white hover:file:bg-teal-800"
-        />
-        <span className="text-[11px] muted mt-1 block">Max file size: 15 GB</span>
-      </label>
+
+      <div
+        {...getRootProps()}
+        className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
+          isDragActive
+            ? "border-teal-500 bg-teal-50 dark:bg-teal-950/30"
+            : isDragReject
+            ? "border-red-400 bg-red-50 dark:bg-red-950/30"
+            : file
+            ? "border-teal-600/50 bg-teal-50/50 dark:bg-teal-950/20"
+            : "border-[var(--dg-border)] hover:border-teal-500/50"
+        }`}
+      >
+        <input {...getInputProps()} />
+        {isDragActive ? (
+          <p className="text-sm text-teal-600 dark:text-teal-400 font-medium">Drop file here</p>
+        ) : file ? (
+          <div className="text-sm">
+            <p className="font-medium truncate">{file.name}</p>
+            <p className="text-[11px] muted mt-1">{(file.size / (1024 * 1024)).toFixed(1)} MB — click or drag to replace</p>
+          </div>
+        ) : (
+          <div className="text-sm muted">
+            <p>Drag & drop a file here, or click to browse</p>
+            <p className="text-[11px] mt-1">Max file size: 15 GB</p>
+          </div>
+        )}
+      </div>
+
       {file?.name?.toLowerCase().endsWith(".iso") && (
         <div className="text-xs px-3 py-2 rounded-md bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-200">
           This is an ISO image. For more accurate results, we recommend <strong>deep mode</strong> which analyzes the default installation profile.

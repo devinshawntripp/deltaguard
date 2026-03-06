@@ -25,6 +25,7 @@
     "prisma": "^6.16.2",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
+    "react-dropzone": "^15.0.0",
     "stripe": "^20.3.1",
     "swagger-ui-react": "^5.31.2",
     "swr": "^2.2.5",
