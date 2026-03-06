@@ -13,7 +13,7 @@ export type Job = {
     org_id: string;
     created_by_user_id?: string | null;
     created_by_api_key_id?: string | null;
-    settings_snapshot?: ScannerSettings | null;
+    settings_snapshot?: (ScannerSettings & { summary_only?: boolean }) | null;
     scan_status?: string | null;
     inventory_status?: string | null;
     inventory_reason?: string | null;
@@ -42,7 +42,7 @@ export async function createJob(params: {
     org_id: string;
     created_by_user_id?: string | null;
     created_by_api_key_id?: string | null;
-    settings_snapshot?: ScannerSettings | null;
+    settings_snapshot?: (ScannerSettings & { summary_only?: boolean }) | null;
 }): Promise<Job> {
     await init();
     const id = params.id || crypto.randomUUID();
