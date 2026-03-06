@@ -406,6 +406,23 @@ BEGIN
   END IF;
 END$$
         `,
+        `
+CREATE TABLE IF NOT EXISTS registry_configs (
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    org_id          UUID NOT NULL REFERENCES orgs(id) ON DELETE CASCADE,
+    name            TEXT NOT NULL,
+    registry_url    TEXT NOT NULL,
+    username        TEXT,
+    token_encrypted BYTEA,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE(org_id, name)
+)
+        `,
+        `CREATE INDEX IF NOT EXISTS idx_registry_configs_org ON registry_configs(org_id)`,
+        `ALTER TABLE scan_jobs ADD COLUMN IF NOT EXISTS source_type TEXT NOT NULL DEFAULT 'upload'`,
+        `ALTER TABLE scan_jobs ADD COLUMN IF NOT EXISTS registry_image TEXT`,
+        `ALTER TABLE scan_jobs ADD COLUMN IF NOT EXISTS registry_config_id UUID`,
         `CREATE INDEX IF NOT EXISTS idx_org_memberships_org_user ON org_memberships(org_id, user_id)`,
         `CREATE INDEX IF NOT EXISTS idx_users_active_org ON users(active_org_id)`,
         `CREATE INDEX IF NOT EXISTS idx_api_keys_org_status ON api_keys(org_id, status)`,
@@ -698,6 +715,19 @@ CREATE TABLE IF NOT EXISTS scan_packages (
   UNIQUE(job_id, name, ecosystem, version, source_kind, source_path)
 );
 
+CREATE TABLE IF NOT EXISTS registry_configs (
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    org_id          UUID NOT NULL REFERENCES orgs(id) ON DELETE CASCADE,
+    name            TEXT NOT NULL,
+    registry_url    TEXT NOT NULL,
+    username        TEXT,
+    token_encrypted BYTEA,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE(org_id, name)
+);
+CREATE INDEX IF NOT EXISTS idx_registry_configs_org ON registry_configs(org_id);
+
 ALTER TABLE scan_jobs ADD COLUMN IF NOT EXISTS org_id UUID;
 ALTER TABLE scan_jobs ADD COLUMN IF NOT EXISTS created_by_user_id UUID;
 ALTER TABLE scan_jobs ADD COLUMN IF NOT EXISTS created_by_api_key_id UUID;
@@ -705,6 +735,9 @@ ALTER TABLE scan_jobs ADD COLUMN IF NOT EXISTS settings_snapshot JSONB;
 ALTER TABLE scan_jobs ADD COLUMN IF NOT EXISTS scan_status TEXT;
 ALTER TABLE scan_jobs ADD COLUMN IF NOT EXISTS inventory_status TEXT;
 ALTER TABLE scan_jobs ADD COLUMN IF NOT EXISTS inventory_reason TEXT;
+ALTER TABLE scan_jobs ADD COLUMN IF NOT EXISTS source_type TEXT NOT NULL DEFAULT 'upload';
+ALTER TABLE scan_jobs ADD COLUMN IF NOT EXISTS registry_image TEXT;
+ALTER TABLE scan_jobs ADD COLUMN IF NOT EXISTS registry_config_id UUID;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS theme_preference TEXT NOT NULL DEFAULT 'system';
 ALTER TABLE users ADD COLUMN IF NOT EXISTS active_org_id UUID;
 
