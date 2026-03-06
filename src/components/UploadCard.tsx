@@ -4,25 +4,25 @@ import { useDropzone } from "react-dropzone";
 import { useUploadStore } from "@/store/useUploadStore";
 
 export default function UploadCard() {
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [mode, setMode] = useState<"light" | "deep">("light");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-  const activeUploadId = useRef<string | null>(null);
+  const activeUploads = useRef<Map<string, { abort: () => void }>>(new Map());
 
   const addUpload = useUploadStore((s) => s.addUpload);
   const updateUpload = useUploadStore((s) => s.updateUpload);
 
   const onDrop = useCallback((accepted: File[]) => {
     if (accepted.length > 0) {
-      setFile(accepted[0]);
+      setFiles((prev) => [...prev, ...accepted]);
       setMessage(null);
     }
   }, []);
 
   const { getRootProps, getInputProps, isDragActive, isDragReject } = useDropzone({
     onDrop,
-    multiple: false,
+    multiple: true,
     noClick: false,
     noKeyboard: false,
   });
@@ -35,32 +35,29 @@ export default function UploadCard() {
     return `${x.toFixed(1)} ${u[i]}`;
   }, []);
 
-  function handleCancel() {
-    const id = activeUploadId.current;
-    if (!id) return;
-    const entry = useUploadStore.getState().uploads.get(id);
-    if (entry) entry.abort();
-    updateUpload(id, { phase: "cancelled" });
-    setLoading(false);
-    setMessage("Upload cancelled");
-    activeUploadId.current = null;
+  function removeFile(idx: number) {
+    setFiles((prev) => prev.filter((_, i) => i !== idx));
   }
 
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!file) return;
+  function handleCancelAll() {
+    activeUploads.current.forEach((ref, id) => {
+      ref.abort();
+      updateUpload(id, { phase: "cancelled" });
+    });
+    activeUploads.current.clear();
+    setLoading(false);
+    setMessage("Uploads cancelled");
+  }
+
+  async function uploadSingleFile(file: File): Promise<string | null> {
     const MAX_SIZE = 15 * 1024 * 1024 * 1024;
-    if (file.size > MAX_SIZE) {
-      setMessage("File exceeds 15 GB limit");
-      return;
-    }
-    setLoading(true);
-    setMessage(null);
+    if (file.size > MAX_SIZE) return `${file.name}: exceeds 15 GB limit`;
 
     const uploadId = crypto.randomUUID();
-    activeUploadId.current = uploadId;
+    const abortRef = { abort: () => {} };
+    activeUploads.current.set(uploadId, abortRef);
 
-    const uploadViaXhr = async (p: any, abortRef: { abort: () => void }) => {
+    const uploadViaXhr = async (p: any) => {
       await new Promise<void>((resolve, reject) => {
         try {
           const method = String(p.method || "PUT").toUpperCase();
@@ -70,7 +67,7 @@ export default function UploadCard() {
           if (method === "PUT") {
             const headers = (p.headers || {}) as Record<string, string>;
             Object.entries(headers).forEach(([k, v]) => xhr.setRequestHeader(k, String(v)));
-            if (!headers["Content-Type"]) xhr.setRequestHeader("Content-Type", file!.type || "application/octet-stream");
+            if (!headers["Content-Type"]) xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
           }
           let lastLoaded = 0;
           let lastTs = Date.now();
@@ -78,7 +75,7 @@ export default function UploadCard() {
             if (!ev.lengthComputable) return;
             const now = Date.now();
             const loaded = ev.loaded;
-            const total = ev.total || file!.size;
+            const total = ev.total || file.size;
             const deltaBytes = loaded - lastLoaded;
             const deltaMs = Math.max(1, now - lastTs);
             const bps = (deltaBytes * 1000) / deltaMs;
@@ -105,8 +102,8 @@ export default function UploadCard() {
           if (method === "POST" && p.fields) {
             const form = new FormData();
             Object.entries(p.fields || {}).forEach(([k, v]) => form.append(k, String(v)));
-            if (!("Content-Type" in (p.fields || {}))) form.append("Content-Type", file!.type || "application/octet-stream");
-            form.append("file", file!);
+            if (!("Content-Type" in (p.fields || {}))) form.append("Content-Type", file.type || "application/octet-stream");
+            form.append("file", file);
             xhr.send(form);
           } else {
             xhr.send(file);
@@ -118,7 +115,6 @@ export default function UploadCard() {
     };
 
     try {
-      const abortRef = { abort: () => {} };
       addUpload({
         id: uploadId,
         filename: file.name,
@@ -138,7 +134,7 @@ export default function UploadCard() {
       if (!putPayload?.url || !putPayload?.key || !putPayload?.bucket) throw new Error("Presign response missing url/key/bucket");
 
       try {
-        await uploadViaXhr(putPayload, abortRef);
+        await uploadViaXhr(putPayload);
       } catch (err: any) {
         if (err.message === "Upload cancelled") throw err;
         const presignPost = await fetch("/api/uploads/presign", {
@@ -148,7 +144,7 @@ export default function UploadCard() {
         });
         const postPayload = await presignPost.json();
         if (!presignPost.ok) throw new Error(postPayload.error || "Presign fallback failed");
-        await uploadViaXhr(postPayload, abortRef);
+        await uploadViaXhr(postPayload);
         putPayload.key = postPayload.key;
       }
 
@@ -162,23 +158,53 @@ export default function UploadCard() {
       if (!start.ok) throw new Error(d.error || "Job create failed");
 
       updateUpload(uploadId, { phase: "done" });
-      setMessage("Job queued: " + d.id);
-      activeUploadId.current = null;
-      try { window.dispatchEvent(new CustomEvent('jobs-refresh')); } catch {}
+      activeUploads.current.delete(uploadId);
+      return null; // success
     } catch (err: any) {
       const msg = err.message || String(err);
       if (msg === "Upload cancelled") {
         updateUpload(uploadId, { phase: "cancelled" });
-        setMessage("Upload cancelled");
       } else {
         updateUpload(uploadId, { phase: "error", error: msg });
-        setMessage(msg);
       }
-      activeUploadId.current = null;
-    } finally {
-      setLoading(false);
+      activeUploads.current.delete(uploadId);
+      return `${file.name}: ${msg}`;
     }
   }
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (files.length === 0) return;
+    setLoading(true);
+    setMessage(null);
+
+    const results = await Promise.allSettled(files.map((f) => uploadSingleFile(f)));
+    const errors: string[] = [];
+    let successCount = 0;
+    for (const r of results) {
+      if (r.status === "fulfilled" && r.value === null) {
+        successCount++;
+      } else if (r.status === "fulfilled" && r.value) {
+        errors.push(r.value);
+      } else if (r.status === "rejected") {
+        errors.push(String(r.reason));
+      }
+    }
+
+    activeUploads.current.clear();
+    setLoading(false);
+    setFiles([]);
+
+    if (errors.length === 0) {
+      setMessage(`${successCount}/${results.length} uploads complete`);
+    } else {
+      setMessage(`${successCount}/${results.length} succeeded. Errors: ${errors.join("; ")}`);
+    }
+
+    try { window.dispatchEvent(new CustomEvent('jobs-refresh')); } catch {}
+  }
+
+  const hasIso = files.some((f) => f.name.toLowerCase().endsWith(".iso"));
 
   return (
     <form onSubmit={onSubmit} className="surface-card p-6 backdrop-blur grid gap-4">
@@ -201,43 +227,62 @@ export default function UploadCard() {
             ? "border-teal-500 bg-teal-50 dark:bg-teal-950/30"
             : isDragReject
             ? "border-red-400 bg-red-50 dark:bg-red-950/30"
-            : file
+            : files.length > 0
             ? "border-teal-600/50 bg-teal-50/50 dark:bg-teal-950/20"
             : "border-[var(--dg-border)] hover:border-teal-500/50"
         }`}
       >
         <input {...getInputProps()} />
         {isDragActive ? (
-          <p className="text-sm text-teal-600 dark:text-teal-400 font-medium">Drop file here</p>
-        ) : file ? (
-          <div className="text-sm">
-            <p className="font-medium truncate">{file.name}</p>
-            <p className="text-[11px] muted mt-1">{(file.size / (1024 * 1024)).toFixed(1)} MB — click or drag to replace</p>
-          </div>
+          <p className="text-sm text-teal-600 dark:text-teal-400 font-medium">Drop files here</p>
+        ) : files.length > 0 ? (
+          <p className="text-sm muted">Drop more files, or click to browse</p>
         ) : (
           <div className="text-sm muted">
-            <p>Drag & drop a file here, or click to browse</p>
-            <p className="text-[11px] mt-1">Max file size: 15 GB</p>
+            <p>Drag & drop files here, or click to browse</p>
+            <p className="text-[11px] mt-1">Max 15 GB per file. Multiple files supported.</p>
           </div>
         )}
       </div>
 
-      {file?.name?.toLowerCase().endsWith(".iso") && (
-        <div className="text-xs px-3 py-2 rounded-md bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-200">
-          This is an ISO image. For more accurate results, we recommend <strong>deep mode</strong> which analyzes the default installation profile.
+      {files.length > 0 && !loading && (
+        <div className="grid gap-1 max-h-40 overflow-y-auto">
+          {files.map((f, i) => (
+            <div key={`${f.name}-${i}`} className="flex items-center justify-between text-xs px-2 py-1 rounded bg-black/5 dark:bg-white/5">
+              <span className="truncate max-w-[220px]">{f.name}</span>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <span className="muted">{(f.size / (1024 * 1024)).toFixed(1)} MB</span>
+                <button
+                  type="button"
+                  onClick={() => removeFile(i)}
+                  className="text-red-500 hover:text-red-600"
+                  aria-label={`Remove ${f.name}`}
+                >
+                  &times;
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       )}
+
+      {hasIso && (
+        <div className="text-xs px-3 py-2 rounded-md bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-200">
+          ISO image detected. For more accurate results, we recommend <strong>deep mode</strong> which analyzes the default installation profile.
+        </div>
+      )}
+
       <div className="flex items-center gap-3">
-        <button disabled={!file || loading} className="btn-primary inline-flex items-center justify-center gap-2 disabled:pointer-events-none">
-          {loading ? "Uploading\u2026" : "Upload & Scan"}
+        <button disabled={files.length === 0 || loading} className="btn-primary inline-flex items-center justify-center gap-2 disabled:pointer-events-none">
+          {loading ? `Uploading ${files.length} file${files.length !== 1 ? "s" : ""}\u2026` : `Upload & Scan${files.length > 1 ? ` (${files.length})` : ""}`}
         </button>
         {loading && (
           <button
             type="button"
-            onClick={handleCancel}
+            onClick={handleCancelAll}
             className="text-sm text-red-500 hover:text-red-600 font-medium transition-colors"
           >
-            Cancel
+            Cancel All
           </button>
         )}
       </div>
