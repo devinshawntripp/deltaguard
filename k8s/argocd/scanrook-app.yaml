@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: scanrook
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/devinshawntripp/deltaguard.git
+    targetRevision: main
+    path: k8s/scanrook
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: scanrook
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
