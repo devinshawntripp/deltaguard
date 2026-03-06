@@ -101,7 +101,9 @@ LIMIT ${limit}
             });
 
             if (this.pgClient) {
+                this.pgClient.removeAllListeners();
                 try { this.pgClient.end(); } catch { }
+                try { (this.pgClient as any).connection?.stream?.destroy(); } catch { }
             }
             this.pgClient = client;
             this.reconnectAttempts = 0;
@@ -114,7 +116,13 @@ LIMIT ${limit}
     }
 
     private handleDisconnect() {
+        const old = this.pgClient;
         this.pgClient = null;
+        if (old) {
+            old.removeAllListeners();
+            try { old.end(); } catch { }
+            try { (old as any).connection?.stream?.destroy(); } catch { }
+        }
         this.scheduleReconnect();
     }
 

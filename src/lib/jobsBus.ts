@@ -62,7 +62,9 @@ class JobsBus {
             });
 
             if (this.client) {
+                this.client.removeAllListeners();
                 try { this.client.end(); } catch { }
+                try { (this.client as any).connection?.stream?.destroy(); } catch { }
             }
             this.client = newClient;
             this.reconnectAttempts = 0;
@@ -73,7 +75,13 @@ class JobsBus {
     }
 
     private handleDisconnect() {
+        const old = this.client;
         this.client = null;
+        if (old) {
+            old.removeAllListeners();
+            try { old.end(); } catch { }
+            try { (old as any).connection?.stream?.destroy(); } catch { }
+        }
         this.scheduleReconnect();
     }
 
