@@ -132,6 +132,39 @@ export async function deleteRegistryConfig(id: string, orgId: string): Promise<b
     return result > 0;
 }
 
+export type RegistryQuota = {
+    used: number;
+    limit: number | null;
+    allowed: boolean;
+};
+
+/**
+ * Check whether the org can add another registry based on their plan's max_registries.
+ */
+export async function getRegistryQuota(orgId: string): Promise<RegistryQuota> {
+    await ensurePlatformSchema();
+    const rows = await prisma.$queryRaw<Array<{ cnt: bigint; max_registries: number | null; plan_code: string | null }>>`
+        SELECT
+          (SELECT COUNT(*) FROM registry_configs WHERE org_id = ${orgId}::uuid) AS cnt,
+          p.max_registries,
+          p.code AS plan_code
+        FROM orgs o
+        LEFT JOIN org_billing ob ON ob.org_id = o.id AND ob.status IN ('active', 'trialing', 'past_due')
+        LEFT JOIN plans p ON p.id = ob.plan_id AND p.active = TRUE
+        WHERE o.id = ${orgId}::uuid
+        LIMIT 1
+    `;
+    const row = rows[0];
+    const used = Number(row?.cnt ?? 0);
+    // No plan row = FREE tier (2 registries). NULL max_registries on a real plan = unlimited.
+    const limit = row?.plan_code ? row.max_registries : 2;
+    return {
+        used,
+        limit,
+        allowed: limit === null || used < limit,
+    };
+}
+
 /**
  * Get decrypted credentials for a registry config. Used by browse proxy.
  */

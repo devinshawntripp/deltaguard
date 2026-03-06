@@ -20,8 +20,15 @@ type PingResult = {
     error?: string;
 };
 
+type RegistryQuota = {
+    used: number;
+    limit: number | null;
+    allowed: boolean;
+};
+
 export default function RegistriesPage() {
     const [registries, setRegistries] = useState<Registry[]>([]);
+    const [quota, setQuota] = useState<RegistryQuota | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -31,6 +38,10 @@ export default function RegistriesPage() {
     const [username, setUsername] = useState("");
     const [token, setToken] = useState("");
     const [creating, setCreating] = useState(false);
+
+    // Test connection state (for add form)
+    const [testing, setTesting] = useState(false);
+    const [testResult, setTestResult] = useState<PingResult | null>(null);
 
     // Per-row state
     const [pinging, setPinging] = useState<Record<string, boolean>>({});
@@ -49,6 +60,7 @@ export default function RegistriesPage() {
             }
             const data = await res.json();
             setRegistries(data.items || []);
+            if (data.quota) setQuota(data.quota);
         } catch (e: unknown) {
             setError(e instanceof Error ? e.message : String(e));
         } finally {
@@ -59,6 +71,29 @@ export default function RegistriesPage() {
     useEffect(() => {
         load();
     }, []);
+
+    async function handleTestConnection() {
+        if (!registryUrl.trim()) return;
+        setTesting(true);
+        setTestResult(null);
+        try {
+            const res = await fetch("/api/org/registries/test", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    registry_url: registryUrl.trim(),
+                    username: username.trim() || undefined,
+                    token: token.trim() || undefined,
+                }),
+            });
+            const data: PingResult = await res.json();
+            setTestResult(data);
+        } catch (e: unknown) {
+            setTestResult({ ok: false, error: e instanceof Error ? e.message : String(e) });
+        } finally {
+            setTesting(false);
+        }
+    }
 
     async function handleCreate(e: React.FormEvent) {
         e.preventDefault();
@@ -84,6 +119,7 @@ export default function RegistriesPage() {
             setRegistryUrl("");
             setUsername("");
             setToken("");
+            setTestResult(null);
             await load();
         } catch (e: unknown) {
             setError(e instanceof Error ? e.message : String(e));
@@ -127,6 +163,8 @@ export default function RegistriesPage() {
         }
     }
 
+    const quotaReached = quota ? !quota.allowed : false;
+
     return (
         <div className="grid gap-6">
             <div>
@@ -134,11 +172,22 @@ export default function RegistriesPage() {
                 <p className="text-sm opacity-70 mt-1">
                     Manage container registry connections for your organization.
                 </p>
+                {quota && (
+                    <p className="text-xs mt-2 opacity-60">
+                        {quota.used} / {quota.limit === null ? "Unlimited" : quota.limit} registries used
+                    </p>
+                )}
             </div>
 
             {error && (
                 <div className="rounded-md border border-red-300 bg-red-100 text-red-900 px-3 py-2 text-sm">
                     {error}
+                </div>
+            )}
+
+            {quotaReached && (
+                <div className="rounded-md border border-amber-300 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-700 text-amber-900 dark:text-amber-200 px-3 py-2 text-sm">
+                    Registry limit reached for your plan. Upgrade to add more registries.
                 </div>
             )}
 
@@ -148,47 +197,71 @@ export default function RegistriesPage() {
                 className="rounded-xl border border-black/10 dark:border-white/10 p-4 grid gap-3"
             >
                 <div className="font-semibold text-sm">Add Registry</div>
-                <div className="grid sm:grid-cols-2 gap-2">
-                    <input
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder="Name (e.g. Docker Hub)"
-                        required
-                        className="rounded border border-black/20 dark:border-white/20 bg-transparent px-2 py-1.5 text-sm"
-                    />
-                    <input
-                        value={registryUrl}
-                        onChange={(e) => setRegistryUrl(e.target.value)}
-                        placeholder="URL (e.g. https://registry-1.docker.io)"
-                        required
-                        className="rounded border border-black/20 dark:border-white/20 bg-transparent px-2 py-1.5 text-sm"
-                    />
-                    <input
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        placeholder="Username (optional)"
-                        className="rounded border border-black/20 dark:border-white/20 bg-transparent px-2 py-1.5 text-sm"
-                    />
-                    <input
-                        value={token}
-                        onChange={(e) => setToken(e.target.value)}
-                        placeholder="Token / Password (optional)"
-                        type="password"
-                        className="rounded border border-black/20 dark:border-white/20 bg-transparent px-2 py-1.5 text-sm"
-                    />
-                </div>
-                <div className="flex items-center gap-3">
-                    <button
-                        type="submit"
-                        disabled={creating || !name.trim() || !registryUrl.trim()}
-                        className="rounded bg-black text-white dark:bg-white dark:text-black px-4 py-1.5 text-xs font-medium disabled:opacity-60"
-                    >
-                        {creating ? "Adding..." : "Add Registry"}
-                    </button>
-                    <span className="text-xs opacity-60">
-                        Credentials are encrypted at rest (AES-256-GCM).
-                    </span>
-                </div>
+                {quotaReached ? (
+                    <p className="text-sm opacity-60">
+                        You have reached your plan&apos;s registry limit ({quota?.limit}).
+                        Delete an existing registry or upgrade your plan to add more.
+                    </p>
+                ) : (
+                    <>
+                        <div className="grid sm:grid-cols-2 gap-2">
+                            <input
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                placeholder="Name (e.g. Docker Hub)"
+                                required
+                                className="rounded border border-black/20 dark:border-white/20 bg-transparent px-2 py-1.5 text-sm"
+                            />
+                            <input
+                                value={registryUrl}
+                                onChange={(e) => { setRegistryUrl(e.target.value); setTestResult(null); }}
+                                placeholder="URL (e.g. https://registry-1.docker.io)"
+                                required
+                                className="rounded border border-black/20 dark:border-white/20 bg-transparent px-2 py-1.5 text-sm"
+                            />
+                            <input
+                                value={username}
+                                onChange={(e) => { setUsername(e.target.value); setTestResult(null); }}
+                                placeholder="Username (optional)"
+                                className="rounded border border-black/20 dark:border-white/20 bg-transparent px-2 py-1.5 text-sm"
+                            />
+                            <input
+                                value={token}
+                                onChange={(e) => { setToken(e.target.value); setTestResult(null); }}
+                                placeholder="Token / Password (optional)"
+                                type="password"
+                                className="rounded border border-black/20 dark:border-white/20 bg-transparent px-2 py-1.5 text-sm"
+                            />
+                        </div>
+                        <div className="flex items-center gap-3 flex-wrap">
+                            <button
+                                type="button"
+                                onClick={handleTestConnection}
+                                disabled={testing || !registryUrl.trim()}
+                                className="rounded border border-black/20 dark:border-white/20 px-4 py-1.5 text-xs font-medium disabled:opacity-60"
+                            >
+                                {testing ? "Testing..." : "Test Connection"}
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={creating || !name.trim() || !registryUrl.trim()}
+                                className="rounded bg-black text-white dark:bg-white dark:text-black px-4 py-1.5 text-xs font-medium disabled:opacity-60"
+                            >
+                                {creating ? "Adding..." : "Add Registry"}
+                            </button>
+                            <span className="text-xs opacity-60">
+                                Credentials are encrypted at rest (AES-256-GCM).
+                            </span>
+                        </div>
+                        {testResult && (
+                            <div className={`text-xs ${testResult.ok ? "text-emerald-700 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                                {testResult.ok
+                                    ? `Connection successful (${testResult.latencyMs}ms)`
+                                    : `Connection failed: ${testResult.error}`}
+                            </div>
+                        )}
+                    </>
+                )}
             </form>
 
             {/* Registries Table */}

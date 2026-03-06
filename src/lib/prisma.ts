@@ -31,15 +31,16 @@ let ensureSchemaPromise: Promise<void> | null = null;
 
 async function ensurePlanSeeds() {
     await prisma.$executeRawUnsafe(`
-INSERT INTO plans (code, name, monthly_scan_limit, active)
+INSERT INTO plans (code, name, monthly_scan_limit, max_registries, active)
 VALUES
-  ('FREE', 'Free', 25, TRUE),
-  ('BASIC', 'Basic', 500, TRUE),
-  ('PRO', 'Pro', 5000, TRUE),
-  ('ENTERPRISE', 'Enterprise', NULL, TRUE)
+  ('FREE', 'Free', 25, 2, TRUE),
+  ('BASIC', 'Basic', 500, 10, TRUE),
+  ('PRO', 'Pro', 5000, 50, TRUE),
+  ('ENTERPRISE', 'Enterprise', NULL, NULL, TRUE)
 ON CONFLICT (code) DO UPDATE
 SET name = EXCLUDED.name,
     monthly_scan_limit = EXCLUDED.monthly_scan_limit,
+    max_registries = EXCLUDED.max_registries,
     active = EXCLUDED.active;
     `);
 }
@@ -230,6 +231,7 @@ CREATE TABLE IF NOT EXISTS plans (
   code TEXT NOT NULL UNIQUE,
   name TEXT NOT NULL,
   monthly_scan_limit INTEGER,
+  max_registries INTEGER,
   active BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -420,6 +422,7 @@ CREATE TABLE IF NOT EXISTS registry_configs (
 )
         `,
         `CREATE INDEX IF NOT EXISTS idx_registry_configs_org ON registry_configs(org_id)`,
+        `ALTER TABLE plans ADD COLUMN IF NOT EXISTS max_registries INTEGER`,
         `ALTER TABLE scan_jobs ADD COLUMN IF NOT EXISTS source_type TEXT NOT NULL DEFAULT 'upload'`,
         `ALTER TABLE scan_jobs ADD COLUMN IF NOT EXISTS registry_image TEXT`,
         `ALTER TABLE scan_jobs ADD COLUMN IF NOT EXISTS registry_config_id UUID`,
@@ -489,6 +492,7 @@ CREATE TABLE IF NOT EXISTS plans (
   code TEXT NOT NULL UNIQUE,
   name TEXT NOT NULL,
   monthly_scan_limit INTEGER,
+  max_registries INTEGER,
   active BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
