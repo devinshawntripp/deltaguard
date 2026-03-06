@@ -13,6 +13,7 @@ type Job = {
   progress_pct: number;
   progress_msg?: string | null;
   error_msg?: string | null;
+  summary_json?: { target?: { type?: string } } | null;
 };
 
 const STATUS_RANK: Record<Job["status"], number> = {
@@ -170,6 +171,11 @@ export default function PackagesTable() {
                   </td>
                   <td className="p-3 opacity-80 text-xs min-w-0">
                     <span className="block truncate" title={j.object_key || ""}>{j.object_key || ""}</span>
+                    {j.summary_json?.target?.type && (
+                      <span className="inline-block px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/5 text-[10px] font-medium muted mt-0.5">
+                        {({ iso: "ISO", container: "Container", binary: "Binary", source: "Source" } as Record<string, string>)[j.summary_json.target.type] ?? j.summary_json.target.type}
+                      </span>
+                    )}
                   </td>
                   <td className="p-3 opacity-80">{j.status}</td>
                   <td className="p-3 min-w-0">
