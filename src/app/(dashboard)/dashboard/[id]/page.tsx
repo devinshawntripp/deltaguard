@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import JobLiveStatus from "@/components/JobLiveStatus";
+import IsoProfileCard from "@/components/IsoProfileCard";
+import ScanSummaryCard from "@/components/ScanSummaryCard";
 import LogViewerSection from "./LogViewerSection";
 import { getJob } from "@/lib/jobs";
 import { getServerSession } from "next-auth";
@@ -56,7 +58,12 @@ export default async function PackageDetails({ params }: { params: Promise<{ id:
                 }}
             />
             {data.summary_json && (
-                <pre className="surface-card p-3 text-sm whitespace-pre-wrap">{JSON.stringify(data.summary_json, null, 2)}</pre>
+                <div className="grid gap-3">
+                    {data.summary_json.iso_profile && (
+                        <IsoProfileCard profile={data.summary_json.iso_profile} />
+                    )}
+                    <ScanSummaryCard data={data.summary_json} />
+                </div>
             )}
         </div>
     );
