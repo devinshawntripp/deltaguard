@@ -170,6 +170,11 @@ export default function UploadCard() {
         />
         <span className="text-[11px] muted mt-1 block">Max file size: 15 GB</span>
       </label>
+      {file?.name?.toLowerCase().endsWith(".iso") && (
+        <div className="text-xs px-3 py-2 rounded-md bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-200">
+          This is an ISO image. For more accurate results, we recommend <strong>deep mode</strong> which analyzes the default installation profile.
+        </div>
+      )}
       <div className="flex items-center gap-3">
         <button disabled={!file || loading} className="btn-primary inline-flex items-center justify-center gap-2 disabled:pointer-events-none">
           {loading ? "Uploading\u2026" : "Upload & Scan"}
