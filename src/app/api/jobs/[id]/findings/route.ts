@@ -208,6 +208,19 @@ END
         const total = Number(countRows[0]?.total || 0);
 
         if (total === 0) {
+            // Check if filters narrowed the result to zero — if the job has
+            // findings in DB but the current filter excludes them all, return
+            // empty instead of falling back to S3 (which ignores filters).
+            const hasFilters = tier !== "all" || !!severity || fixedFilter != null || !!search;
+            if (hasFilters) {
+                const baseCount = await prisma.$queryRawUnsafe<Array<{ cnt: number }>>(
+                    `SELECT COUNT(*)::int AS cnt FROM scan_findings WHERE job_id = $1::uuid`,
+                    id,
+                );
+                if (Number(baseCount[0]?.cnt || 0) > 0) {
+                    return NextResponse.json(emptyResponse(page, pageSize));
+                }
+            }
             const fallback = await parseS3FindingsFallback(
                 {
                     report_bucket: job.report_bucket || null,
