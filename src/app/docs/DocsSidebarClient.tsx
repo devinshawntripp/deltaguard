@@ -116,7 +116,7 @@ export default function DocsSidebarClient({
 
             {/* Sidebar */}
             <aside className={`${sidebarOpen ? "block" : "hidden"} lg:block`}>
-                <div className="sticky top-24 rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-black/20 backdrop-blur p-4">
+                <div className="sticky top-24 max-h-[calc(100vh-8rem)] overflow-y-auto rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-black/20 backdrop-blur p-4">
                     <div className="text-xs uppercase tracking-wide muted mb-2">Documentation</div>
                     <nav className="grid gap-1">
                         {navItems.map((item) => (
