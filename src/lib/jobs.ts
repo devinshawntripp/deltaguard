@@ -86,6 +86,42 @@ VALUES (
     return job;
 }
 
+export async function createRegistryJob(params: {
+    registry_config_id: string;
+    registry_image: string;
+    org_id: string;
+    created_by_user_id?: string | null;
+    created_by_api_key_id?: string | null;
+    settings_snapshot?: (ScannerSettings & { summary_only?: boolean }) | null;
+}): Promise<Job> {
+    await init();
+    const id = crypto.randomUUID();
+    const bucket = process.env.UPLOADS_BUCKET || process.env.MINIO_UPLOADS_BUCKET || "deltaguard";
+    const objectKey = `registry-pulls/${id}/image.tar`;
+    const settingsSnapshot =
+        params.settings_snapshot == null ? null : JSON.stringify(params.settings_snapshot);
+    await prisma.$executeRaw`
+INSERT INTO scan_jobs (
+  id, status, bucket, object_key, mode, format, refs,
+  org_id, created_by_user_id, created_by_api_key_id, settings_snapshot,
+  source_type, registry_image, registry_config_id
+)
+VALUES (
+  ${id}::uuid, 'queued', ${bucket}, ${objectKey},
+  'light', 'json', FALSE,
+  ${params.org_id}::uuid,
+  ${params.created_by_user_id || null}::uuid,
+  ${params.created_by_api_key_id || null}::uuid,
+  ${settingsSnapshot || null}::jsonb,
+  'registry', ${params.registry_image}, ${params.registry_config_id}::uuid
+)
+    `;
+    const rows = await prisma.$queryRaw<any[]>`SELECT * FROM scan_jobs WHERE id=${id}::uuid`;
+    const job = rows[0] as Job;
+    try { await prisma.$executeRaw`SELECT pg_notify('job_events', ${id})`; } catch { }
+    return job;
+}
+
 export async function getJob(id: string, orgId?: string): Promise<Job | null> {
     await init();
     const rows = orgId

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 
 type RegistryInfo = {
@@ -12,6 +12,7 @@ type RegistryInfo = {
 
 export default function RegistryBrowsePage() {
     const params = useParams<{ id: string }>();
+    const router = useRouter();
     const registryId = params.id;
 
     const [registry, setRegistry] = useState<RegistryInfo | null>(null);
@@ -25,6 +26,8 @@ export default function RegistryBrowsePage() {
     const [tagError, setTagError] = useState<string | null>(null);
 
     const [search, setSearch] = useState("");
+    const [scanning, setScanning] = useState<Record<string, boolean>>({});
+    const [scanError, setScanError] = useState<string | null>(null);
 
     // Load registry info
     useEffect(() => {
@@ -82,6 +85,33 @@ export default function RegistryBrowsePage() {
             .finally(() => setLoadingTags(false));
     }, [registryId, selectedRepo]);
 
+    async function handleScan(tag: string) {
+        if (!selectedRepo) return;
+        const key = `${selectedRepo}:${tag}`;
+        setScanning((s) => ({ ...s, [key]: true }));
+        setScanError(null);
+        try {
+            const res = await fetch("/api/registry/scan", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    registry_config_id: registryId,
+                    repo: selectedRepo,
+                    tag,
+                }),
+            });
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data.error || `HTTP ${res.status}`);
+            }
+            const job = await res.json();
+            router.push(`/dashboard/${job.id}`);
+        } catch (e: unknown) {
+            setScanError(e instanceof Error ? e.message : String(e));
+            setScanning((s) => ({ ...s, [key]: false }));
+        }
+    }
+
     const filtered = search
         ? repos.filter((r) => r.toLowerCase().includes(search.toLowerCase()))
         : repos;
@@ -107,6 +137,12 @@ export default function RegistryBrowsePage() {
             {repoError && (
                 <div className="rounded-md border border-red-300 bg-red-100 text-red-900 px-3 py-2 text-sm">
                     {repoError}
+                </div>
+            )}
+
+            {scanError && (
+                <div className="rounded-md border border-red-300 bg-red-100 text-red-900 px-3 py-2 text-sm">
+                    {scanError}
                 </div>
             )}
 
@@ -179,23 +215,26 @@ export default function RegistryBrowsePage() {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {tags.map((tag) => (
-                                        <tr
-                                            key={tag}
-                                            className="border-t border-black/5 dark:border-white/5"
-                                        >
-                                            <td className="p-2 font-mono text-xs">{tag}</td>
-                                            <td className="p-2 text-right">
-                                                <button
-                                                    disabled
-                                                    title="Coming in Phase 5.3"
-                                                    className="rounded bg-black text-white dark:bg-white dark:text-black px-3 py-1 text-xs font-medium disabled:opacity-40"
-                                                >
-                                                    Scan
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))}
+                                    {tags.map((tag) => {
+                                        const key = `${selectedRepo}:${tag}`;
+                                        return (
+                                            <tr
+                                                key={tag}
+                                                className="border-t border-black/5 dark:border-white/5"
+                                            >
+                                                <td className="p-2 font-mono text-xs">{tag}</td>
+                                                <td className="p-2 text-right">
+                                                    <button
+                                                        onClick={() => handleScan(tag)}
+                                                        disabled={scanning[key]}
+                                                        className="rounded bg-black text-white dark:bg-white dark:text-black px-3 py-1 text-xs font-medium disabled:opacity-40"
+                                                    >
+                                                        {scanning[key] ? "Scanning..." : "Scan"}
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
                                 </tbody>
                             </table>
                         </div>
