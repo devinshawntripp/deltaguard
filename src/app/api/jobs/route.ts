@@ -54,6 +54,9 @@ export const POST = withRateLimit(async function POST(req: NextRequest) {
             );
         }
 
+        const summaryOnly = Boolean(body.summary_only ?? false);
+        const settingsWithSummary = { ...settings, summary_only: summaryOnly };
+
         const job = await createJob({
             bucket,
             object_key,
@@ -63,7 +66,7 @@ export const POST = withRateLimit(async function POST(req: NextRequest) {
             org_id: actor.orgId,
             created_by_user_id: actor.userId || null,
             created_by_api_key_id: actor.apiKeyId || null,
-            settings_snapshot: settings,
+            settings_snapshot: settingsWithSummary,
         });
         await incrementUsage(actor.orgId, actor.kind === "api_key" ? "api" : "ui");
         return NextResponse.json(job);

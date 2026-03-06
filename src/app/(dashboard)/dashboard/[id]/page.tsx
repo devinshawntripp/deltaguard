@@ -28,15 +28,22 @@ export default async function PackageDetails({ params }: { params: Promise<{ id:
             </div>
         );
     }
+
+    const summaryOnly = data.settings_snapshot?.summary_only === true;
+
     return (
         <div className="grid gap-6">
             <LogViewerSection scanId={id} />
             <div className="flex items-center justify-between">
-                <Link href="/dashboard" className="text-sm underline">← Back</Link>
+                <Link href="/dashboard" className="text-sm underline">&larr; Back</Link>
                 <div className="flex items-center gap-3 text-sm">
                     <Link href={`/dashboard/${id}/logs`} className="underline">Logs</Link>
-                    <Link href={`/dashboard/${id}/findings`} className="underline">Findings</Link>
-                    <Link href={`/dashboard/${id}/files`} className="underline">File tree</Link>
+                    {!summaryOnly && (
+                        <>
+                            <Link href={`/dashboard/${id}/findings`} className="underline">Findings</Link>
+                            <Link href={`/dashboard/${id}/files`} className="underline">File tree</Link>
+                        </>
+                    )}
                 </div>
             </div>
             <div className="flex items-center justify-between">
@@ -67,6 +74,14 @@ export default async function PackageDetails({ params }: { params: Promise<{ id:
                         <IsoProfileCard profile={data.summary_json.iso_profile} />
                     )}
                     <ScanSummaryCard data={data.summary_json} />
+                    {summaryOnly && (
+                        <div className="text-xs muted px-2">
+                            Quick Summary mode — only severity counts shown.{" "}
+                            <Link href={`/dashboard/${id}/findings`} className="underline">
+                                View Full Report
+                            </Link>
+                        </div>
+                    )}
                 </div>
             )}
         </div>

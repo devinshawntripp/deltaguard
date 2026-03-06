@@ -6,6 +6,7 @@ import { useUploadStore } from "@/store/useUploadStore";
 export default function UploadCard() {
   const [files, setFiles] = useState<File[]>([]);
   const [mode, setMode] = useState<"light" | "deep">("light");
+  const [summaryOnly, setSummaryOnly] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const activeUploads = useRef<Map<string, { abort: () => void }>>(new Map());
@@ -152,14 +153,21 @@ export default function UploadCard() {
       const start = await fetch("/api/jobs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bucket: putPayload.bucket, object_key: putPayload.key, mode, format: "json", refs: false }),
+        body: JSON.stringify({
+          bucket: putPayload.bucket,
+          object_key: putPayload.key,
+          mode,
+          format: "json",
+          refs: false,
+          summary_only: summaryOnly,
+        }),
       });
       const d = await start.json();
       if (!start.ok) throw new Error(d.error || "Job create failed");
 
       updateUpload(uploadId, { phase: "done" });
       activeUploads.current.delete(uploadId);
-      return null; // success
+      return null;
     } catch (err: any) {
       const msg = err.message || String(err);
       if (msg === "Upload cancelled") {
@@ -210,12 +218,18 @@ export default function UploadCard() {
     <form onSubmit={onSubmit} className="surface-card p-6 backdrop-blur grid gap-4">
       <div className="flex items-center justify-between">
         <div className="font-semibold tracking-tight">Upload artifact</div>
-        <div className="flex items-center gap-2 text-xs muted">
-          <label>
-            <input type="radio" name="mode" value="light" checked={mode === "light"} onChange={() => setMode("light")} /> Light
-          </label>
-          <label>
-            <input type="radio" name="mode" value="deep" checked={mode === "deep"} onChange={() => setMode("deep")} /> Deep
+        <div className="flex items-center gap-3 text-xs muted">
+          <div className="flex items-center gap-2">
+            <label>
+              <input type="radio" name="mode" value="light" checked={mode === "light"} onChange={() => setMode("light")} /> Light
+            </label>
+            <label>
+              <input type="radio" name="mode" value="deep" checked={mode === "deep"} onChange={() => setMode("deep")} /> Deep
+            </label>
+          </div>
+          <label className="flex items-center gap-1 cursor-pointer" title="Show only severity counts instead of the full report">
+            <input type="checkbox" checked={summaryOnly} onChange={(e) => setSummaryOnly(e.target.checked)} className="accent-teal-600" />
+            Quick Summary
           </label>
         </div>
       </div>
