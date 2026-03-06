@@ -141,16 +141,30 @@ LIMIT 1
     if (!actorIsAdmin && hasRolesMask) {
       const requested = parseRoleMask(body.roles_mask, currMask);
       if (requested !== currMask) {
-        return NextResponse.json(
-          {
-            error: "only admin override can change role masks",
-            code: "forbidden_role_assignment",
-            actor_roles_mask: actor.rolesMask.toString(),
-            current_roles_mask: currMask.toString(),
-            requested_roles_mask: requested.toString(),
-          },
-          { status: 403 },
-        );
+        // Org owners can assign roles below their own level (bits 1-64),
+        // but cannot grant ORG_OWNER (128) or ADMIN_OVERRIDE.
+        const actorIsOwner = hasRole(actor.rolesMask, ROLE_ORG_OWNER);
+        if (!actorIsOwner) {
+          return NextResponse.json(
+            {
+              error: "only org owners or admin override can change role masks",
+              code: "forbidden_role_assignment",
+            },
+            { status: 403 },
+          );
+        }
+        // Check the bits that changed
+        const changed = requested ^ currMask;
+        const OWNER_AND_ABOVE = ROLE_ORG_OWNER | ADMIN_OVERRIDE;
+        if ((changed & OWNER_AND_ABOVE) !== BigInt(0)) {
+          return NextResponse.json(
+            {
+              error: "org owners cannot assign or revoke org_owner or admin_override roles",
+              code: "forbidden_role_escalation",
+            },
+            { status: 403 },
+          );
+        }
       }
     }
 

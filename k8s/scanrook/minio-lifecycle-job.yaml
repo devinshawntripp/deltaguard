@@ -1,7 +1,7 @@
-# MinIO lifecycle rules configuration (Phase 5.7)
+# MinIO lifecycle rules configuration
 # Weekly CronJob that ensures lifecycle (expiration) rules are set on buckets.
-# - uploads bucket: 90-day expiration
-# - reports bucket: 180-day expiration
+# - deltaguard (uploads) bucket: 7-day expiration (safety net — reaper handles precise cleanup)
+# - reports bucket: 90-day expiration
 apiVersion: batch/v1
 kind: CronJob
 metadata:
@@ -41,27 +41,21 @@ spec:
                     "${MINIO_ACCESS_KEY}" \
                     "${MINIO_SECRET_KEY}"
 
-                  echo "Setting lifecycle rule on uploads bucket (90-day expiration)..."
-                  mc ilm rule add minio/uploads \
-                    --expire-days 90 \
-                    --noncurrent-expire-days 90 \
-                    --tags "managed-by=lifecycle-job" \
-                    2>/dev/null || \
-                  mc ilm rule add minio/uploads \
-                    --expire-days 90
+                  echo "Setting lifecycle rule on deltaguard (uploads) bucket (7-day expiration)..."
+                  mc ilm rule add minio/deltaguard \
+                    --expire-days 7 2>/dev/null || \
+                  mc ilm rule add minio/deltaguard \
+                    --expire-days 7 || true
 
-                  echo "Setting lifecycle rule on reports bucket (180-day expiration)..."
+                  echo "Setting lifecycle rule on reports bucket (90-day expiration)..."
                   mc ilm rule add minio/reports \
-                    --expire-days 180 \
-                    --noncurrent-expire-days 180 \
-                    --tags "managed-by=lifecycle-job" \
-                    2>/dev/null || \
+                    --expire-days 90 2>/dev/null || \
                   mc ilm rule add minio/reports \
-                    --expire-days 180
+                    --expire-days 90 || true
 
                   echo "Current lifecycle rules:"
-                  echo "--- uploads ---"
-                  mc ilm rule ls minio/uploads || true
+                  echo "--- deltaguard (uploads) ---"
+                  mc ilm rule ls minio/deltaguard || true
                   echo "--- reports ---"
                   mc ilm rule ls minio/reports || true
                   echo "Lifecycle configuration complete at $(date)"

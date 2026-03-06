@@ -78,6 +78,30 @@ export async function deleteObject(args: { bucket: string; key: string }) {
     await s3Internal.send(new DeleteObjectCommand({ Bucket: args.bucket, Key: args.key }));
 }
 
+export async function listObjects(args: { bucket: string; prefix?: string }): Promise<Array<{ key: string; size: number; lastModified: Date }>> {
+    const { ListObjectsV2Command } = await import("@aws-sdk/client-s3");
+    const results: Array<{ key: string; size: number; lastModified: Date }> = [];
+    let continuationToken: string | undefined;
+    do {
+        const resp = await s3Internal.send(new ListObjectsV2Command({
+            Bucket: args.bucket,
+            Prefix: args.prefix,
+            ContinuationToken: continuationToken,
+        }));
+        for (const obj of resp.Contents || []) {
+            if (obj.Key) {
+                results.push({
+                    key: obj.Key,
+                    size: obj.Size || 0,
+                    lastModified: obj.LastModified || new Date(0),
+                });
+            }
+        }
+        continuationToken = resp.IsTruncated ? resp.NextContinuationToken : undefined;
+    } while (continuationToken);
+    return results;
+}
+
 export async function downloadToFile(args: { bucket: string; key: string; filePath: string }) {
     const res = await s3Internal.send(new GetObjectCommand({ Bucket: args.bucket, Key: args.key }));
     const stream = res.Body as unknown as NodeJS.ReadableStream;

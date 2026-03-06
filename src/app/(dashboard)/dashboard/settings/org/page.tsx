@@ -506,23 +506,27 @@ export default function OrgSettingsPage() {
                     </select>
                   </td>
                   <td className="p-3">
+                    {!permissions.can_edit_roles ? (
+                      <div className="text-xs opacity-70">{labels.join(", ") || "none"}</div>
+                    ) : (
                     <div className="grid gap-1">
+                      {permissions.is_super_admin && (
                       <label className="inline-flex items-center gap-2 text-xs pb-1 border-b border-black/10 dark:border-white/10">
                         <input
                           type="checkbox"
                           checked={isOverride}
-                          disabled={!permissions.can_edit_roles}
                           onChange={(e) => toggleAdminOverride(m.user_id, e.target.checked)}
                         />
                         <span className="font-medium">Admin Override</span>
                         <span className="opacity-70">(max-int full access)</span>
                       </label>
+                      )}
                       <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-                        {ROLES.map((r) => (
+                        {ROLES.filter((r) => permissions.is_super_admin || Number(r.bit) <= (permissions.max_assignable_role_bit || 0)).map((r) => (
                           <label key={`${m.user_id}-${r.label}`} className="inline-flex items-center gap-2 text-xs">
                             <input
                               type="checkbox"
-                              disabled={isOverride || !permissions.can_edit_roles}
+                              disabled={isOverride}
                               checked={isOverride || (mask & r.bit) === r.bit}
                               onChange={() => toggleRole(m.user_id, r.bit)}
                             />
@@ -533,14 +537,18 @@ export default function OrgSettingsPage() {
                       </div>
                       <div className="text-xs opacity-70">Resolved roles: {labels.join(", ") || "none"}</div>
                     </div>
+                    )}
                   </td>
                   <td className="p-3">
+                    {permissions.is_super_admin ? (
                     <input
                       value={d.rolesMask}
                       onChange={(e) => setDrafts((prev) => ({ ...prev, [m.user_id]: { ...d, rolesMask: e.target.value } }))}
-                      disabled={!permissions.can_edit_roles}
-                      className="w-full rounded border border-black/20 dark:border-white/20 bg-transparent px-2 py-1 font-mono text-xs disabled:opacity-60"
+                      className="w-full rounded border border-black/20 dark:border-white/20 bg-transparent px-2 py-1 font-mono text-xs"
                     />
+                    ) : (
+                    <span className="font-mono text-xs opacity-60">{d.rolesMask}</span>
+                    )}
                     {d.msg ? <div className="text-xs mt-1 text-emerald-700 dark:text-emerald-400">{d.msg}</div> : null}
                   </td>
                   <td className="p-3">

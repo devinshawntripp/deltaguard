@@ -15,5 +15,6 @@ resources:
   - pg-backup-cronjob.yaml
   - hpa.yaml
   - minio-lifecycle-job.yaml
+  - s3-reaper-cronjob.yaml
   # - configmap.yaml
   # - secret.yaml

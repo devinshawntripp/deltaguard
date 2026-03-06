@@ -1,0 +1,59 @@
+# S3 orphan reaper — runs daily at 4 AM UTC
+# Calls the scanrook-web API endpoint that cross-references S3 objects
+# against the scan_jobs table and deletes unreferenced objects older than 1 hour.
+# Also rotates vulndb snapshots (keeps latest 2).
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: s3-reaper
+  labels:
+    app: s3-reaper
+spec:
+  schedule: "0 4 * * *"  # Daily at 4:00 AM UTC
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 120
+      template:
+        metadata:
+          labels:
+            app: s3-reaper
+        spec:
+          restartPolicy: OnFailure
+          dnsConfig:
+            options:
+              - name: ndots
+                value: "1"
+          containers:
+            - name: reaper
+              image: curlimages/curl:8.5.0
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -e
+                  echo "Running S3 orphan reaper at $(date -u)"
+                  RESP=$(curl -sf -X POST \
+                    -H "x-cleanup-secret: ${CLEANUP_SECRET}" \
+                    -H "Content-Type: application/json" \
+                    "http://scanrook-web.scanrook.svc:3000/api/admin/s3-cleanup")
+                  echo "Response: ${RESP}"
+                  DELETED=$(echo "${RESP}" | grep -o '"deleted_count":[0-9]*' | cut -d: -f2)
+                  FREED=$(echo "${RESP}" | grep -o '"freed_human":"[^"]*"' | cut -d'"' -f4)
+                  echo "Deleted ${DELETED} orphaned objects, freed ${FREED}"
+              env:
+                - name: CLEANUP_SECRET
+                  valueFrom:
+                    secretKeyRef:
+                      name: scanrook-secrets
+                      key: CLEANUP_SECRET
+              resources:
+                limits:
+                  cpu: 50m
+                  memory: 32Mi
+                requests:
+                  cpu: 10m
+                  memory: 16Mi
