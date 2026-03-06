@@ -37,6 +37,116 @@ data:
         editable: true
 ---
 apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-provider
+  namespace: monitoring
+  labels:
+    app: grafana
+data:
+  dashboards.yaml: |
+    apiVersion: 1
+    providers:
+      - name: scanrook
+        orgId: 1
+        folder: ScanRook
+        type: file
+        disableDeletion: false
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards
+          foldersFromFilesStructure: false
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards
+  namespace: monitoring
+  labels:
+    app: grafana
+data:
+  scanrook-scans.json: |
+    {
+      "dashboard": {
+        "id": null,
+        "uid": "scanrook-scans",
+        "title": "ScanRook Scans",
+        "tags": ["scanrook"],
+        "timezone": "browser",
+        "refresh": "30s",
+        "time": { "from": "now-24h", "to": "now" },
+        "panels": [
+          {
+            "id": 1,
+            "title": "Scan Job Pod Duration",
+            "type": "timeseries",
+            "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+            "datasource": { "type": "loki", "uid": "loki" },
+            "targets": [
+              {
+                "expr": "{namespace=\"scanrook\", container=\"runjob\"} |= \"scan completed\" | regexp \"duration=(?P<duration>[0-9.]+)s\"",
+                "legendFormat": "{{pod}}"
+              }
+            ]
+          },
+          {
+            "id": 2,
+            "title": "Active Scan Pods by Tier",
+            "type": "stat",
+            "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+            "datasource": { "type": "prometheus", "uid": "prometheus" },
+            "targets": [
+              {
+                "expr": "count(kube_pod_labels{namespace=\"scanrook\", label_app=\"scanrook-scan\"}) by (label_scanrook_io_tier)",
+                "legendFormat": "{{label_scanrook_io_tier}}"
+              }
+            ]
+          },
+          {
+            "id": 3,
+            "title": "Scan Throughput (Jobs/Hour)",
+            "type": "timeseries",
+            "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+            "datasource": { "type": "loki", "uid": "loki" },
+            "targets": [
+              {
+                "expr": "count_over_time({namespace=\"scanrook\", container=\"runjob\"} |= \"scan completed\" [1h])",
+                "legendFormat": "completed/hour"
+              }
+            ]
+          },
+          {
+            "id": 4,
+            "title": "Scan Pod Resource Usage",
+            "type": "timeseries",
+            "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+            "datasource": { "type": "prometheus", "uid": "prometheus" },
+            "targets": [
+              {
+                "expr": "sum(container_memory_working_set_bytes{namespace=\"scanrook\", container=\"runjob\"}) by (pod)",
+                "legendFormat": "{{pod}} memory"
+              }
+            ]
+          },
+          {
+            "id": 5,
+            "title": "Dispatcher Events",
+            "type": "logs",
+            "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
+            "datasource": { "type": "loki", "uid": "loki" },
+            "targets": [
+              {
+                "expr": "{namespace=\"scanrook\", container=\"dispatcher\"}"
+              }
+            ]
+          }
+        ],
+        "schemaVersion": 39,
+        "version": 1
+      }
+    }
+---
+apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: grafana-data
@@ -59,6 +169,8 @@ metadata:
     app: grafana
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: grafana
@@ -120,12 +232,24 @@ spec:
             - name: datasources
               mountPath: /etc/grafana/provisioning/datasources
               readOnly: true
+            - name: dashboard-provider
+              mountPath: /etc/grafana/provisioning/dashboards
+              readOnly: true
+            - name: dashboards
+              mountPath: /var/lib/grafana/dashboards
+              readOnly: true
             - name: data
               mountPath: /var/lib/grafana
       volumes:
         - name: datasources
           configMap:
             name: grafana-datasources
+        - name: dashboard-provider
+          configMap:
+            name: grafana-dashboard-provider
+        - name: dashboards
+          configMap:
+            name: grafana-dashboards
         - name: data
           persistentVolumeClaim:
             claimName: grafana-data

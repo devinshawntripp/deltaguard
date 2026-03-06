@@ -19,8 +19,8 @@ data:
         static_configs:
           - targets: ["localhost:9090"]
 
-      # Worker pods /metrics endpoint
-      - job_name: "scanrook-worker"
+      # Dispatcher pods /metrics endpoint
+      - job_name: "scanrook-dispatcher"
         kubernetes_sd_configs:
           - role: pod
             namespaces:
@@ -29,33 +29,10 @@ data:
         relabel_configs:
           - source_labels: [__meta_kubernetes_pod_label_app]
             action: keep
-            regex: scanrook-worker
-          - source_labels: [__meta_kubernetes_pod_ip]
-            action: replace
-            target_label: __address__
-            regex: (.+)
-            replacement: $1:8080
-          - source_labels: [__meta_kubernetes_pod_name]
-            target_label: pod
-
-      # Web pods
-      - job_name: "scanrook-web"
-        kubernetes_sd_configs:
-          - role: pod
-            namespaces:
-              names:
-                - scanrook
-        relabel_configs:
-          - source_labels: [__meta_kubernetes_pod_label_app]
+            regex: scanrook-dispatcher
+          - source_labels: [__meta_kubernetes_pod_container_port_number]
+            regex: "8080"
             action: keep
-            regex: scanrook-web
-          - source_labels: [__meta_kubernetes_pod_ip]
-            action: replace
-            target_label: __address__
-            regex: (.+)
-            replacement: $1:3000
-          - source_labels: [__meta_kubernetes_pod_name]
-            target_label: pod
 
       # Kubernetes node metrics (kubelet)
       - job_name: "kubelet"
