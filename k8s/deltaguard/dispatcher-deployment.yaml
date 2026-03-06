@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scanrook-dispatcher
+  labels:
+    app: scanrook-dispatcher
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: scanrook-dispatcher
+  template:
+    metadata:
+      labels:
+        app: scanrook-dispatcher
+    spec:
+      serviceAccountName: scanrook-dispatcher
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      dnsConfig:
+        options:
+          - name: ndots
+            value: "1"
+      containers:
+        - name: dispatcher
+          image: devintripp/rust-scanner-worker:k8s-scheduler-v1
+          imagePullPolicy: Always
+          command: ["/usr/local/bin/dispatcher"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            readOnlyRootFilesystem: true
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: HTTP_ADDR
+              value: ":8080"
+            - name: WORKER_STALE_JOB_TIMEOUT_SECONDS
+              value: "1800"
+            - name: WORKER_STALE_SWEEP_SECONDS
+              value: "60"
+            - name: DISPATCHER_NAMESPACE
+              value: scanrook
+            - name: DISPATCHER_SCAN_IMAGE
+              value: devintripp/rust-scanner-worker:k8s-scheduler-v1
+            - name: DISPATCHER_SERVICE_ACCOUNT
+              value: scanrook-dispatcher
+            - name: DISPATCHER_ENV_SECRET
+              value: scanrook-secrets
+            - name: DISPATCHER_ENV_CONFIGMAP
+              value: scanrook-config
+            - name: S3_ENDPOINT
+              value: minio.storage.svc.cluster.local:9000
+            - name: HTTP_PROXY
+              value: http://10.10.10.2:3128
+            - name: HTTPS_PROXY
+              value: http://10.10.10.2:3128
+            - name: http_proxy
+              value: http://10.10.10.2:3128
+            - name: https_proxy
+              value: http://10.10.10.2:3128
+            - name: NO_PROXY
+              value: .svc,.svc.cluster.local,.cluster.local,10.96.0.0/12,10.0.0.0/8,192.168.0.0/16,172.16.0.0/12,s3.apps.onetripp.com,minio.apps.onetripp.com,minio.storage.svc.cluster.local,minio.storage.svc.cluster.local.
+            - name: no_proxy
+              value: .svc,.svc.cluster.local,.cluster.local,10.96.0.0/12,10.0.0.0/8,192.168.0.0/16,172.16.0.0/12,s3.apps.onetripp.com,minio.apps.onetripp.com,minio.storage.svc.cluster.local,minio.storage.svc.cluster.local.
+          envFrom:
+            - secretRef:
+                name: scanrook-secrets
+            - configMapRef:
+                name: scanrook-config
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi

@@ -200,3 +200,143 @@ spec:
           port: 53
         - protocol: TCP
           port: 53
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: scanrook-scan
+  labels:
+    app: scanrook-scan
+spec:
+  podSelector:
+    matchLabels:
+      app: scanrook-scan
+  policyTypes:
+    - Egress
+  egress:
+    # DNS (kube-dns, TCP + UDP)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # PostgreSQL (pg-shared-rw.db.svc)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: db
+      ports:
+        - protocol: TCP
+          port: 5432
+    # MinIO (minio.storage.svc)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: storage
+      ports:
+        - protocol: TCP
+          port: 9000
+    # Internet egress (OSV, NVD, Red Hat APIs, scanrook upgrade)
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    # Allow traffic to home-proxy (Squid) for outbound HTTP/HTTPS
+    - to:
+        - ipBlock:
+            cidr: 10.10.10.2/32
+      ports:
+        - protocol: TCP
+          port: 3128
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: scanrook-dispatcher
+  labels:
+    app: scanrook-dispatcher
+spec:
+  podSelector:
+    matchLabels:
+      app: scanrook-dispatcher
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Health check endpoint
+    - from: []
+      ports:
+        - protocol: TCP
+          port: 8080
+  egress:
+    # DNS (kube-dns, TCP + UDP)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # PostgreSQL (pg-shared-rw.db.svc)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: db
+      ports:
+        - protocol: TCP
+          port: 5432
+    # MinIO (minio.storage.svc)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: storage
+      ports:
+        - protocol: TCP
+          port: 9000
+    # K8s API server (for creating Jobs)
+    - to:
+        - ipBlock:
+            cidr: 10.96.0.0/12
+      ports:
+        - protocol: TCP
+          port: 443
+    # Internet egress
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    # Allow traffic to home-proxy (Squid) for outbound HTTP/HTTPS
+    - to:
+        - ipBlock:
+            cidr: 10.10.10.2/32
+      ports:
+        - protocol: TCP
+          port: 3128
