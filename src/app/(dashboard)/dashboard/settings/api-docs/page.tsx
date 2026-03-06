@@ -5,7 +5,6 @@ export const dynamic = "force-dynamic";
 export default function ApiDocsPage() {
   return (
     <div className="grid gap-5">
-      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css" />
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">API Docs</h1>
         <p className="text-sm opacity-70 mt-1">

@@ -283,6 +283,38 @@ export function buildOpenApiDocument(baseUrl: string): OpenApiDocument {
           },
         },
       },
+      "/api/jobs/{id}/cancel": {
+        post: {
+          tags: ["jobs"],
+          summary: "Cancel a queued or running scan",
+          security: bearerOrHeader,
+          parameters: [
+            { name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } },
+          ],
+          responses: {
+            "200": { description: "Job cancelled", content: { "application/json": { schema: { type: "object", properties: { status: { type: "string" }, id: { type: "string" } } } } } },
+            "401": { $ref: "#/components/responses/Unauthorized" },
+            "403": { $ref: "#/components/responses/ForbiddenRole" },
+            "409": { description: "Job not in cancellable state" },
+          },
+        },
+      },
+      "/api/jobs/{id}/requeue": {
+        post: {
+          tags: ["jobs"],
+          summary: "Re-queue a failed or cancelled scan",
+          security: bearerOrHeader,
+          parameters: [
+            { name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } },
+          ],
+          responses: {
+            "200": { description: "Job re-queued", content: { "application/json": { schema: { type: "object", properties: { status: { type: "string" }, id: { type: "string" } } } } } },
+            "401": { $ref: "#/components/responses/Unauthorized" },
+            "403": { $ref: "#/components/responses/ForbiddenRole" },
+            "409": { description: "Job not in requeueable state" },
+          },
+        },
+      },
       "/api/org/api-keys": {
         get: {
           tags: ["api-keys"],
@@ -529,7 +561,7 @@ export function buildOpenApiDocument(baseUrl: string): OpenApiDocument {
           type: "object",
           properties: {
             id: { type: "string", format: "uuid" },
-            status: { type: "string", enum: ["queued", "running", "done", "failed", "deleting"] },
+            status: { type: "string", enum: ["queued", "running", "done", "failed", "cancelled", "deleting"] },
             object_key: { type: "string" },
             created_at: { type: "string", format: "date-time" },
             started_at: { type: "string", format: "date-time", nullable: true },
