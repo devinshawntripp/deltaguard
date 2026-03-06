@@ -6,4 +6,4 @@
 #
 # This manifest is kept for reference but should NOT be applied.
 # To remove the old CronJob from the cluster:
-#   kubectl delete cronjob vulndb-build -n deltaguard
+#   kubectl delete cronjob vulndb-build -n scanrook

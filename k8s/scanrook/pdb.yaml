@@ -1,4 +1,4 @@
-# PodDisruptionBudgets for deltaguard namespace
+# PodDisruptionBudgets for scanrook namespace
 # Ensures minimum availability during voluntary disruptions (node drains, upgrades).
 ---
 apiVersion: policy/v1

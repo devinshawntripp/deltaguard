@@ -1,4 +1,4 @@
-# ResourceQuota for deltaguard namespace
+# ResourceQuota for scanrook namespace
 # Prevents runaway resource consumption across all pods in the namespace.
 ---
 apiVersion: v1

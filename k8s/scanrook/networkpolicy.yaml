@@ -1,4 +1,4 @@
-# NetworkPolicy for deltaguard namespace
+# NetworkPolicy for scanrook namespace
 # Restricts traffic to only known required flows.
 ---
 apiVersion: networking.k8s.io/v1
