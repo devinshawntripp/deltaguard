@@ -28,10 +28,10 @@ data:
         pipeline_stages:
           - cri: {}
         relabel_configs:
-          # Only collect logs from deltaguard and monitoring namespaces
+          # Only collect logs from scanrook and monitoring namespaces
           - source_labels: [__meta_kubernetes_namespace]
             action: keep
-            regex: (deltaguard|monitoring|db|storage|ingress-nginx)
+            regex: (scanrook|monitoring|db|storage|ingress-nginx)
           - source_labels: [__meta_kubernetes_pod_node_name]
             target_label: node
           - source_labels: [__meta_kubernetes_namespace]
