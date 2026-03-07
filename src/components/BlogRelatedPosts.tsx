@@ -61,7 +61,7 @@ export function BlogRelatedPostsMobile({ currentHref, category }: BlogRelatedPos
   if (related.length === 0) return null;
 
   return (
-    <div className="lg:hidden px-6 pt-6">
+    <div className="lg:hidden">
       <button
         type="button"
         onClick={() => setOpen(!open)}

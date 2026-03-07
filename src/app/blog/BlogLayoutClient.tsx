@@ -49,9 +49,9 @@ export default function BlogLayoutClient({ children }: { children: React.ReactNo
   }
 
   return (
-    <>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
       {/* Mobile sidebar toggle + related posts */}
-      <div className="lg:hidden mb-4">
+      <div className="lg:hidden mb-4 flex items-center gap-2">
         <button
           type="button"
           onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -62,16 +62,15 @@ export default function BlogLayoutClient({ children }: { children: React.ReactNo
           </svg>
           {sidebarOpen ? "Hide posts" : "All posts"}
         </button>
-        {sidebarOpen && <div className="mt-3"><BlogSidebar currentHref={pathname} mobile /></div>}
       </div>
+      {sidebarOpen && <div className="lg:hidden mb-4"><BlogSidebar currentHref={pathname} mobile /></div>}
       <BlogRelatedPostsMobile currentHref={pathname} category={currentPost.category} />
-      <div className="lg:max-w-7xl lg:mx-auto lg:px-6">
-        <div className="lg:grid lg:grid-cols-[220px_minmax(0,1fr)_220px] lg:gap-8 lg:items-start">
-          <BlogSidebar currentHref={pathname} />
-          <div className="min-w-0 overflow-hidden">{children}</div>
-          <BlogRelatedPostsDesktop currentHref={pathname} category={currentPost.category} />
-        </div>
+
+      <div className="lg:grid lg:grid-cols-[240px_minmax(0,1fr)_240px] lg:gap-10 lg:items-start mt-4 lg:mt-0">
+        <BlogSidebar currentHref={pathname} />
+        <div className="min-w-0 overflow-hidden">{children}</div>
+        <BlogRelatedPostsDesktop currentHref={pathname} category={currentPost.category} />
       </div>
-    </>
+    </div>
   );
 }
