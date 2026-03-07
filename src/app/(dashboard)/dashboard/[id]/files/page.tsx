@@ -26,13 +26,13 @@ export default async function JobFilesPage({
       <div className="flex items-center gap-2 text-sm">
         <Link
           href={`/dashboard/${id}/files?tab=filesystem`}
-          className={`px-3 py-1 rounded border ${activeTab === "filesystem" ? "bg-black text-white border-black" : "border-black/20 dark:border-white/20"}`}
+          className={`px-3 py-1 rounded border transition-colors ${activeTab === "filesystem" ? "bg-[var(--dg-accent)] text-white border-[var(--dg-accent)]" : "border-[var(--dg-border)] hover:border-[var(--dg-border-strong)]"}`}
         >
           Everything
         </Link>
         <Link
           href={`/dashboard/${id}/files?tab=packages`}
-          className={`px-3 py-1 rounded border ${activeTab === "packages" ? "bg-black text-white border-black" : "border-black/20 dark:border-white/20"}`}
+          className={`px-3 py-1 rounded border transition-colors ${activeTab === "packages" ? "bg-[var(--dg-accent)] text-white border-[var(--dg-accent)]" : "border-[var(--dg-border)] hover:border-[var(--dg-border-strong)]"}`}
         >
           Packages + versions + paths
         </Link>

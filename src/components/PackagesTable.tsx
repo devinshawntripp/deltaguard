@@ -194,8 +194,8 @@ export default function PackagesTable() {
                   </td>
                   <td className="p-3 text-right min-w-0">
                     <div className="flex items-center gap-1.5 flex-wrap justify-end">
-                      <Link href={`/dashboard/${j.id}/findings`} className="text-xs px-2 py-1 rounded-md bg-blue-600 text-white hover:bg-blue-700">Findings</Link>
-                      <Link href={`/dashboard/${j.id}/files`} className="text-xs px-2 py-1 rounded-md bg-slate-700 text-white hover:bg-slate-800">Files</Link>
+                      <Link href={`/dashboard/${j.id}/findings`} className="text-xs px-2 py-1 rounded-md btn-primary">Findings</Link>
+                      <Link href={`/dashboard/${j.id}/files`} className="text-xs px-2 py-1 rounded-md btn-secondary">Files</Link>
                       <button
                         onClick={async () => {
                           try {
@@ -210,7 +210,7 @@ export default function PackagesTable() {
                             });
                           } catch { }
                         }}
-                        className="text-xs px-2 py-1 rounded-md bg-red-600 text-white hover:bg-red-700"
+                        className="text-xs px-2 py-1 rounded-md bg-[var(--dg-danger)] text-white hover:opacity-90"
                       >
                         Delete
                       </button>
