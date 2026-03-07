@@ -24,7 +24,10 @@ export default async function PackageDetails({ params }: { params: Promise<{ id:
         return (
             <div className="grid gap-4">
                 <div className="muted">Job not found.</div>
-                <Link href="/dashboard" className="text-sm underline">Back to dashboard</Link>
+                <Link href="/dashboard" className="btn-secondary inline-flex items-center gap-1.5 w-fit text-sm">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.5 3L4.5 7L8.5 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    Back to dashboard
+                </Link>
             </div>
         );
     }
@@ -35,13 +38,16 @@ export default async function PackageDetails({ params }: { params: Promise<{ id:
         <div className="grid gap-6">
             <LogViewerSection scanId={id} />
             <div className="flex items-center justify-between">
-                <Link href="/dashboard" className="text-sm underline">&larr; Back</Link>
-                <div className="flex items-center gap-3 text-sm">
-                    <Link href={`/dashboard/${id}/logs`} className="underline">Logs</Link>
+                <Link href="/dashboard" className="btn-secondary inline-flex items-center gap-1.5 text-sm">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.5 3L4.5 7L8.5 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    Back
+                </Link>
+                <div className="flex items-center gap-2">
+                    <Link href={`/dashboard/${id}/logs`} className="btn-secondary text-sm">Logs</Link>
                     {!summaryOnly && (
                         <>
-                            <Link href={`/dashboard/${id}/findings`} className="underline">Findings</Link>
-                            <Link href={`/dashboard/${id}/files`} className="underline">File tree</Link>
+                            <Link href={`/dashboard/${id}/findings`} className="btn-secondary text-sm">Findings</Link>
+                            <Link href={`/dashboard/${id}/files`} className="btn-secondary text-sm">File tree</Link>
                         </>
                     )}
                 </div>
