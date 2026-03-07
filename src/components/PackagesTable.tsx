@@ -42,9 +42,32 @@ function mergeMonotonicJob(cur: Job | undefined, incoming: Partial<Job> & { id: 
   return merged;
 }
 
+function SkeletonRows() {
+  return (
+    <>
+      {Array.from({ length: 6 }).map((_, i) => (
+        <tr key={`skel-${i}`} className="border-t border-black/5 dark:border-white/5">
+          <td className="p-3"><div className="w-4 h-4 rounded bg-black/10 dark:bg-white/10 animate-pulse" /></td>
+          <td className="p-3"><div className="h-3 rounded bg-black/10 dark:bg-white/10 animate-pulse w-3/4" /></td>
+          <td className="p-3"><div className="h-3 rounded bg-black/10 dark:bg-white/10 animate-pulse w-4/5" /></td>
+          <td className="p-3"><div className="h-3 rounded bg-black/10 dark:bg-white/10 animate-pulse w-12" /></td>
+          <td className="p-3">
+            <div className="h-2 rounded bg-black/10 dark:bg-white/10 animate-pulse w-full" />
+            <div className="h-2 rounded bg-black/10 dark:bg-white/10 animate-pulse w-1/2 mt-2" />
+          </td>
+          <td className="p-3"><div className="h-3 rounded bg-black/10 dark:bg-white/10 animate-pulse w-20" /></td>
+          <td className="p-3"><div className="h-3 rounded bg-black/10 dark:bg-white/10 animate-pulse w-20" /></td>
+          <td className="p-3 text-right"><div className="h-5 rounded bg-black/10 dark:bg-white/10 animate-pulse w-16 ml-auto" /></td>
+        </tr>
+      ))}
+    </>
+  );
+}
+
 export default function PackagesTable() {
   const [list, setList] = React.useState<Job[]>([]);
   const [openIds, setOpenIds] = React.useState<Set<string>>(new Set());
+  const [loaded, setLoaded] = React.useState(false);
   const sortJobs = React.useCallback((items: Job[]) => {
     const rank = (s: string) => (s === "running" ? 0 : s === "queued" ? 1 : 2);
     const arr = [...items];
@@ -60,6 +83,7 @@ export default function PackagesTable() {
       try {
         const msg = JSON.parse(ev.data);
         if (msg.type === "snapshot" && Array.isArray(msg.items)) {
+          setLoaded(true);
           setList(sortJobs(msg.items));
         }
         if (msg.type === "changed" && msg.item) {
@@ -100,6 +124,7 @@ export default function PackagesTable() {
     const handler: EventListener = () => {
       fetch('/api/jobs', { cache: 'no-store' }).then(r => r.ok ? r.json() : []).then((items) => {
         if (!Array.isArray(items)) return;
+        setLoaded(true);
         setList((prev) => {
           const map = new Map<string, Job>();
           for (const j of prev) map.set(j.id, j);
@@ -144,6 +169,12 @@ export default function PackagesTable() {
           </tr>
         </thead>
         <tbody>
+          {!loaded && <SkeletonRows />}
+          {loaded && list.length === 0 && (
+            <tr>
+              <td colSpan={8} className="p-8 text-center muted">No scans yet. Upload a file above to get started.</td>
+            </tr>
+          )}
           {list.map((j, idx) => {
             const pct = j.status === "done" ? 100 : Math.min(100, j.progress_pct || 0);
             const isActive = j.status === "running" || j.status === "queued";
