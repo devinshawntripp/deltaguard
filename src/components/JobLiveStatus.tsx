@@ -26,6 +26,58 @@ const STATUS_RANK: Record<JobStatus, number> = {
     deleting: 3,
 };
 
+const STAGE_LABELS: Record<string, string> = {
+    "queued": "Waiting in queue...",
+    "claimed": "Worker claimed job",
+    "s3_download": "Downloading artifact from S3...",
+    "scanner_start": "Starting scanner...",
+    "extract": "Extracting archive contents...",
+    "inventory": "Detecting packages...",
+    "osv": "Enriching vulnerabilities (OSV)...",
+    "debian_tracker": "Checking Debian security tracker...",
+    "nvd": "Enriching vulnerabilities (NVD)...",
+    "redhat": "Checking Red Hat advisories (OVAL)...",
+    "epss": "Scoring exploit probability (EPSS)...",
+    "kev": "Checking CISA Known Exploited Vulns...",
+    "ingest": "Ingesting results into database...",
+    "report_upload": "Uploading report to S3...",
+    "complete": "Scan complete",
+    "failed": "Scan failed",
+};
+
+function humanizeProgress(msg: string | null | undefined, scanStatus: string | null | undefined): string | null {
+    if (!msg && !scanStatus) return null;
+
+    // Try scan_status first — it often carries the workflow stage
+    const raw = scanStatus || msg || "";
+    const lower = raw.toLowerCase().trim();
+
+    // Direct stage match
+    if (STAGE_LABELS[lower]) return STAGE_LABELS[lower];
+
+    // Map common progress_msg patterns to human labels
+    if (lower.startsWith("container.extract") || lower.startsWith("iso.extract") || lower.startsWith("archive.extract")) return "Extracting archive contents...";
+    if (lower.startsWith("container.layers") || lower.startsWith("iso.squashfs")) return "Extracting filesystem layers...";
+    if (lower.includes("pulling") || lower.includes("image.pull") || lower.startsWith("scan.image")) return "Pulling image...";
+    if (lower.includes("rpmdb") || lower.startsWith("container.packages") || lower.startsWith("container.rpm") || lower.startsWith("iso.packages")) return "Detecting packages...";
+    if (lower.startsWith("container.go.") || lower.startsWith("container.filename.")) return "Detecting packages...";
+    if (lower.startsWith("inventory") || lower.startsWith("binary.")) return "Detecting packages...";
+    if (lower.startsWith("osv.") || lower.startsWith("container.osv") || lower.startsWith("container.enrich.osv")) return "Enriching vulnerabilities (OSV)...";
+    if (lower.startsWith("nvd.") || lower.startsWith("container.enrich.nvd") || lower.startsWith("binary.nvd")) return "Enriching vulnerabilities (NVD)...";
+    if (lower.startsWith("redhat.") || lower.startsWith("rh.") || lower.startsWith("oval.") || lower.startsWith("container.enrich.redhat")) return "Checking Red Hat advisories (OVAL)...";
+    if (lower.startsWith("debian") || lower.startsWith("distro.")) return "Checking Debian security tracker...";
+    if (lower.startsWith("epss.")) return "Scoring exploit probability (EPSS)...";
+    if (lower.startsWith("kev.") || lower.startsWith("cisa.kev")) return "Checking CISA Known Exploited Vulns...";
+    if (lower.startsWith("worker.claim") || lower === "worker.start") return "Worker claimed job";
+    if (lower.startsWith("s3.download")) return "Downloading artifact from S3...";
+    if (lower.startsWith("worker.ingest") || lower.startsWith("ingest.")) return "Ingesting results into database...";
+    if (lower.startsWith("worker.report") || lower.startsWith("report.upload") || lower.startsWith("s3.report")) return "Uploading report to S3...";
+    if (lower === "scan.done" || lower === "scan.summary") return "Scan complete";
+
+    // Fallback: return the original message
+    return raw;
+}
+
 function mergeMonotonic(cur: JobState, next: Partial<JobState>): JobState {
     const merged = { ...cur, ...next };
     const curRank = STATUS_RANK[cur.status];
@@ -37,6 +89,21 @@ function mergeMonotonic(cur: JobState, next: Partial<JobState>): JobState {
     if (!merged.progress_msg) merged.progress_msg = cur.progress_msg;
     if (!merged.error_msg) merged.error_msg = cur.error_msg;
     return merged;
+}
+
+function StatusBadge({ status }: { status: JobStatus }) {
+    const styles: Record<JobStatus, string> = {
+        queued: "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300",
+        running: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300",
+        done: "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300",
+        failed: "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300",
+        deleting: "bg-gray-100 dark:bg-gray-900/30 text-gray-700 dark:text-gray-300",
+    };
+    return (
+        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wide ${styles[status]}`}>
+            {status}
+        </span>
+    );
 }
 
 export default function JobLiveStatus({ initial }: { initial: JobState }) {
@@ -63,21 +130,37 @@ export default function JobLiveStatus({ initial }: { initial: JobState }) {
         return () => es.close();
     }, [job.id, job.status]);
 
+    const humanStage = humanizeProgress(job.progress_msg, job.scan_status);
+    const isActive = job.status === "queued" || job.status === "running";
+
     return (
-        <div className="grid gap-2 text-sm">
-            <div className="font-semibold">{job.status} • {job.progress_pct}%</div>
-            <div>Created: {job.created_at ? new Date(job.created_at).toLocaleString() : ""}</div>
-            {job.started_at && <div>Started: {new Date(job.started_at).toLocaleString()}</div>}
-            {job.finished_at && <div>Finished: {new Date(job.finished_at).toLocaleString()}</div>}
-            {job.progress_msg && <div className="opacity-80">{job.progress_msg}</div>}
+        <div className="grid gap-3 text-sm">
+            <div className="flex items-center gap-3">
+                <StatusBadge status={job.status} />
+                <span className="font-semibold">{job.progress_pct}%</span>
+            </div>
+            {isActive && humanStage && (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/50">
+                    <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                    </span>
+                    <span className="font-medium text-blue-800 dark:text-blue-200">{humanStage}</span>
+                </div>
+            )}
+            {!isActive && humanStage && job.status !== "failed" && (
+                <div className="opacity-80">{humanStage}</div>
+            )}
+            <div className="grid gap-1 text-xs muted">
+                <div>Created: {job.created_at ? new Date(job.created_at).toLocaleString() : ""}</div>
+                {job.started_at && <div>Started: {new Date(job.started_at).toLocaleString()}</div>}
+                {job.finished_at && <div>Finished: {new Date(job.finished_at).toLocaleString()}</div>}
+            </div>
             {job.status === "failed" && job.error_msg && (
                 <div className="rounded-md bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 px-3 py-2 text-red-800 dark:text-red-200">
                     <span className="font-medium">Error:</span> {job.error_msg}
                 </div>
             )}
-            {job.scan_status && <div className="opacity-80">scan_status: {job.scan_status}</div>}
-            {job.inventory_status && <div className="opacity-80">inventory_status: {job.inventory_status}</div>}
-            {job.inventory_reason && <div className="opacity-80">inventory_reason: {job.inventory_reason}</div>}
         </div>
     );
 }
