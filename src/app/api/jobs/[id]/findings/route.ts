@@ -110,16 +110,50 @@ async function parseS3FindingsFallback(job: {
     const text = await res.text();
     if (!text.trim()) return emptyResponse(page, pageSize);
 
-    const parsed = JSON.parse(text) as Record<string, unknown>;
-    const allItems = Array.isArray(parsed.findings) ? parsed.findings as FindingsItem[] : [];
+    // Detect format: if first non-empty line starts with {"type": it's NDJSON
+    const firstLine = text.trim().split('\n')[0];
+    let allItems: FindingsItem[];
+    let summary: Record<string, number>;
+    let scanStatus: string | null = null;
+    let inventoryStatus: string | null = null;
+    let inventoryReason: string | null = null;
+
+    if (firstLine.includes('"type"')) {
+        // NDJSON format
+        const lines = text.trim().split('\n');
+        allItems = [];
+        summary = emptyResponse(page, pageSize).summary;
+        for (const line of lines) {
+            if (!line.trim()) continue;
+            try {
+                const obj = JSON.parse(line) as Record<string, unknown>;
+                if (obj.type === 'finding' && obj.data) {
+                    allItems.push(obj.data as FindingsItem);
+                } else if (obj.type === 'summary' && obj.data) {
+                    summary = obj.data as Record<string, number>;
+                } else if (obj.type === 'metadata') {
+                    scanStatus = typeof obj.scan_status === 'string' ? obj.scan_status : null;
+                    inventoryStatus = typeof obj.inventory_status === 'string' ? obj.inventory_status : null;
+                    inventoryReason = typeof obj.inventory_reason === 'string' ? obj.inventory_reason : null;
+                }
+            } catch { /* skip malformed lines */ }
+        }
+    } else {
+        // Legacy JSON format
+        const parsed = JSON.parse(text) as Record<string, unknown>;
+        allItems = Array.isArray(parsed.findings) ? parsed.findings as FindingsItem[] : [];
+        summary = (parsed.summary && typeof parsed.summary === "object")
+            ? parsed.summary as Record<string, number>
+            : emptyResponse(page, pageSize).summary;
+        scanStatus = typeof parsed.scan_status === "string" ? parsed.scan_status : null;
+        inventoryStatus = typeof parsed.inventory_status === "string" ? parsed.inventory_status : null;
+        inventoryReason = typeof parsed.inventory_reason === "string" ? parsed.inventory_reason : null;
+    }
+
     const nonFixed = allItems.filter((f) => f && f.fixed !== true);
     const total = nonFixed.length;
     const offset = (page - 1) * pageSize;
     const items = nonFixed.slice(offset, offset + pageSize);
-
-    const summary = (parsed.summary && typeof parsed.summary === "object")
-        ? parsed.summary as Record<string, number>
-        : emptyResponse(page, pageSize).summary;
 
     return {
         items,
@@ -127,9 +161,9 @@ async function parseS3FindingsFallback(job: {
         page,
         page_size: pageSize,
         total,
-        scan_status: typeof parsed.scan_status === "string" ? parsed.scan_status : job.scan_status,
-        inventory_status: typeof parsed.inventory_status === "string" ? parsed.inventory_status : job.inventory_status,
-        inventory_reason: typeof parsed.inventory_reason === "string" ? parsed.inventory_reason : job.inventory_reason,
+        scan_status: scanStatus ?? job.scan_status,
+        inventory_status: inventoryStatus ?? job.inventory_status,
+        inventory_reason: inventoryReason ?? job.inventory_reason,
     };
 }
 
