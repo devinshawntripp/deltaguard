@@ -1,6 +1,16 @@
 import Link from "next/link";
 import JobFilesTree from "@/components/JobFilesTree";
 import JobPackagesTable from "@/components/JobPackagesTable";
+import { getJob } from "@/lib/jobs";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/authOptions";
+
+export const dynamic = "force-dynamic";
+
+function stripTimestampPrefix(key: string): string {
+    const match = key.match(/^\d+_(.+)$/);
+    return match ? match[1] : key;
+}
 
 export default async function JobFilesPage({
   params,
@@ -13,10 +23,18 @@ export default async function JobFilesPage({
   const { tab = "filesystem" } = await searchParams;
   const activeTab = tab === "packages" ? "packages" : "filesystem";
 
+  const session = await getServerSession(authOptions);
+  const orgId = session?.org_id || session?.user?.org_id;
+  const job = orgId ? await getJob(id, orgId) : null;
+
+  const displayName = job?.object_key
+      ? stripTimestampPrefix(job.object_key.split("/").pop() || job.object_key)
+      : id;
+
   return (
     <div className="grid gap-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">File Tree for {id}</h1>
+        <h1 className="text-xl font-semibold">File Tree for {displayName}</h1>
         <div className="flex items-center gap-2">
           <Link href={`/dashboard/${id}/findings`} className="btn-secondary text-sm">Findings</Link>
           <Link href="/dashboard" className="btn-secondary inline-flex items-center gap-1.5 text-sm">
