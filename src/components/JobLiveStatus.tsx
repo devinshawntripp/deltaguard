@@ -48,14 +48,11 @@ const STAGE_LABELS: Record<string, string> = {
 function humanizeProgress(msg: string | null | undefined, scanStatus: string | null | undefined): string | null {
     if (!msg && !scanStatus) return null;
 
-    // Try scan_status first — it often carries the workflow stage
     const raw = scanStatus || msg || "";
     const lower = raw.toLowerCase().trim();
 
-    // Direct stage match
     if (STAGE_LABELS[lower]) return STAGE_LABELS[lower];
 
-    // Map common progress_msg patterns to human labels
     if (lower.startsWith("container.extract") || lower.startsWith("iso.extract") || lower.startsWith("archive.extract")) return "Extracting archive contents...";
     if (lower.startsWith("container.layers") || lower.startsWith("iso.squashfs")) return "Extracting filesystem layers...";
     if (lower.includes("pulling") || lower.includes("image.pull") || lower.startsWith("scan.image")) return "Pulling image...";
@@ -74,8 +71,13 @@ function humanizeProgress(msg: string | null | undefined, scanStatus: string | n
     if (lower.startsWith("worker.report") || lower.startsWith("report.upload") || lower.startsWith("s3.report")) return "Uploading report to S3...";
     if (lower === "scan.done" || lower === "scan.summary") return "Scan complete";
 
-    // Fallback: return the original message
     return raw;
+}
+
+function formatEta(seconds: number): string {
+    if (seconds < 60) return `<1m remaining`;
+    const mins = Math.round(seconds / 60);
+    return `~${mins}m remaining`;
 }
 
 function mergeMonotonic(cur: JobState, next: Partial<JobState>): JobState {
@@ -106,6 +108,27 @@ function StatusBadge({ status }: { status: JobStatus }) {
     );
 }
 
+function useEta(startedAt: string | null | undefined, progressPct: number, isActive: boolean): string | null {
+    const [now, setNow] = React.useState(Date.now());
+
+    React.useEffect(() => {
+        if (!isActive) return;
+        const id = setInterval(() => setNow(Date.now()), 5000);
+        return () => clearInterval(id);
+    }, [isActive]);
+
+    if (!isActive || !startedAt || progressPct <= 5 || progressPct >= 100) return null;
+
+    const elapsed = (now - new Date(startedAt).getTime()) / 1000;
+    if (elapsed < 10) return null;
+
+    const totalEstimate = elapsed / (progressPct / 100);
+    const remaining = totalEstimate - elapsed;
+
+    if (remaining < 5) return null;
+    return formatEta(remaining);
+}
+
 export default function JobLiveStatus({ initial }: { initial: JobState }) {
     const [job, setJob] = React.useState<JobState>(initial);
 
@@ -132,13 +155,25 @@ export default function JobLiveStatus({ initial }: { initial: JobState }) {
 
     const humanStage = humanizeProgress(job.progress_msg, job.scan_status);
     const isActive = job.status === "queued" || job.status === "running";
+    const eta = useEta(job.started_at, job.progress_pct, isActive);
 
     return (
         <div className="grid gap-3 text-sm">
             <div className="flex items-center gap-3">
                 <StatusBadge status={job.status} />
                 <span className="font-semibold">{job.progress_pct}%</span>
+                {eta && (
+                    <span className="text-xs muted">{eta}</span>
+                )}
             </div>
+            {isActive && (
+                <div className="w-full h-2 rounded bg-black/10 dark:bg-white/10 overflow-hidden">
+                    <div
+                        className="h-2 rounded bg-blue-600 transition-[width] duration-700 ease-out"
+                        style={{ width: `${Math.min(100, job.progress_pct)}%` }}
+                    />
+                </div>
+            )}
             {isActive && humanStage && (
                 <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/50">
                     <span className="relative flex h-2 w-2">
