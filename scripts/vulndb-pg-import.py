@@ -26,6 +26,7 @@ Env vars:
   IMPORT_DEBIAN      Set to "0" to skip (default: "1")
   IMPORT_UBUNTU      Set to "0" to skip (default: "1")
   IMPORT_ALPINE      Set to "0" to skip (default: "1")
+  IMPORT_OVAL        Set to "0" to skip Red Hat OVAL import (default: "1")
   FORCE_REFRESH      Set to "1" to ignore staleness checks and refresh all (default: "0")
   SKIP_SQLITE_EXPORT Set to "1" to skip SQLite export + MinIO upload (default: "0")
 """
@@ -72,6 +73,7 @@ REVALIDATION_HOURS = {
     "debian": 24,   # Debian tracker updated daily
     "ubuntu": 48,   # Ubuntu USN API, less frequent
     "alpine": 48,   # Alpine SecDB, less frequent
+    "oval": 24,     # Red Hat OVAL V2, updated daily
 }
 
 # OSV ecosystems to download (must match Rust scanner's osv_ecosystem_zips)
@@ -250,6 +252,27 @@ def ensure_pg_tables(conn):
                 last_checked_at TIMESTAMPTZ NOT NULL,
                 PRIMARY KEY (cve_id, package, branch, repo)
             );
+            CREATE TABLE IF NOT EXISTS oval_definitions_cache (
+                id SERIAL PRIMARY KEY,
+                rhel_version INT NOT NULL,
+                definition_id TEXT NOT NULL,
+                cves TEXT[] NOT NULL,
+                test_refs TEXT[] NOT NULL,
+                severity TEXT,
+                issued_date TIMESTAMPTZ,
+                last_checked_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                UNIQUE(rhel_version, definition_id)
+            );
+            CREATE TABLE IF NOT EXISTS oval_test_constraints_cache (
+                id SERIAL PRIMARY KEY,
+                rhel_version INT NOT NULL,
+                test_ref TEXT NOT NULL,
+                package TEXT NOT NULL,
+                op TEXT NOT NULL,
+                evr TEXT NOT NULL,
+                last_checked_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                UNIQUE(rhel_version, test_ref, package)
+            );
         """)
     conn.commit()
     log.info("Ensured PG cache tables exist")
@@ -270,6 +293,7 @@ def source_is_stale(conn, source: str) -> bool:
         "debian": ("debian_tracker_cache", "last_checked_at"),
         "ubuntu": ("ubuntu_usn_cache", "last_checked_at"),
         "alpine": ("alpine_secdb_cache", "last_checked_at"),
+        "oval": ("oval_definitions_cache", "last_checked_at"),
     }
     table, col = table_map.get(source, (None, None))
     if not table:
@@ -970,6 +994,175 @@ def _upsert_alpine_batch(conn, rows):
     conn.commit()
 
 
+# ---------------------------------------------------------------------------
+# Red Hat OVAL V2 Import
+# ---------------------------------------------------------------------------
+
+OVAL_V2_URLS = {
+    7: "https://access.redhat.com/security/data/oval/v2/RHEL7/rhel-7.oval.xml.bz2",
+    8: "https://access.redhat.com/security/data/oval/v2/RHEL8/rhel-8.oval.xml.bz2",
+    9: "https://access.redhat.com/security/data/oval/v2/RHEL9/rhel-9.oval.xml.bz2",
+}
+
+
+def import_redhat_oval(conn, session: requests.Session):
+    """Import Red Hat OVAL V2 definitions for RHEL 7, 8, 9."""
+    import bz2
+    import re
+    import xml.etree.ElementTree as ET
+
+    log.info("=== Starting Red Hat OVAL import ===")
+    total_defs = 0
+    total_constraints = 0
+
+    ns_linux = "http://oval.mitre.org/XMLSchema/oval-definitions-5#linux"
+    ns_oval = "http://oval.mitre.org/XMLSchema/oval-definitions-5"
+    cve_re = re.compile(r"CVE-\d{4}-\d+")
+
+    for rhel_ver, url in OVAL_V2_URLS.items():
+        log.info("Downloading OVAL for RHEL %d: %s", rhel_ver, url)
+        t0 = time.time()
+        try:
+            resp = session.get(url, timeout=300)
+            resp.raise_for_status()
+            raw = bz2.decompress(resp.content)
+        except Exception as e:
+            log.error("RHEL %d OVAL download failed: %s", rhel_ver, e)
+            continue
+        log.info("RHEL %d: downloaded + decompressed in %.1fs (%d bytes)",
+                 rhel_ver, time.time() - t0, len(raw))
+
+        root = ET.fromstring(raw)
+
+        # Build object_id → package_name map
+        objects = {}
+        for obj in root.iter(f"{{{ns_linux}}}rpminfo_object"):
+            obj_id = obj.get("id", "")
+            name_el = obj.find(f"{{{ns_linux}}}name")
+            if name_el is not None and name_el.text:
+                objects[obj_id] = name_el.text.strip()
+
+        # Build state_id → (op, evr) map
+        states = {}
+        for st in root.iter(f"{{{ns_linux}}}rpminfo_state"):
+            st_id = st.get("id", "")
+            evr_el = st.find(f"{{{ns_linux}}}evr")
+            if evr_el is not None and evr_el.text:
+                op = evr_el.get("operation", "less than")
+                op_code = {"less than": "LT", "less than or equal": "LE",
+                           "equals": "EQ", "greater than or equal": "GE",
+                           "greater than": "GT"}.get(op, "LT")
+                states[st_id] = (op_code, evr_el.text.strip())
+
+        # Parse tests → (test_id, package, op, evr)
+        test_constraints = []
+        for test in root.iter(f"{{{ns_linux}}}rpminfo_test"):
+            test_id = test.get("id", "")
+            obj_ref = test.find(f"{{{ns_linux}}}object")
+            state_ref = test.find(f"{{{ns_linux}}}state")
+            if obj_ref is not None and state_ref is not None:
+                obj_id = obj_ref.get("object_ref", "")
+                st_id = state_ref.get("state_ref", "")
+                pkg = objects.get(obj_id)
+                constraint = states.get(st_id)
+                if pkg and constraint:
+                    op, evr = constraint
+                    test_constraints.append((test_id, pkg, op, evr))
+
+        # Parse definitions
+        definitions = []
+        defs_el = root.find(f"{{{ns_oval}}}definitions")
+        if defs_el is not None:
+            for defn in defs_el.findall(f"{{{ns_oval}}}definition"):
+                def_id = defn.get("id", "")
+                metadata = defn.find(f"{{{ns_oval}}}metadata")
+                cves = set()
+                severity = None
+                issued_date = None
+
+                if metadata is not None:
+                    for cve_el in metadata.iter():
+                        if cve_el.tag.endswith("}cve") or cve_el.tag == "cve":
+                            if cve_el.text:
+                                cves.add(cve_el.text.strip())
+                    title_el = metadata.find(f"{{{ns_oval}}}title")
+                    if title_el is not None and title_el.text:
+                        cves.update(cve_re.findall(title_el.text))
+
+                    # Extract severity and date from advisory
+                    for child in metadata:
+                        if child.tag.endswith("}advisory") or child.tag == "advisory":
+                            for sub in child:
+                                if sub.tag.endswith("}severity") or sub.tag == "severity":
+                                    if sub.text:
+                                        severity = sub.text.strip()
+                                if sub.tag.endswith("}issued") or sub.tag == "issued":
+                                    date_str = sub.get("date", "")
+                                    if date_str:
+                                        try:
+                                            issued_date = datetime.fromisoformat(
+                                                date_str.replace("Z", "+00:00"))
+                                        except ValueError:
+                                            pass
+                            break
+
+                if not cves:
+                    continue
+
+                # Extract test refs from criteria tree
+                test_refs = set()
+                criteria = defn.find(f"{{{ns_oval}}}criteria")
+                if criteria is not None:
+                    for criterion in criteria.iter():
+                        if criterion.tag.endswith("}criterion") or criterion.tag == "criterion":
+                            tref = criterion.get("test_ref", "")
+                            if tref:
+                                test_refs.add(tref)
+
+                definitions.append((def_id, list(cves), list(test_refs), severity, issued_date))
+
+        # Batch upsert into PG
+        now = datetime.now(timezone.utc)
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM oval_definitions_cache WHERE rhel_version = %s", (rhel_ver,))
+            cur.execute("DELETE FROM oval_test_constraints_cache WHERE rhel_version = %s", (rhel_ver,))
+
+            for i in range(0, len(definitions), CHUNK_SIZE):
+                batch = definitions[i:i + CHUNK_SIZE]
+                psycopg2.extras.execute_values(cur, """
+                    INSERT INTO oval_definitions_cache
+                        (rhel_version, definition_id, cves, test_refs, severity, issued_date, last_checked_at)
+                    VALUES %s
+                    ON CONFLICT (rhel_version, definition_id) DO UPDATE SET
+                        cves = EXCLUDED.cves, test_refs = EXCLUDED.test_refs,
+                        severity = EXCLUDED.severity, issued_date = EXCLUDED.issued_date,
+                        last_checked_at = EXCLUDED.last_checked_at
+                """, [(rhel_ver, d[0], d[1], d[2], d[3], d[4], now) for d in batch])
+
+            for i in range(0, len(test_constraints), CHUNK_SIZE):
+                batch = test_constraints[i:i + CHUNK_SIZE]
+                psycopg2.extras.execute_values(cur, """
+                    INSERT INTO oval_test_constraints_cache
+                        (rhel_version, test_ref, package, op, evr, last_checked_at)
+                    VALUES %s
+                    ON CONFLICT (rhel_version, test_ref, package) DO UPDATE SET
+                        op = EXCLUDED.op, evr = EXCLUDED.evr,
+                        last_checked_at = EXCLUDED.last_checked_at
+                """, [(rhel_ver, tc[0], tc[1], tc[2], tc[3], now) for tc in batch])
+
+        conn.commit()
+        total_defs += len(definitions)
+        total_constraints += len(test_constraints)
+        log.info("RHEL %d: upserted %d definitions, %d test constraints in %.1fs",
+                 rhel_ver, len(definitions), len(test_constraints), time.time() - t0)
+
+        del raw, root  # free memory before next version
+
+    log.info("=== Red Hat OVAL import complete: %d definitions, %d constraints ===",
+             total_defs, total_constraints)
+    return total_defs + total_constraints
+
+
 # ===========================================================================
 # Phase 2: Export PG → SQLite → gzip → MinIO
 # ===========================================================================
@@ -1373,6 +1566,7 @@ def main():
         ("debian",  "IMPORT_DEBIAN",  import_debian),
         ("ubuntu",  "IMPORT_UBUNTU",  import_ubuntu),
         ("alpine",  "IMPORT_ALPINE",  import_alpine),
+        ("oval",    "IMPORT_OVAL",    import_redhat_oval),
     ]
 
     for source_name, env_var, import_fn in sources:
