@@ -2,6 +2,7 @@
 import React from "react";
 
 import Link from "next/link";
+import JobDetailTabs from "./JobDetailTabs";
 
 type Job = {
   id: string;
@@ -388,34 +389,18 @@ export default function PackagesTable() {
                 </tr>
                 {isOpen && (
                   <tr className="border-t border-black/5 dark:border-white/5">
-                    <td className="p-3" colSpan={8}>
-                      <div className="grid gap-3 py-1">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="font-medium">{j.progress_msg || (isActive ? "Processing..." : j.status === "failed" ? "Failed" : "Complete")}</span>
-                          <span className="tabular-nums muted">{pct}%</span>
-                        </div>
-                        <div className="w-full h-2 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
-                          <div
-                            className={`h-full rounded-full transition-[width] duration-500 ${j.status === "failed" ? "bg-red-500" : j.status === "done" ? "bg-emerald-500" : "bg-blue-500"}`}
-                            style={{ width: `${pct}%` }}
-                          />
-                        </div>
-                        {/* Severity counts */}
-                        {j.summary_json?.summary && (j.summary_json.summary.critical || j.summary_json.summary.high || j.summary_json.summary.medium || j.summary_json.summary.low) ? (
-                          <div className="flex flex-wrap gap-1.5">
-                            {!!j.summary_json.summary.critical && <span className="text-[11px] px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-950 text-red-800 dark:text-red-200 font-semibold">Critical: {j.summary_json.summary.critical}</span>}
-                            {!!j.summary_json.summary.high && <span className="text-[11px] px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-950 text-orange-800 dark:text-orange-200 font-semibold">High: {j.summary_json.summary.high}</span>}
-                            {!!j.summary_json.summary.medium && <span className="text-[11px] px-2 py-0.5 rounded-full bg-yellow-100 dark:bg-yellow-950 text-yellow-800 dark:text-yellow-200 font-semibold">Medium: {j.summary_json.summary.medium}</span>}
-                            {!!j.summary_json.summary.low && <span className="text-[11px] px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-200 font-semibold">Low: {j.summary_json.summary.low}</span>}
-                          </div>
-                        ) : null}
-                        {j.status === "failed" && j.error_msg && (
-                          <p className="text-xs text-red-600 dark:text-red-400">{j.error_msg}</p>
-                        )}
-                        <div className="flex gap-2">
-                          <a href={`/dashboard/${j.id}`} className="btn-secondary text-xs">Details</a>
-                          <a href={`/dashboard/${j.id}/findings`} className="btn-secondary text-xs">Findings</a>
-                        </div>
+                    <td className="p-0" colSpan={8}>
+                      <div className="px-4 py-3">
+                        <JobDetailTabs
+                          scanId={j.id}
+                          jobStatus={j.status}
+                          summaryJson={j.summary_json}
+                          startedAt={j.started_at}
+                          finishedAt={j.finished_at}
+                          displayName={j.object_key?.replace(/^\d+_/, "") || j.id}
+                          progressPct={j.progress_pct}
+                          progressMsg={j.progress_msg}
+                        />
                       </div>
                     </td>
                   </tr>
