@@ -67,83 +67,127 @@ metadata:
 data:
   scanrook-scans.json: |
     {
-      "dashboard": {
-        "id": null,
-        "uid": "scanrook-scans",
-        "title": "ScanRook Scans",
-        "tags": ["scanrook"],
-        "timezone": "browser",
-        "refresh": "30s",
-        "time": { "from": "now-24h", "to": "now" },
-        "panels": [
-          {
-            "id": 1,
-            "title": "Scan Job Pod Duration",
-            "type": "timeseries",
-            "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
-            "datasource": { "type": "loki", "uid": "loki" },
-            "targets": [
-              {
-                "expr": "{namespace=\"scanrook\", container=\"runjob\"} |= \"scan completed\" | regexp \"duration=(?P<duration>[0-9.]+)s\"",
-                "legendFormat": "{{pod}}"
-              }
-            ]
+      "id": null,
+      "uid": "scanrook-scans",
+      "title": "ScanRook Scans",
+      "tags": ["scanrook"],
+      "timezone": "browser",
+      "refresh": "30s",
+      "time": { "from": "now-24h", "to": "now" },
+      "panels": [
+        {
+          "id": 1,
+          "title": "Jobs Dispatched",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 8, "x": 0, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "custom": { "drawStyle": "bars", "fillOpacity": 30, "stacking": { "mode": "normal" } },
+              "unit": "short"
+            }
           },
-          {
-            "id": 2,
-            "title": "Active Scan Pods by Tier",
-            "type": "stat",
-            "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
-            "datasource": { "type": "prometheus", "uid": "prometheus" },
-            "targets": [
-              {
-                "expr": "count(kube_pod_labels{namespace=\"scanrook\", label_app=\"scanrook-scan\"}) by (label_scanrook_io_tier)",
-                "legendFormat": "{{label_scanrook_io_tier}}"
-              }
-            ]
+          "targets": [
+            {
+              "expr": "increase(scanrook_jobs_dispatched_total[1h])",
+              "legendFormat": "{{tier}}"
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "title": "Active Scan Pods by Tier",
+          "type": "stat",
+          "gridPos": { "h": 8, "w": 8, "x": 8, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": { "color": { "mode": "palette-classic" } }
           },
-          {
-            "id": 3,
-            "title": "Scan Throughput (Jobs/Hour)",
-            "type": "timeseries",
-            "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
-            "datasource": { "type": "loki", "uid": "loki" },
-            "targets": [
-              {
-                "expr": "count_over_time({namespace=\"scanrook\", container=\"runjob\"} |= \"scan completed\" [1h])",
-                "legendFormat": "completed/hour"
-              }
-            ]
+          "targets": [
+            {
+              "expr": "scanrook_active_scan_pods",
+              "legendFormat": "{{tier}}"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "title": "Scan Throughput (Jobs/Hour)",
+          "type": "stat",
+          "gridPos": { "h": 8, "w": 8, "x": 16, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "color": { "mode": "thresholds" },
+              "thresholds": { "steps": [{ "color": "green", "value": null }] }
+            }
           },
-          {
-            "id": 4,
-            "title": "Scan Pod Resource Usage",
-            "type": "timeseries",
-            "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
-            "datasource": { "type": "prometheus", "uid": "prometheus" },
-            "targets": [
-              {
-                "expr": "sum(container_memory_working_set_bytes{namespace=\"scanrook\", container=\"runjob\"}) by (pod)",
-                "legendFormat": "{{pod}} memory"
-              }
-            ]
+          "targets": [
+            {
+              "expr": "sum(increase(scanrook_jobs_dispatched_total[1h]))",
+              "legendFormat": "dispatched/hour"
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "title": "Scan Pod Resource Usage (Memory)",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": { "unit": "bytes", "custom": { "fillOpacity": 10 } }
           },
-          {
-            "id": 5,
-            "title": "Dispatcher Events",
-            "type": "logs",
-            "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
-            "datasource": { "type": "loki", "uid": "loki" },
-            "targets": [
-              {
-                "expr": "{namespace=\"scanrook\", container=\"dispatcher\"}"
-              }
-            ]
-          }
-        ],
-        "schemaVersion": 39,
-        "version": 1
-      }
+          "targets": [
+            {
+              "expr": "sum(container_memory_working_set_bytes{namespace=\"scanrook\", container=\"scan\"}) by (pod)",
+              "legendFormat": "{{pod}}"
+            }
+          ]
+        },
+        {
+          "id": 6,
+          "title": "Job Failures",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "custom": { "drawStyle": "bars", "fillOpacity": 30 },
+              "color": { "mode": "palette-classic" }
+            }
+          },
+          "targets": [
+            {
+              "expr": "increase(scanrook_jobs_failed_total[1h])",
+              "legendFormat": "{{reason}}"
+            },
+            {
+              "expr": "increase(scanrook_jobs_stale_failed_total[1h])",
+              "legendFormat": "stale"
+            },
+            {
+              "expr": "increase(scanrook_jobs_cancelled_total[1h])",
+              "legendFormat": "cancelled"
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "title": "Dispatcher Events",
+          "type": "logs",
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
+          "datasource": { "type": "loki", "uid": "loki" },
+          "targets": [
+            {
+              "expr": "{namespace=\"scanrook\", container=\"dispatcher\"}"
+            }
+          ]
+        }
+      ],
+      "schemaVersion": 39,
+      "version": 2
     }
 ---
 apiVersion: v1
