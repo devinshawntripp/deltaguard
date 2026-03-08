@@ -317,9 +317,13 @@ spec:
     - to:
         - ipBlock:
             cidr: 10.96.0.0/12
+        - ipBlock:
+            cidr: 10.10.10.10/32
       ports:
         - protocol: TCP
           port: 443
+        - protocol: TCP
+          port: 6443
     # Internet egress
     - to:
         - ipBlock:
