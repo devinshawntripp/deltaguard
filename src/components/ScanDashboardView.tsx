@@ -207,7 +207,18 @@ export default function ScanDashboardView({
     const [pct, setPct] = React.useState(initialPct ?? 0);
     const [currentStage, setCurrentStage] = React.useState(initialMsg ?? "");
     const [currentDetail, setCurrentDetail] = React.useState<string | undefined>(undefined);
-    const [liveSev, setLiveSev] = React.useState<Severities>({ critical: 0, high: 0, medium: 0, low: 0 });
+    const [liveSev, setLiveSev] = React.useState<Severities>(() => {
+        const s = summaryJson?.summary ?? (summaryJson as Record<string, number> | null);
+        if (s && typeof s === "object" && "critical" in s) {
+            return {
+                critical: (s as Record<string, number>).critical ?? 0,
+                high: (s as Record<string, number>).high ?? 0,
+                medium: (s as Record<string, number>).medium ?? 0,
+                low: (s as Record<string, number>).low ?? 0,
+            };
+        }
+        return { critical: 0, high: 0, medium: 0, low: 0 };
+    });
     const [elapsed, setElapsed] = React.useState(0);
     const [terminal, setTerminal] = React.useState(jobStatus === "done" || jobStatus === "failed");
     const [terminalError, setTerminalError] = React.useState(jobStatus === "failed");
@@ -299,9 +310,10 @@ export default function ScanDashboardView({
         }
 
         if (terminal) {
-            // Small delay after SSE terminal event to let DB writes settle
-            const timer = setTimeout(fetchSummary, 800);
-            return () => { cancelled = true; clearTimeout(timer); };
+            // Delay after SSE terminal event to let DB writes settle, then retry
+            const timer1 = setTimeout(fetchSummary, 800);
+            const timer2 = setTimeout(fetchSummary, 4000);
+            return () => { cancelled = true; clearTimeout(timer1); clearTimeout(timer2); };
         }
 
         fetchSummary();
