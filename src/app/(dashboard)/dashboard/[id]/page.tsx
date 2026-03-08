@@ -63,6 +63,7 @@ export default async function PackageDetails({ params }: { params: Promise<{ id:
                 displayName={data.object_key?.replace(/^\d+_/, "") || id}
                 progressPct={data.progress_pct}
                 progressMsg={data.progress_msg}
+                sbomStatus={data.sbom_status}
             />
         </div>
     );

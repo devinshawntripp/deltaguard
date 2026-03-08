@@ -4,10 +4,11 @@ import React from "react";
 import ScanDashboardView from "@/components/ScanDashboardView";
 import ScanFindingsView from "@/components/ScanFindingsView";
 import ScanThreatView from "@/components/ScanThreatView";
+import SbomTabView from "@/components/SbomTabView";
 import { openSse } from "@/lib/ssePool";
 import { isTerminalStage, isErrorStage } from "@/lib/workflowStages";
 
-type TabId = "dashboard" | "findings" | "threat";
+type TabId = "dashboard" | "findings" | "threat" | "sbom";
 
 type Props = {
     scanId: string;
@@ -21,12 +22,14 @@ type Props = {
     displayName?: string;
     progressPct?: number;
     progressMsg?: string | null;
+    sbomStatus?: string;
 };
 
 const TABS: { id: TabId; label: string }[] = [
     { id: "dashboard", label: "Dashboard" },
     { id: "findings", label: "Findings" },
     { id: "threat", label: "Threat" },
+    { id: "sbom", label: "SBOM" },
 ];
 
 export default function JobDetailTabs({
@@ -38,6 +41,7 @@ export default function JobDetailTabs({
     displayName,
     progressPct,
     progressMsg,
+    sbomStatus,
 }: Props) {
     const [tab, setTab] = React.useState<TabId>("dashboard");
     const [liveStatus, setLiveStatus] = React.useState(jobStatus);
@@ -77,7 +81,7 @@ export default function JobDetailTabs({
             <div className="flex gap-1 p-1 rounded-lg bg-black/5 dark:bg-white/5 w-fit">
                 {TABS.map((t) => {
                     const isActive = tab === t.id;
-                    const isDisabled = t.id === "threat" && !isDone;
+                    const isDisabled = (t.id === "threat" || t.id === "sbom") && !isDone;
                     return (
                         <button
                             key={t.id}
@@ -124,6 +128,12 @@ export default function JobDetailTabs({
                     scanId={scanId}
                     jobStatus={liveStatus}
                     summaryJson={summaryJson}
+                />
+            )}
+            {tab === "sbom" && (
+                <SbomTabView
+                    jobId={scanId}
+                    sbomStatus={sbomStatus || "pending"}
                 />
             )}
         </div>

@@ -26,6 +26,7 @@ export type Job = {
     report_key?: string | null;
     error_msg?: string | null;
     summary_json?: any;
+    sbom_status?: string;
 };
 
 async function init() {
