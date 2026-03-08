@@ -3,6 +3,7 @@
 import React from "react";
 import ScanDashboardView from "@/components/ScanDashboardView";
 import ScanFindingsView from "@/components/ScanFindingsView";
+import JobFindings from "@/components/JobFindings";
 import ScanThreatView from "@/components/ScanThreatView";
 import SbomTabView from "@/components/SbomTabView";
 import { openSse } from "@/lib/ssePool";
@@ -114,14 +115,17 @@ export default function JobDetailTabs({
                 />
             )}
             {tab === "findings" && (
-                <ScanFindingsView
-                    scanId={scanId}
-                    jobStatus={liveStatus}
-                    summaryJson={summaryJson}
-                    startedAt={startedAt}
-                    finishedAt={finishedAt}
-                    displayName={displayName}
-                />
+                <>
+                    <ScanFindingsView
+                        scanId={scanId}
+                        jobStatus={liveStatus}
+                        summaryJson={summaryJson}
+                        startedAt={startedAt}
+                        finishedAt={finishedAt}
+                        displayName={displayName}
+                    />
+                    {isDone && <JobFindings jobId={scanId} />}
+                </>
             )}
             {tab === "threat" && (
                 <ScanThreatView

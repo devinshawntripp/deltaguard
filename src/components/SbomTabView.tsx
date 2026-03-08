@@ -158,12 +158,13 @@ export default function SbomTabView({ jobId, sbomStatus: initialStatus }: SbomTa
     async function handleDownload(formatKey: string) {
         setDownloading(formatKey);
         try {
-            const res = await fetch(`/api/jobs/${jobId}/sbom?format=${formatKey}`);
-            if (!res.ok) return;
-            const data = await res.json();
-            if (data.url) {
-                window.open(data.url, "_blank");
-            }
+            const url = `/api/jobs/${jobId}/sbom/download?format=${formatKey}`;
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `${jobId}.sbom.${formatKey}.json`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
         } catch { /* ignore */ }
         finally { setDownloading(null); }
     }

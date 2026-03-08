@@ -69,8 +69,21 @@ export async function presignPut(args: { bucket: string; key: string; contentTyp
 }
 
 export async function presignGet(args: { bucket: string; key: string; expiresSeconds?: number }) {
-    const url = await getSignedUrl(s3Internal as unknown as S3Client, new GetObjectCommand({ Bucket: args.bucket, Key: args.key }), { expiresIn: args.expiresSeconds ?? 3600 });
+    const url = await getSignedUrl(s3Public as unknown as S3Client, new GetObjectCommand({ Bucket: args.bucket, Key: args.key }), { expiresIn: args.expiresSeconds ?? 3600 });
     return { url, method: "GET" as const };
+}
+
+export async function streamFromS3(args: { bucket: string; key: string }): Promise<{ stream: ReadableStream; contentLength?: number }> {
+    const res = await s3Internal.send(new GetObjectCommand({ Bucket: args.bucket, Key: args.key }));
+    const body = res.Body as unknown as NodeJS.ReadableStream;
+    const stream = new ReadableStream({
+        start(controller) {
+            body.on("data", (chunk: Buffer) => controller.enqueue(chunk));
+            body.on("end", () => controller.close());
+            body.on("error", (err: Error) => controller.error(err));
+        },
+    });
+    return { stream, contentLength: res.ContentLength };
 }
 
 export async function deleteObject(args: { bucket: string; key: string }) {
