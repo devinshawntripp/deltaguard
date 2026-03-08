@@ -13,6 +13,17 @@ type SbomSummary = {
     ecosystems: Record<string, number>;
 };
 
+type DiffSummary = {
+    added: number;
+    removed: number;
+    changed: number;
+};
+
+type DiffResponse = {
+    summary: DiffSummary;
+    full_diff_url: string;
+};
+
 type PackageRow = {
     name: string;
     ecosystem: string;
@@ -35,6 +46,11 @@ export default function SbomTabView({ jobId, sbomStatus: initialStatus }: SbomTa
     const [summary, setSummary] = React.useState<SbomSummary | null>(null);
     const [downloading, setDownloading] = React.useState<string | null>(null);
 
+    // Diff state
+    const [diff, setDiff] = React.useState<DiffResponse | null>(null);
+    const [diffLoading, setDiffLoading] = React.useState(false);
+    const [noDiff, setNoDiff] = React.useState(false);
+
     // Package table state
     const [packages, setPackages] = React.useState<PackageRow[]>([]);
     const [pkgTotal, setPkgTotal] = React.useState(0);
@@ -56,6 +72,14 @@ export default function SbomTabView({ jobId, sbomStatus: initialStatus }: SbomTa
                     if (data.stage === "sbom_export_complete") {
                         setStatus("ready");
                     }
+                    if (data.stage === "sbom_diff_complete") {
+                        setDiffLoading(true);
+                        fetch(`/api/jobs/${jobId}/sbom/diff`)
+                            .then((r) => r.ok ? r.json() : null)
+                            .then((d) => { if (d) setDiff(d); })
+                            .catch(() => {})
+                            .finally(() => setDiffLoading(false));
+                    }
                 } catch { /* ignore */ }
             },
             onError: () => { /* SSE pool handles reconnect */ },
@@ -76,6 +100,23 @@ export default function SbomTabView({ jobId, sbomStatus: initialStatus }: SbomTa
             .then((r) => r.json())
             .then((d) => { if (!cancelled) setSummary(d); })
             .catch(() => {});
+        return () => { cancelled = true; };
+    }, [jobId, status]);
+
+    // Fetch diff when ready
+    React.useEffect(() => {
+        if (status !== "ready") return;
+        let cancelled = false;
+        setDiffLoading(true);
+        fetch(`/api/jobs/${jobId}/sbom/diff`)
+            .then((r) => {
+                if (r.status === 404) { if (!cancelled) setNoDiff(true); return null; }
+                if (!r.ok) return null;
+                return r.json();
+            })
+            .then((d) => { if (!cancelled && d) setDiff(d); })
+            .catch(() => {})
+            .finally(() => { if (!cancelled) setDiffLoading(false); });
         return () => { cancelled = true; };
     }, [jobId, status]);
 
@@ -216,6 +257,42 @@ export default function SbomTabView({ jobId, sbomStatus: initialStatus }: SbomTa
                     ))}
                 </div>
                 <p className="text-xs muted mt-2">Download your software bill of materials in industry-standard formats.</p>
+            </div>
+
+            {/* SBOM Diff Section */}
+            <div className="surface-card p-5">
+                <h3 className="text-sm font-semibold mb-3">Changes from Previous Scan</h3>
+                {diffLoading ? (
+                    <div className="flex items-center gap-2 text-sm muted">
+                        <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        </svg>
+                        Loading diff...
+                    </div>
+                ) : diff ? (
+                    <div className="flex flex-wrap items-center gap-3">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
+                            +{diff.summary.added} added
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300">
+                            &minus;{diff.summary.removed} removed
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+                            ~{diff.summary.changed} changed
+                        </span>
+                        <a
+                            href={diff.full_diff_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-blue-600 dark:text-blue-400 hover:underline ml-auto"
+                        >
+                            View full diff JSON
+                        </a>
+                    </div>
+                ) : noDiff ? (
+                    <p className="text-sm muted">First scan &mdash; no baseline to compare against.</p>
+                ) : null}
             </div>
 
             {/* Package Inventory Table */}

@@ -27,6 +27,7 @@ export type Job = {
     error_msg?: string | null;
     summary_json?: any;
     sbom_status?: string;
+    sbom_diff_summary?: any;
 };
 
 async function init() {

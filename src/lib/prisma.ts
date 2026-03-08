@@ -427,6 +427,7 @@ CREATE TABLE IF NOT EXISTS registry_configs (
         `ALTER TABLE scan_jobs ADD COLUMN IF NOT EXISTS registry_image TEXT`,
         `ALTER TABLE scan_jobs ADD COLUMN IF NOT EXISTS registry_config_id UUID`,
         `ALTER TABLE scan_jobs ADD COLUMN IF NOT EXISTS sbom_status TEXT NOT NULL DEFAULT 'pending'`,
+        `ALTER TABLE scan_jobs ADD COLUMN IF NOT EXISTS sbom_diff_summary JSONB`,
         `CREATE INDEX IF NOT EXISTS idx_org_memberships_org_user ON org_memberships(org_id, user_id)`,
         `CREATE INDEX IF NOT EXISTS idx_users_active_org ON users(active_org_id)`,
         `CREATE INDEX IF NOT EXISTS idx_api_keys_org_status ON api_keys(org_id, status)`,
