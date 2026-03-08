@@ -15,7 +15,7 @@ function sseHeaders() {
     });
 }
 
-const TERMINAL_STAGES = new Set(["scan.done", "scan.summary", "scan.error", "scan.err", "worker.stale.fail"]);
+const TERMINAL_STAGES = new Set(["scan.done", "scan.summary", "scan.error", "scan.err", "worker.stale.fail", "dispatcher.k8s.failed"]);
 
 export async function GET(req: NextRequest, context: { params: Promise<{ id: string }> }) {
     const guard = await requireRequestActor(req, {

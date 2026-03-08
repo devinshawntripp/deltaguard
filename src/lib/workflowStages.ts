@@ -57,12 +57,12 @@ export const PIPELINE_TO_WORKFLOW: Record<string, WorkflowStageId> = {
 
 export function isTerminalStage(stage: string): boolean {
     const s = String(stage || "").toLowerCase().trim();
-    return s === "scan.done" || s === "scan.summary" || s === "scan.err" || s === "scan.error" || s === "worker.stale.fail" || s === "pipeline.complete";
+    return s === "scan.done" || s === "scan.summary" || s === "scan.err" || s === "scan.error" || s === "worker.stale.fail" || s === "pipeline.complete" || s === "dispatcher.k8s.failed";
 }
 
 export function isErrorStage(stage: string): boolean {
     const s = String(stage || "").toLowerCase().trim();
-    return s === "scan.err" || s === "scan.error" || s.endsWith(".err") || s.endsWith(".error") || s === "worker.stale.fail";
+    return s === "scan.err" || s === "scan.error" || s.endsWith(".err") || s.endsWith(".error") || s === "worker.stale.fail" || s === "dispatcher.k8s.failed";
 }
 
 export function mapEventToWorkflowStage(stage: string, detail?: string): WorkflowStageId | null {

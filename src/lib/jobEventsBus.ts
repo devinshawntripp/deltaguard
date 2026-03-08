@@ -15,7 +15,7 @@ type Tailer = {
     terminal: boolean;
 };
 
-const TERMINAL_STAGES = new Set(["scan.done", "scan.summary", "scan.error", "scan.err", "pipeline.complete"]);
+const TERMINAL_STAGES = new Set(["scan.done", "scan.summary", "scan.error", "scan.err", "pipeline.complete", "dispatcher.k8s.failed"]);
 
 function isTerminalStage(stage: string): boolean {
     const s = stage.toLowerCase().trim();
