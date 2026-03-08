@@ -242,7 +242,7 @@ export default function PackagesTable() {
 
               {/* Action buttons */}
               <div className="flex items-center gap-2 flex-wrap pt-1">
-                <Link href={`/dashboard/${j.id}/findings`} className="text-xs px-2 py-1 rounded-md btn-primary">Findings</Link>
+                <Link href={`/dashboard/${j.id}`} className="text-xs px-2 py-1 rounded-md btn-primary">Details</Link>
                 <Link href={`/dashboard/${j.id}/files`} className="text-xs px-2 py-1 rounded-md btn-secondary">Files</Link>
                 {isActive && (
                   <button
@@ -352,7 +352,7 @@ export default function PackagesTable() {
                   </td>
                   <td className="p-3 text-right min-w-0">
                     <div className="flex items-center gap-1.5 flex-wrap justify-end">
-                      <Link href={`/dashboard/${j.id}/findings`} className="text-xs px-2 py-1 rounded-md btn-primary">Findings</Link>
+                      <Link href={`/dashboard/${j.id}`} className="text-xs px-2 py-1 rounded-md btn-primary">Details</Link>
                       <Link href={`/dashboard/${j.id}/files`} className="text-xs px-2 py-1 rounded-md btn-secondary">Files</Link>
                       {(j.status === "running" || j.status === "queued") && (
                         <button

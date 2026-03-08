@@ -408,12 +408,6 @@ export default function ScanDashboardView({
                     {/* Action buttons */}
                     <div className="flex gap-2 flex-wrap">
                         <Link
-                            href={`/dashboard/${scanId}/findings`}
-                            className="btn-primary text-sm inline-flex items-center gap-1.5"
-                        >
-                            View Findings
-                        </Link>
-                        <Link
                             href="/dashboard"
                             className="btn-secondary text-sm inline-flex items-center gap-1.5"
                         >

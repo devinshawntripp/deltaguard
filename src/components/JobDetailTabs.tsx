@@ -33,6 +33,104 @@ const TABS: { id: TabId; label: string }[] = [
     { id: "sbom", label: "SBOM" },
 ];
 
+function SeverityBox({
+    label,
+    count,
+    bg,
+    text,
+}: {
+    label: string;
+    count: number;
+    bg: string;
+    text: string;
+}) {
+    return (
+        <div className={`flex flex-col items-center justify-center rounded-lg px-3 py-2 ${bg}`}>
+            <span className={`text-xl font-bold tabular-nums ${text}`}>{count}</span>
+            <span className={`text-xs font-medium ${text} opacity-80`}>{label}</span>
+        </div>
+    );
+}
+
+function FindingsSummaryCard({
+    scanId,
+    summaryJson,
+    jobStatus,
+    terminal,
+}: {
+    scanId: string;
+    summaryJson?: Props["summaryJson"];
+    jobStatus: string;
+    terminal: boolean;
+}) {
+    const [sev, setSev] = React.useState(() => {
+        const s = summaryJson?.summary ?? (summaryJson as Record<string, number> | null);
+        if (s && typeof s === "object" && "critical" in s) {
+            return {
+                critical: (s as Record<string, number>).critical ?? 0,
+                high: (s as Record<string, number>).high ?? 0,
+                medium: (s as Record<string, number>).medium ?? 0,
+                low: (s as Record<string, number>).low ?? 0,
+            };
+        }
+        return { critical: 0, high: 0, medium: 0, low: 0 };
+    });
+
+    React.useEffect(() => {
+        let cancelled = false;
+        async function fetchSummary() {
+            try {
+                const res = await fetch(`/api/jobs/${scanId}/findings?page_size=1`);
+                if (!res.ok || cancelled) return;
+                const data = await res.json();
+                const s = data?.summary;
+                if (s && !cancelled) {
+                    setSev({
+                        critical: s.critical ?? 0,
+                        high: s.high ?? 0,
+                        medium: s.medium ?? 0,
+                        low: s.low ?? 0,
+                    });
+                }
+            } catch { /* non-fatal */ }
+        }
+
+        if (terminal) {
+            const t1 = setTimeout(fetchSummary, 800);
+            const t2 = setTimeout(fetchSummary, 4000);
+            return () => { cancelled = true; clearTimeout(t1); clearTimeout(t2); };
+        }
+
+        fetchSummary();
+
+        if (!terminal && jobStatus !== "queued") {
+            const interval = setInterval(fetchSummary, 5000);
+            return () => { cancelled = true; clearInterval(interval); };
+        }
+
+        return () => { cancelled = true; };
+    }, [scanId, jobStatus, terminal]);
+
+    const total = sev.critical + sev.high + sev.medium + sev.low;
+
+    return (
+        <div className="surface-card p-4">
+            <div className="flex items-center justify-between mb-3">
+                <span className="text-sm font-semibold">Findings Summary</span>
+                {total > 0 && (
+                    <span className="text-xs muted tabular-nums">{total} total</span>
+                )}
+            </div>
+            <div className="grid grid-cols-4 gap-2">
+                <SeverityBox label="Critical" count={sev.critical} bg="bg-red-50 dark:bg-red-950/40" text="text-red-700 dark:text-red-300" />
+                <SeverityBox label="High" count={sev.high} bg="bg-orange-50 dark:bg-orange-950/40" text="text-orange-700 dark:text-orange-300" />
+                <SeverityBox label="Medium" count={sev.medium} bg="bg-yellow-50 dark:bg-yellow-950/40" text="text-yellow-700 dark:text-yellow-300" />
+                <SeverityBox label="Low" count={sev.low} bg="bg-blue-50 dark:bg-blue-950/40" text="text-blue-700 dark:text-blue-300" />
+            </div>
+        </div>
+    );
+}
+
 export default function JobDetailTabs({
     scanId,
     jobStatus,
@@ -75,9 +173,18 @@ export default function JobDetailTabs({
     }, [scanId, liveStatus]);
 
     const isDone = liveStatus === "done";
+    const terminal = liveStatus === "done" || liveStatus === "failed";
 
     return (
         <div className="grid gap-4">
+            {/* Findings summary — visible on ALL tabs */}
+            <FindingsSummaryCard
+                scanId={scanId}
+                summaryJson={summaryJson}
+                jobStatus={liveStatus}
+                terminal={terminal}
+            />
+
             {/* Tab switcher */}
             <div className="flex gap-1 p-1 rounded-lg bg-black/5 dark:bg-white/5 w-fit">
                 {TABS.map((t) => {
