@@ -5,6 +5,7 @@ metadata:
   labels:
     app: scanrook-redis
 spec:
+  storageClassName: longhorn
   accessModes:
     - ReadWriteOnce
   resources:
