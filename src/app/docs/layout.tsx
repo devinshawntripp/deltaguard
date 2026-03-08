@@ -30,10 +30,13 @@ const navItems: NavItem[] = [
             { href: "/docs/concepts/deep-scanning", label: "Deep Scanning" },
             { href: "/docs/concepts/compliance", label: "Compliance" },
             { href: "/docs/concepts/supply-chain-security", label: "Supply Chain Security" },
+            { href: "/docs/concepts/scan-status", label: "Scan Status" },
+            { href: "/docs/concepts/vulnerability-database", label: "Vulnerability Database" },
         ],
     },
     { href: "/docs/benchmarks", label: "Benchmarks" },
     { href: "/docs/self-hosted", label: "Self-Hosted" },
+    { href: "/docs/architecture", label: "Architecture" },
     { href: "/docs/data-sources", label: "Data Sources" },
     {
         href: "/docs/integrations",
@@ -66,6 +69,9 @@ const breadcrumbLabels: Record<string, string> = {
     integrations: "Integrations",
     "github-actions": "GitHub Actions",
     "gitlab-ci": "GitLab CI",
+    "scan-status": "Scan Status",
+    "vulnerability-database": "Vulnerability Database",
+    architecture: "Architecture",
 };
 
 export default function DocsLayout({ children }: { children: React.ReactNode }) {
