@@ -278,7 +278,7 @@ export default function ScanDashboardView({
         };
     }, [scanId, eventsPath, isActive]);
 
-    // Fetch actual severity counts from findings API (summaryJson.summary may have 0s)
+    // Fetch severity counts from findings API — re-runs on mount, status change, and SSE completion
     React.useEffect(() => {
         let cancelled = false;
         async function fetchSummary() {
@@ -297,9 +297,23 @@ export default function ScanDashboardView({
                 }
             } catch { /* non-fatal */ }
         }
+
+        if (terminal) {
+            // Small delay after SSE terminal event to let DB writes settle
+            const timer = setTimeout(fetchSummary, 800);
+            return () => { cancelled = true; clearTimeout(timer); };
+        }
+
         fetchSummary();
+
+        // Also poll severity during active scans (findings arrive progressively)
+        if (!terminal && jobStatus !== "queued") {
+            const interval = setInterval(fetchSummary, 5000);
+            return () => { cancelled = true; clearInterval(interval); };
+        }
+
         return () => { cancelled = true; };
-    }, [scanId, jobStatus]);
+    }, [scanId, jobStatus, terminal]);
 
     const totalFindings = liveSev.critical + liveSev.high + liveSev.medium + liveSev.low;
     const allSev = totalFindings;
