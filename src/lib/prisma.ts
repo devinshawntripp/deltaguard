@@ -426,6 +426,7 @@ CREATE TABLE IF NOT EXISTS registry_configs (
         `ALTER TABLE scan_jobs ADD COLUMN IF NOT EXISTS source_type TEXT NOT NULL DEFAULT 'upload'`,
         `ALTER TABLE scan_jobs ADD COLUMN IF NOT EXISTS registry_image TEXT`,
         `ALTER TABLE scan_jobs ADD COLUMN IF NOT EXISTS registry_config_id UUID`,
+        `ALTER TABLE scan_jobs ADD COLUMN IF NOT EXISTS sbom_status TEXT NOT NULL DEFAULT 'pending'`,
         `CREATE INDEX IF NOT EXISTS idx_org_memberships_org_user ON org_memberships(org_id, user_id)`,
         `CREATE INDEX IF NOT EXISTS idx_users_active_org ON users(active_org_id)`,
         `CREATE INDEX IF NOT EXISTS idx_api_keys_org_status ON api_keys(org_id, status)`,
@@ -742,6 +743,7 @@ ALTER TABLE scan_jobs ADD COLUMN IF NOT EXISTS inventory_reason TEXT;
 ALTER TABLE scan_jobs ADD COLUMN IF NOT EXISTS source_type TEXT NOT NULL DEFAULT 'upload';
 ALTER TABLE scan_jobs ADD COLUMN IF NOT EXISTS registry_image TEXT;
 ALTER TABLE scan_jobs ADD COLUMN IF NOT EXISTS registry_config_id UUID;
+ALTER TABLE scan_jobs ADD COLUMN IF NOT EXISTS sbom_status TEXT NOT NULL DEFAULT 'pending';
 ALTER TABLE users ADD COLUMN IF NOT EXISTS theme_preference TEXT NOT NULL DEFAULT 'system';
 ALTER TABLE users ADD COLUMN IF NOT EXISTS active_org_id UUID;
 
