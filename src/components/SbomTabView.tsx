@@ -155,18 +155,33 @@ export default function SbomTabView({ jobId, sbomStatus: initialStatus }: SbomTa
         }, 300);
     }
 
+    const [downloadError, setDownloadError] = React.useState<string | null>(null);
+
     async function handleDownload(formatKey: string) {
         setDownloading(formatKey);
+        setDownloadError(null);
         try {
             const url = `/api/jobs/${jobId}/sbom/download?format=${formatKey}`;
+            const res = await fetch(url);
+            if (!res.ok) {
+                const body = await res.json().catch(() => ({ error: "Download failed" }));
+                setDownloadError(body.error || `Download failed (${res.status})`);
+                return;
+            }
+            const blob = await res.blob();
+            const blobUrl = URL.createObjectURL(blob);
             const a = document.createElement("a");
-            a.href = url;
+            a.href = blobUrl;
             a.download = `${jobId}.sbom.${formatKey}.json`;
             document.body.appendChild(a);
             a.click();
             a.remove();
-        } catch { /* ignore */ }
-        finally { setDownloading(null); }
+            URL.revokeObjectURL(blobUrl);
+        } catch {
+            setDownloadError("Network error — could not download SBOM.");
+        } finally {
+            setDownloading(null);
+        }
     }
 
     function toggleSort(col: string) {
@@ -257,6 +272,11 @@ export default function SbomTabView({ jobId, sbomStatus: initialStatus }: SbomTa
                         </button>
                     ))}
                 </div>
+                {downloadError && (
+                    <div className="mt-3 px-3 py-2 rounded-md bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 text-sm text-red-800 dark:text-red-200">
+                        {downloadError}
+                    </div>
+                )}
                 <p className="text-xs muted mt-2">Download your software bill of materials in industry-standard formats.</p>
             </div>
 
