@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import ProgressGraph from "@/components/ProgressGraph";
+
 import Link from "next/link";
 
 type Job = {
@@ -13,7 +13,15 @@ type Job = {
   progress_pct: number;
   progress_msg?: string | null;
   error_msg?: string | null;
-  summary_json?: { target?: { type?: string } } | null;
+  summary_json?: {
+    target?: { type?: string };
+    summary?: {
+      critical?: number;
+      high?: number;
+      medium?: number;
+      low?: number;
+    };
+  } | null;
 };
 
 const STATUS_RANK: Record<Job["status"], number> = {
@@ -154,7 +162,125 @@ export default function PackagesTable() {
     if (openIds.size === 0) setOpenIds(new Set([list[0].id]));
   }, [list, openIds.size]);
   return (
-    <div className="overflow-auto rounded-xl border border-black/10 dark:border-white/10">
+    <div>
+      {/* Mobile card layout — shown below lg breakpoint */}
+      <div className="lg:hidden space-y-3">
+        {!loaded && (
+          <div className="space-y-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={`mskel-${i}`} className="rounded-xl border border-black/10 dark:border-white/10 p-4 space-y-2 animate-pulse">
+                <div className="h-3 rounded bg-black/10 dark:bg-white/10 w-3/4" />
+                <div className="h-3 rounded bg-black/10 dark:bg-white/10 w-1/4" />
+                <div className="h-2 rounded bg-black/10 dark:bg-white/10 w-full mt-2" />
+              </div>
+            ))}
+          </div>
+        )}
+        {loaded && list.length === 0 && (
+          <div className="p-8 text-center muted text-sm">No scans yet. Upload a file above to get started.</div>
+        )}
+        {list.map((j) => {
+          const pct = j.status === "done" ? 100 : Math.min(100, j.progress_pct || 0);
+          const isActive = j.status === "running" || j.status === "queued";
+          const sv = j.summary_json?.summary;
+          const typeLabel = j.summary_json?.target?.type
+            ? ({ iso: "ISO", container: "Container", binary: "Binary", source: "Source" } as Record<string, string>)[j.summary_json.target.type] ?? j.summary_json.target.type
+            : null;
+          return (
+            <div key={`card-${j.id}`} className="rounded-xl border border-black/10 dark:border-white/10 p-4 space-y-3">
+              {/* Header row: filename + status badge */}
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-mono truncate opacity-60" title={j.id}>{j.id}</p>
+                  <p className="text-sm font-medium truncate mt-0.5" title={j.object_key || ""}>{j.object_key || "-"}</p>
+                  {typeLabel && (
+                    <span className="inline-block px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/5 text-[10px] font-medium muted mt-0.5">{typeLabel}</span>
+                  )}
+                </div>
+                <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full font-medium ${
+                  j.status === "done" ? "bg-green-100 dark:bg-green-950 text-green-800 dark:text-green-200"
+                  : j.status === "failed" ? "bg-red-100 dark:bg-red-950 text-red-800 dark:text-red-200"
+                  : j.status === "running" ? "bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-200"
+                  : "bg-black/5 dark:bg-white/5 opacity-70"
+                }`}>
+                  {j.status}
+                </span>
+              </div>
+
+              {/* Progress bar */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs opacity-60">Progress</span>
+                  <span className="text-xs opacity-60">{pct}%</span>
+                </div>
+                <div className="h-2 w-full bg-black/10 dark:bg-white/10 rounded">
+                  <div
+                    className={`h-2 rounded ${j.status === "failed" ? "bg-red-600" : j.status === "done" ? "bg-green-600" : "bg-blue-600"}`}
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+                {(j.progress_msg || (j.status === "failed" && j.error_msg)) && (
+                  <p className="text-[11px] opacity-60 truncate mt-1">
+                    {j.status === "failed" && j.error_msg ? j.error_msg : j.progress_msg}
+                  </p>
+                )}
+              </div>
+
+              {/* Severity counts (if available) */}
+              {sv && (sv.critical || sv.high || sv.medium || sv.low) ? (
+                <div className="flex flex-wrap gap-1.5">
+                  {!!sv.critical && <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-red-100 dark:bg-red-950 text-red-800 dark:text-red-200 font-medium">C: {sv.critical}</span>}
+                  {!!sv.high && <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-orange-100 dark:bg-orange-950 text-orange-800 dark:text-orange-200 font-medium">H: {sv.high}</span>}
+                  {!!sv.medium && <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-yellow-100 dark:bg-yellow-950 text-yellow-800 dark:text-yellow-200 font-medium">M: {sv.medium}</span>}
+                  {!!sv.low && <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-200 font-medium">L: {sv.low}</span>}
+                </div>
+              ) : null}
+
+              {/* Created date */}
+              <p className="text-[11px] opacity-50">Created: {new Date(j.created_at).toLocaleString()}</p>
+
+              {/* Action buttons */}
+              <div className="flex items-center gap-2 flex-wrap pt-1">
+                <Link href={`/dashboard/${j.id}/findings`} className="text-xs px-2 py-1 rounded-md btn-primary">Findings</Link>
+                <Link href={`/dashboard/${j.id}/files`} className="text-xs px-2 py-1 rounded-md btn-secondary">Files</Link>
+                {isActive && (
+                  <button
+                    onClick={async () => {
+                      try {
+                        await fetch(`/api/jobs/${j.id}/cancel`, { method: "POST" });
+                      } catch { }
+                    }}
+                    className="text-xs px-2 py-1 rounded-md bg-orange-600 text-white hover:opacity-90"
+                  >
+                    Cancel
+                  </button>
+                )}
+                <button
+                  onClick={async () => {
+                    try {
+                      const res = await fetch(`/api/jobs/${j.id}`, { method: "DELETE" });
+                      if (!res.ok) return;
+                      setList((prev) => prev.filter((x) => x.id !== j.id));
+                      setOpenIds((prev) => {
+                        if (!prev.has(j.id)) return prev;
+                        const n = new Set(prev);
+                        n.delete(j.id);
+                        return n;
+                      });
+                    } catch { }
+                  }}
+                  className="text-xs px-2 py-1 rounded-md bg-[var(--dg-danger)] text-white hover:opacity-90"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Desktop table layout — shown at lg and above */}
+      <div className="hidden lg:block overflow-auto rounded-xl border border-black/10 dark:border-white/10">
       <table className="w-full table-fixed text-sm">
         <thead className="bg-black/[.04] dark:bg-white/[.04] text-left">
           <tr>
@@ -227,6 +353,18 @@ export default function PackagesTable() {
                     <div className="flex items-center gap-1.5 flex-wrap justify-end">
                       <Link href={`/dashboard/${j.id}/findings`} className="text-xs px-2 py-1 rounded-md btn-primary">Findings</Link>
                       <Link href={`/dashboard/${j.id}/files`} className="text-xs px-2 py-1 rounded-md btn-secondary">Files</Link>
+                      {(j.status === "running" || j.status === "queued") && (
+                        <button
+                          onClick={async () => {
+                            try {
+                              await fetch(`/api/jobs/${j.id}/cancel`, { method: "POST" });
+                            } catch { }
+                          }}
+                          className="text-xs px-2 py-1 rounded-md bg-orange-600 text-white hover:opacity-90"
+                        >
+                          Cancel
+                        </button>
+                      )}
                       <button
                         onClick={async () => {
                           try {
@@ -251,17 +389,33 @@ export default function PackagesTable() {
                 {isOpen && (
                   <tr className="border-t border-black/5 dark:border-white/5">
                     <td className="p-3" colSpan={8}>
-                      <div className="grid gap-2">
-                        <div className="text-sm font-medium">Workflow</div>
-                        <ProgressGraph
-                          scanId={j.id}
-                          eventsPath={`/api/jobs/${j.id}/events`}
-                          mode={isActive ? "stream" : "list"}
-                          height={250}
-                          onProgress={(p, m) => {
-                            setList((prev) => prev.map((x) => x.id === j.id ? { ...x, progress_pct: Math.max(x.progress_pct || 0, p), progress_msg: m || x.progress_msg } : x));
-                          }}
-                        />
+                      <div className="grid gap-3 py-1">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="font-medium">{j.progress_msg || (isActive ? "Processing..." : j.status === "failed" ? "Failed" : "Complete")}</span>
+                          <span className="tabular-nums muted">{pct}%</span>
+                        </div>
+                        <div className="w-full h-2 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-[width] duration-500 ${j.status === "failed" ? "bg-red-500" : j.status === "done" ? "bg-emerald-500" : "bg-blue-500"}`}
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                        {/* Severity counts */}
+                        {j.summary_json?.summary && (j.summary_json.summary.critical || j.summary_json.summary.high || j.summary_json.summary.medium || j.summary_json.summary.low) ? (
+                          <div className="flex flex-wrap gap-1.5">
+                            {!!j.summary_json.summary.critical && <span className="text-[11px] px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-950 text-red-800 dark:text-red-200 font-semibold">Critical: {j.summary_json.summary.critical}</span>}
+                            {!!j.summary_json.summary.high && <span className="text-[11px] px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-950 text-orange-800 dark:text-orange-200 font-semibold">High: {j.summary_json.summary.high}</span>}
+                            {!!j.summary_json.summary.medium && <span className="text-[11px] px-2 py-0.5 rounded-full bg-yellow-100 dark:bg-yellow-950 text-yellow-800 dark:text-yellow-200 font-semibold">Medium: {j.summary_json.summary.medium}</span>}
+                            {!!j.summary_json.summary.low && <span className="text-[11px] px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-200 font-semibold">Low: {j.summary_json.summary.low}</span>}
+                          </div>
+                        ) : null}
+                        {j.status === "failed" && j.error_msg && (
+                          <p className="text-xs text-red-600 dark:text-red-400">{j.error_msg}</p>
+                        )}
+                        <div className="flex gap-2">
+                          <a href={`/dashboard/${j.id}`} className="btn-secondary text-xs">Details</a>
+                          <a href={`/dashboard/${j.id}/findings`} className="btn-secondary text-xs">Findings</a>
+                        </div>
                       </div>
                     </td>
                   </tr>
@@ -271,6 +425,7 @@ export default function PackagesTable() {
           })}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }
