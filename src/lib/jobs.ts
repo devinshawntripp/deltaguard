@@ -87,7 +87,7 @@ VALUES (
 }
 
 export async function createRegistryJob(params: {
-    registry_config_id: string;
+    registry_config_id?: string | null;
     registry_image: string;
     org_id: string;
     created_by_user_id?: string | null;
@@ -113,7 +113,7 @@ VALUES (
   ${params.created_by_user_id || null}::uuid,
   ${params.created_by_api_key_id || null}::uuid,
   ${settingsSnapshot || null}::jsonb,
-  'registry', ${params.registry_image}, ${params.registry_config_id}::uuid
+  'registry', ${params.registry_image}, ${params.registry_config_id || null}::uuid
 )
     `;
     const rows = await prisma.$queryRaw<any[]>`SELECT * FROM scan_jobs WHERE id=${id}::uuid`;

@@ -57,7 +57,7 @@ export const PIPELINE_TO_WORKFLOW: Record<string, WorkflowStageId> = {
 
 export function isTerminalStage(stage: string): boolean {
     const s = String(stage || "").toLowerCase().trim();
-    return s === "scan.done" || s === "scan.summary" || s === "scan.err" || s === "scan.error" || s === "worker.stale.fail";
+    return s === "scan.done" || s === "scan.summary" || s === "scan.err" || s === "scan.error" || s === "worker.stale.fail" || s === "pipeline.complete";
 }
 
 export function isErrorStage(stage: string): boolean {

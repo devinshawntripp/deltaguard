@@ -133,6 +133,24 @@ export async function createOrgForUser(params: {
     const name = String(params.name || "").trim();
     if (!name) throw new Error("org name is required");
 
+    // Check if the user is a super admin (ADMIN_OVERRIDE) — exempt from org limit.
+    const userIsAdmin = await isGlobalAdminUser(params.userId);
+
+    if (!userIsAdmin) {
+        // Enforce one-org-per-user limit: check for existing active ROLE_ORG_OWNER memberships.
+        const ownerRows = await prisma.$queryRaw<Array<{ c: string }>>`
+SELECT COUNT(*)::text AS c
+FROM org_memberships
+WHERE user_id=${params.userId}::uuid
+  AND status='active'
+  AND (roles_mask & CAST(${ROLE_ORG_OWNER.toString()} AS BIGINT)) = CAST(${ROLE_ORG_OWNER.toString()} AS BIGINT)
+        `;
+        const ownerCount = Number(ownerRows[0]?.c || "0");
+        if (ownerCount > 0) {
+            throw new Error("Users can only own one organization");
+        }
+    }
+
     const slug = await ensureUniqueOrgSlug(params.slug || name);
 
     const created = await prisma.$queryRaw<Array<{ id: string; name: string; slug: string }>>`

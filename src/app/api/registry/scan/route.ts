@@ -22,15 +22,9 @@ export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
         const registryConfigId = String(body?.registry_config_id || "").trim();
+        const directImage = String(body?.image || "").trim();
         const repo = String(body?.repo || "").trim();
         const tag = String(body?.tag || "").trim();
-
-        if (!registryConfigId) return NextResponse.json({ error: "registry_config_id required" }, { status: 400 });
-        if (!repo) return NextResponse.json({ error: "repo required" }, { status: 400 });
-        if (!tag) return NextResponse.json({ error: "tag required" }, { status: 400 });
-
-        const registry = await getRegistryConfig(registryConfigId, guard.actor.orgId);
-        if (!registry) return NextResponse.json({ error: "registry not found" }, { status: 404 });
 
         const isAdmin = guard.actor.rolesMask === ADMIN_OVERRIDE;
         const quota = await canQueueScan(guard.actor.orgId);
@@ -41,15 +35,34 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        const registryHost = registry.registryUrl
-            .replace(/^https?:\/\//, "")
-            .replace(/\/+$/, "");
-        const registryImage = `${registryHost}/${repo}:${tag}`;
+        let registryImage: string;
+
+        if (directImage) {
+            // Public image scan — no registry config needed
+            // Validate image ref format (must have at least a name)
+            if (!/^[a-zA-Z0-9][a-zA-Z0-9._\-/]*(?::[a-zA-Z0-9._\-]+)?$/.test(directImage)) {
+                return NextResponse.json({ error: "Invalid image reference" }, { status: 400 });
+            }
+            registryImage = directImage;
+        } else {
+            // Private registry scan — requires config
+            if (!registryConfigId) return NextResponse.json({ error: "registry_config_id or image required" }, { status: 400 });
+            if (!repo) return NextResponse.json({ error: "repo required" }, { status: 400 });
+            if (!tag) return NextResponse.json({ error: "tag required" }, { status: 400 });
+
+            const registry = await getRegistryConfig(registryConfigId, guard.actor.orgId);
+            if (!registry) return NextResponse.json({ error: "registry not found" }, { status: 404 });
+
+            const registryHost = registry.registryUrl
+                .replace(/^https?:\/\//, "")
+                .replace(/\/+$/, "");
+            registryImage = `${registryHost}/${repo}:${tag}`;
+        }
 
         const settings = await getScannerSettings(guard.actor.orgId);
 
         const job = await createRegistryJob({
-            registry_config_id: registryConfigId,
+            registry_config_id: registryConfigId || null,
             registry_image: registryImage,
             org_id: guard.actor.orgId,
             created_by_user_id: guard.actor.userId || null,

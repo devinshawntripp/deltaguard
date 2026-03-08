@@ -684,7 +684,7 @@ export default function ProgressGraph({
 
     const terminalStage = String(terminalEvent?.stage || "").toLowerCase();
     const isFailed = terminalStage === "scan.err" || terminalStage === "scan.error" || terminalStage === "worker.stale.fail";
-    const isFinished = terminalStage === "scan.done" || terminalStage === "scan.summary";
+    const isFinished = terminalStage === "scan.done" || terminalStage === "scan.summary" || terminalStage === "pipeline.complete";
     const scanDone = isFailed || isFinished;
 
     // Duration

@@ -1,6 +1,5 @@
 import Link from "next/link";
 import JobFindings from "@/components/JobFindings";
-import ProgressGraph from "@/components/ProgressGraph";
 import { getJob } from "@/lib/jobs";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
@@ -34,10 +33,6 @@ export default async function JobFindingsPage({ params }: { params: Promise<{ id
                         Dashboard
                     </Link>
                 </div>
-            </div>
-            <div className="grid gap-2">
-                <div className="text-sm font-medium">Workflow</div>
-                <ProgressGraph scanId={id} eventsPath={`/api/jobs/${id}/events`} mode="list" />
             </div>
             <JobFindings jobId={id} />
         </div>

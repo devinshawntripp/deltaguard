@@ -9,6 +9,7 @@ import {
     getUserByEmail,
     verifyPassword,
 } from "@/lib/users";
+import { prisma } from "@/lib/prisma";
 import { getCachedTokenVersion, isSessionSidRevoked, revokeSessionSid, setCachedTokenVersion } from "@/lib/redis";
 import { ROLE_VIEWER } from "@/lib/roles";
 
@@ -118,6 +119,31 @@ export const authOptions: NextAuthOptions = {
                 token.sid = crypto.randomUUID();
                 token.revoked = false;
                 await setCachedTokenVersion(String(user.id), Number(token.token_version || 0));
+            } else {
+                // Token refresh path: re-fetch active_org_id and roles_mask from DB
+                // so org switches (POST /api/orgs/active) are reflected in the session.
+                const userId = typeof token.sub === "string" ? token.sub : "";
+                if (userId) {
+                    try {
+                        const rows = await prisma.$queryRaw<Array<{ active_org_id: string | null; roles_mask: string }>>`
+SELECT u.active_org_id::text AS active_org_id,
+       m.roles_mask::text AS roles_mask
+FROM users u
+JOIN org_memberships m
+  ON m.user_id = u.id
+ AND m.org_id = u.active_org_id
+WHERE u.id=${userId}::uuid
+  AND m.status='active'
+LIMIT 1
+                        `;
+                        if (rows[0]?.active_org_id) {
+                            token.org_id = rows[0].active_org_id;
+                            token.roles_mask = rows[0].roles_mask;
+                        }
+                    } catch {
+                        // Non-fatal: keep existing token values if DB lookup fails
+                    }
+                }
             }
 
             if (!token.sid) {

@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import PackagesTable from "@/components/PackagesTable";
 import UploadCard from "@/components/UploadCard";
+import PublicImageScan from "@/components/PublicImageScan";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { prisma, ensurePlatformSchema } from "@/lib/prisma";
@@ -33,6 +34,7 @@ export default async function DashboardPage() {
         </div>
         <p className="muted text-sm">Queue artifacts, inspect workflow stages, and triage findings quickly.</p>
       </div>
+      <PublicImageScan />
       <UploadCard />
       <Suspense fallback={<div className="opacity-60">Loading packages…</div>}>
         <PackagesTable />

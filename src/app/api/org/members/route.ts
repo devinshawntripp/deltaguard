@@ -94,6 +94,7 @@ export async function PATCH(req: NextRequest) {
       user_id?: string;
       roles_mask?: string | number | bigint | null;
       status?: string;
+      org_id?: string;
     };
 
     const userId = String(body?.user_id || "").trim();
@@ -101,10 +102,14 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "user_id required" }, { status: 400 });
     }
 
+    // Super admins may supply an org_id in the body to act on a different org.
+    const bodyOrgId = actorIsAdmin ? String(body?.org_id || "").trim() : "";
+    const targetOrgId = bodyOrgId || actor.orgId;
+
     const rows = await prisma.$queryRaw<Array<{ roles_mask: string; status: string }>>`
 SELECT roles_mask::text AS roles_mask, status
 FROM org_memberships
-WHERE org_id=${actor.orgId}::uuid AND user_id=${userId}::uuid
+WHERE org_id=${targetOrgId}::uuid AND user_id=${userId}::uuid
 LIMIT 1
     `;
     const current = rows[0];
@@ -175,7 +180,7 @@ LIMIT 1
       const countRows = await prisma.$queryRaw<Array<{ c: string }>>`
 SELECT COUNT(*)::text AS c
 FROM org_memberships
-WHERE org_id=${actor.orgId}::uuid
+WHERE org_id=${targetOrgId}::uuid
   AND status='active'
   AND (
     roles_mask = CAST(${ADMIN_OVERRIDE.toString()} AS BIGINT)
@@ -196,7 +201,7 @@ UPDATE org_memberships
 SET roles_mask = CAST(${nextMask.toString()} AS BIGINT),
     status = ${nextStatus},
     created_at = created_at
-WHERE org_id=${actor.orgId}::uuid
+WHERE org_id=${targetOrgId}::uuid
   AND user_id=${userId}::uuid
     `;
 
@@ -210,7 +215,7 @@ SELECT
   m.created_at::text AS created_at
 FROM org_memberships m
 JOIN users u ON u.id = m.user_id
-WHERE m.org_id=${actor.orgId}::uuid AND m.user_id=${userId}::uuid
+WHERE m.org_id=${targetOrgId}::uuid AND m.user_id=${userId}::uuid
 LIMIT 1
     `;
 
