@@ -60,6 +60,14 @@ export default function SbomTabView({ jobId, sbomStatus: initialStatus }: SbomTa
     const [pkgOrder, setPkgOrder] = React.useState<"asc" | "desc">("asc");
     const [pkgLoading, setPkgLoading] = React.useState(false);
 
+    // Timeout fallback: if status stays "pending" for >2min, assume failure
+    const [timedOut, setTimedOut] = React.useState(false);
+    React.useEffect(() => {
+        if (status !== "pending") return;
+        const timer = setTimeout(() => setTimedOut(true), 120_000);
+        return () => clearTimeout(timer);
+    }, [status]);
+
     // Listen for SSE sbom_export_complete event
     React.useEffect(() => {
         if (status === "ready") return;
@@ -199,12 +207,19 @@ export default function SbomTabView({ jobId, sbomStatus: initialStatus }: SbomTa
     // Pending state
     if (status === "pending") {
         return (
-            <div className="surface-card p-8 flex items-center gap-3 text-sm muted">
-                <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500" />
-                </span>
-                Generating SBOMs...
+            <div className="surface-card p-8 space-y-2">
+                <div className="flex items-center gap-3 text-sm muted">
+                    <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500" />
+                    </span>
+                    Generating SBOMs...
+                </div>
+                {timedOut && (
+                    <div className="px-3 py-2 rounded-md bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 text-sm text-amber-800 dark:text-amber-200">
+                        SBOM generation is taking longer than expected and may have failed. Check the Logs tab for details.
+                    </div>
+                )}
             </div>
         );
     }
