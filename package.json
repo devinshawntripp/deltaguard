@@ -19,6 +19,7 @@
     "@tanstack/react-virtual": "^3.13.19",
     "bcryptjs": "^3.0.3",
     "ioredis": "^5.9.3",
+    "mermaid": "^11.12.3",
     "next": "^16.1.6",
     "next-auth": "^4.24.13",
     "pg": "^8.13.1",
