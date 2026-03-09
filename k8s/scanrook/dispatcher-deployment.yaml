@@ -25,7 +25,7 @@ spec:
             value: "1"
       containers:
         - name: dispatcher
-          image: devintripp/rust-scanner-worker:v1.14.2
+          image: devintripp/rust-scanner-worker:v1.14.3
           imagePullPolicy: Always
           command: ["/usr/local/bin/dispatcher"]
           securityContext:
@@ -46,9 +46,9 @@ spec:
             - name: DISPATCHER_NAMESPACE
               value: scanrook
             - name: DISPATCHER_SCAN_IMAGE
-              value: devintripp/rust-scanner-worker:v1.14.2
+              value: devintripp/rust-scanner-worker:v1.14.3
             - name: REGISTRY_PULLER_IMAGE
-              value: devintripp/rust-scanner-worker:v1.14.2
+              value: devintripp/rust-scanner-worker:v1.14.3
             - name: DISPATCHER_SERVICE_ACCOUNT
               value: scanrook-dispatcher
             - name: DISPATCHER_ENV_SECRET
