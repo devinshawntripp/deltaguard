@@ -130,15 +130,21 @@ function SeverityBox({
     count,
     bg,
     text,
+    loading,
 }: {
     label: string;
     count: number;
     bg: string;
     text: string;
+    loading?: boolean;
 }) {
     return (
         <div className={`flex flex-col items-center justify-center rounded-lg px-3 py-2 ${bg}`}>
-            <span className={`text-xl font-bold tabular-nums ${text}`}>{count}</span>
+            {loading ? (
+                <span className="w-8 h-6 rounded bg-black/10 dark:bg-white/10 animate-pulse" />
+            ) : (
+                <span className={`text-xl font-bold tabular-nums ${text}`}>{count}</span>
+            )}
             <span className={`text-xs font-medium ${text} opacity-80`}>{label}</span>
         </div>
     );
@@ -207,6 +213,11 @@ export default function ScanDashboardView({
     const [pct, setPct] = React.useState(initialPct ?? 0);
     const [currentStage, setCurrentStage] = React.useState(initialMsg ?? "");
     const [currentDetail, setCurrentDetail] = React.useState<string | undefined>(undefined);
+    const hasSummaryData = React.useMemo(() => {
+        const s = summaryJson?.summary ?? (summaryJson as Record<string, number> | null);
+        return !!(s && typeof s === "object" && "critical" in s);
+    }, [summaryJson]);
+    const [sevLoading, setSevLoading] = React.useState(!hasSummaryData);
     const [liveSev, setLiveSev] = React.useState<Severities>(() => {
         const s = summaryJson?.summary ?? (summaryJson as Record<string, number> | null);
         if (s && typeof s === "object" && "critical" in s) {
@@ -305,6 +316,7 @@ export default function ScanDashboardView({
                         medium: s.medium ?? 0,
                         low: s.low ?? 0,
                     });
+                    setSevLoading(false);
                 }
             } catch { /* non-fatal */ }
         }
@@ -362,10 +374,10 @@ export default function ScanDashboardView({
 
                             {/* Live severity counters */}
                             <div className="grid grid-cols-4 gap-2">
-                                <SeverityBox label="Critical" count={liveSev.critical} bg="bg-red-50 dark:bg-red-950/40" text="text-red-700 dark:text-red-300" />
-                                <SeverityBox label="High" count={liveSev.high} bg="bg-orange-50 dark:bg-orange-950/40" text="text-orange-700 dark:text-orange-300" />
-                                <SeverityBox label="Medium" count={liveSev.medium} bg="bg-yellow-50 dark:bg-yellow-950/40" text="text-yellow-700 dark:text-yellow-300" />
-                                <SeverityBox label="Low" count={liveSev.low} bg="bg-blue-50 dark:bg-blue-950/40" text="text-blue-700 dark:text-blue-300" />
+                                <SeverityBox label="Critical" count={liveSev.critical} bg="bg-red-50 dark:bg-red-950/40" text="text-red-700 dark:text-red-300" loading={sevLoading} />
+                                <SeverityBox label="High" count={liveSev.high} bg="bg-orange-50 dark:bg-orange-950/40" text="text-orange-700 dark:text-orange-300" loading={sevLoading} />
+                                <SeverityBox label="Medium" count={liveSev.medium} bg="bg-yellow-50 dark:bg-yellow-950/40" text="text-yellow-700 dark:text-yellow-300" loading={sevLoading} />
+                                <SeverityBox label="Low" count={liveSev.low} bg="bg-blue-50 dark:bg-blue-950/40" text="text-blue-700 dark:text-blue-300" loading={sevLoading} />
                             </div>
                         </div>
                     </div>

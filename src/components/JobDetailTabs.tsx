@@ -106,6 +106,8 @@ function FindingsSummaryCard({
         }
 
         if (terminal) {
+            // Fetch immediately, then at delays to let DB writes settle
+            fetchSummary();
             const t1 = setTimeout(fetchSummary, 800);
             const t2 = setTimeout(fetchSummary, 4000);
             return () => { cancelled = true; clearTimeout(t1); clearTimeout(t2); };
