@@ -58,6 +58,8 @@ LIMIT ${limit}
         if (!t || t.terminal || t.listeners.size === 0) return;
         try {
             const rows = await this.fetchBacklog(jobId, t.lastId, 200);
+            let sawTerminal = false;
+            let sawSbomComplete = false;
             for (const r of rows) {
                 const rowId = typeof r.id === "bigint" ? Number(r.id) : Number(r.id);
                 const normalized: EventRow = { ...r, id: rowId };
@@ -67,10 +69,12 @@ LIMIT ${limit}
                     l.sinceId = rowId;
                     try { l.handler(normalized); } catch { }
                 }
-                if (isTerminalStage(r.stage)) {
-                    this.stopTailer(t);
-                    return;
-                }
+                if (isTerminalStage(r.stage)) sawTerminal = true;
+                if (r.stage === "sbom_export_complete") sawSbomComplete = true;
+            }
+            // Only stop after both scan terminal AND sbom complete have been delivered
+            if (sawTerminal && sawSbomComplete) {
+                this.stopTailer(t);
             }
         } catch { }
     }
@@ -154,8 +158,10 @@ LIMIT ${limit}
                 if (rowId > t.lastId) t.lastId = rowId;
                 handler(normalized);
             }
-            // If already terminal in backlog, stop immediately
-            if (rows.some(r => isTerminalStage(r.stage))) {
+            // Only stop if BOTH terminal and sbom_export_complete are in the backlog
+            const hasTerminal = rows.some(r => isTerminalStage(r.stage));
+            const hasSbomComplete = rows.some(r => r.stage === "sbom_export_complete");
+            if (hasTerminal && hasSbomComplete) {
                 t.terminal = true;
                 t.listeners.delete(listener);
                 return () => { };

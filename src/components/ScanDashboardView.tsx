@@ -172,8 +172,8 @@ function SeverityBar({
         <div className="flex items-center gap-3">
             <span className={`w-16 text-xs font-medium text-right ${text}`}>{label}</span>
             {loading ? (
-                <div className="flex-1 h-2 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
-                    <div className="h-full w-full animate-pulse bg-black/10 dark:bg-white/10 rounded-full" />
+                <div className="flex-1 h-2 rounded-full bg-black/5 dark:bg-white/5 overflow-hidden">
+                    <div className="h-full rounded-full animate-pulse bg-black/20 dark:bg-white/20" style={{ width: "60%" }} />
                 </div>
             ) : (
                 <div className="flex-1 h-2 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
@@ -184,7 +184,7 @@ function SeverityBar({
                 </div>
             )}
             {loading ? (
-                <span className="w-8 h-4 rounded bg-black/10 dark:bg-white/10 animate-pulse" />
+                <span className="w-8 h-4 rounded bg-black/20 dark:bg-white/20 animate-pulse" />
             ) : (
                 <span className="w-8 text-xs tabular-nums muted text-right">{count}</span>
             )}
