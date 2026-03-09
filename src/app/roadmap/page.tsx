@@ -82,6 +82,36 @@ const shipped: RoadmapItem[] = [
       "Findings are classified as ConfirmedInstalled or HeuristicUnverified based on evidence source. Installed-state packages are prioritized over heuristic matches.",
     status: "shipped",
   },
+  {
+    title: "Docker registry scanning (OCI-compliant)",
+    description:
+      "Connect any OCI-compliant registry (Docker Hub, GHCR, ECR, GCR, self-hosted). Browse repositories and tags, scan images on demand, and manage registry credentials per organization with AES-256-GCM encryption.",
+    status: "shipped",
+  },
+  {
+    title: "Prometheus + Grafana monitoring dashboards",
+    description:
+      "Scanner and worker metrics exposed via Prometheus endpoints. Pre-built Grafana dashboards for scan throughput, queue depth, enrichment latency, and error rates.",
+    status: "shipped",
+  },
+  {
+    title: "Centralized logging (Loki)",
+    description:
+      "Logs from all services aggregated into Grafana Loki via Promtail with unified search, alerting, and correlation across the UI, Dispatcher, and Scanner.",
+    status: "shipped",
+  },
+  {
+    title: "Org and team RBAC",
+    description:
+      "Bitwise role-based access control with eight granular roles from Viewer to Org Owner. API key authentication with scoped permissions and per-org billing quota enforcement.",
+    status: "shipped",
+  },
+  {
+    title: "Real-time scan progress (SSE)",
+    description:
+      "Live scan progress streaming via PostgreSQL NOTIFY/LISTEN and Server-Sent Events. No polling \u2014 the browser receives stage updates, severity counts, and SBOM status in real time.",
+    status: "shipped",
+  },
 ];
 
 const inProgress: RoadmapItem[] = [
@@ -125,21 +155,39 @@ const planned: RoadmapItem[] = [
     status: "planned",
   },
   {
-    title: "Prometheus + Grafana monitoring dashboards",
-    description:
-      "Expose scanner and worker metrics via Prometheus endpoints. Pre-built Grafana dashboards for scan throughput, queue depth, enrichment latency, and error rates.",
-    status: "planned",
-  },
-  {
-    title: "Centralized logging (Loki)",
-    description:
-      "Aggregate logs from all three services (UI, Worker, Scanner) into Grafana Loki for unified search, alerting, and correlation.",
-    status: "planned",
-  },
-  {
     title: "HorizontalPodAutoscaler",
     description:
-      "Kubernetes HPA for the Go worker deployment, scaling worker replicas based on scan queue depth and CPU utilization.",
+      "Kubernetes HPA for the Go dispatcher, scaling scan pod concurrency based on queue depth and cluster resource utilization.",
+    status: "planned",
+  },
+  {
+    title: "Scheduled recurring scans",
+    description:
+      "Cron-based scan schedules for registry images. Automatically re-scan images on a configurable cadence to catch newly disclosed vulnerabilities.",
+    status: "planned",
+  },
+  {
+    title: "Webhook notifications",
+    description:
+      "Configurable webhook endpoints that fire on scan completion, new critical findings, or policy violations. Supports Slack, Discord, PagerDuty, and generic HTTP targets.",
+    status: "planned",
+  },
+  {
+    title: "Vulnerability remediation guidance",
+    description:
+      "Actionable fix recommendations per finding including the minimum patched version, upgrade commands, and links to vendor advisories.",
+    status: "planned",
+  },
+  {
+    title: "Scan comparison view",
+    description:
+      "Side-by-side diff of two scan results for the same image showing new, resolved, and unchanged findings across versions.",
+    status: "planned",
+  },
+  {
+    title: "GitHub / GitLab integration",
+    description:
+      "Native integration with GitHub Actions and GitLab CI to run scans as PR checks. Post findings as review comments with inline severity badges.",
     status: "planned",
   },
 ];
