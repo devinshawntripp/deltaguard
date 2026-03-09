@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { openSse } from "@/lib/ssePool";
+// SSE tracking handled by parent (JobDetailTabs) — status passed via prop
 
 type SbomTabViewProps = {
     jobId: string;
@@ -68,55 +68,10 @@ export default function SbomTabView({ jobId, sbomStatus: initialStatus }: SbomTa
         return () => clearTimeout(timer);
     }, [status]);
 
-    // Poll sbom_status from DB when pending (covers case where SSE event already fired)
+    // Sync status from parent prop (JobDetailTabs tracks SSE and passes live status)
     React.useEffect(() => {
-        if (status !== "pending") return;
-        let cancelled = false;
-        const check = async () => {
-            try {
-                const res = await fetch(`/api/jobs/${jobId}/sbom/summary`);
-                if (cancelled) return;
-                if (res.ok) { setStatus("ready"); return; }
-                if (res.status === 404) { /* still pending */ }
-            } catch { /* ignore */ }
-        };
-        // Check immediately, then every 3s
-        check();
-        const interval = setInterval(check, 3000);
-        return () => { cancelled = true; clearInterval(interval); };
-    }, [jobId, status]);
-
-    // Listen for SSE sbom_export_complete event
-    React.useEffect(() => {
-        if (status === "ready") return;
-
-        let closeRef: (() => void) | null = null;
-        const promise = openSse(`/api/jobs/${jobId}/events`, {
-            onMessage: (ev: MessageEvent) => {
-                try {
-                    const data = JSON.parse(typeof ev.data === "string" ? ev.data : "{}");
-                    if (data.stage === "sbom_export_complete") {
-                        setStatus("ready");
-                    }
-                    if (data.stage === "sbom_diff_complete") {
-                        setDiffLoading(true);
-                        fetch(`/api/jobs/${jobId}/sbom/diff`)
-                            .then((r) => r.ok ? r.json() : null)
-                            .then((d) => { if (d) setDiff(d); })
-                            .catch(() => {})
-                            .finally(() => setDiffLoading(false));
-                    }
-                } catch { /* ignore */ }
-            },
-            onError: () => { /* SSE pool handles reconnect */ },
-        });
-
-        promise.then((close) => { closeRef = close; });
-        return () => {
-            if (closeRef) closeRef();
-            else promise.then((close) => close());
-        };
-    }, [jobId, status]);
+        setStatus(initialStatus);
+    }, [initialStatus]);
 
     // Fetch summary when ready
     React.useEffect(() => {

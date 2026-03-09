@@ -322,18 +322,15 @@ export default function ScanDashboardView({
         }
 
         if (terminal) {
-            // Delay after SSE terminal event to let DB writes settle, then retry
-            const timer1 = setTimeout(fetchSummary, 800);
-            const timer2 = setTimeout(fetchSummary, 4000);
-            return () => { cancelled = true; clearTimeout(timer1); clearTimeout(timer2); };
+            // Fetch immediately, then retry after delay to let DB writes settle
+            fetchSummary();
+            const t1 = setTimeout(fetchSummary, 2000);
+            return () => { cancelled = true; clearTimeout(t1); };
         }
 
-        fetchSummary();
-
-        // Also poll severity during active scans (findings arrive progressively)
-        if (!terminal && jobStatus !== "queued") {
-            const interval = setInterval(fetchSummary, 5000);
-            return () => { cancelled = true; clearInterval(interval); };
+        // Initial fetch for non-terminal, non-queued jobs
+        if (jobStatus !== "queued") {
+            fetchSummary();
         }
 
         return () => { cancelled = true; };

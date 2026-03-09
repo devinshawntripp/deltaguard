@@ -106,18 +106,15 @@ function FindingsSummaryCard({
         }
 
         if (terminal) {
-            // Fetch immediately, then at delays to let DB writes settle
+            // Fetch immediately, then retry after delay to let DB writes settle
             fetchSummary();
-            const t1 = setTimeout(fetchSummary, 800);
-            const t2 = setTimeout(fetchSummary, 4000);
-            return () => { cancelled = true; clearTimeout(t1); clearTimeout(t2); };
+            const t1 = setTimeout(fetchSummary, 2000);
+            return () => { cancelled = true; clearTimeout(t1); };
         }
 
-        fetchSummary();
-
-        if (!terminal && jobStatus !== "queued") {
-            const interval = setInterval(fetchSummary, 5000);
-            return () => { cancelled = true; clearInterval(interval); };
+        // Initial fetch for non-terminal jobs
+        if (jobStatus !== "queued") {
+            fetchSummary();
         }
 
         return () => { cancelled = true; };
@@ -156,10 +153,13 @@ export default function JobDetailTabs({
 }: Props) {
     const [tab, setTab] = React.useState<TabId>("dashboard");
     const [liveStatus, setLiveStatus] = React.useState(jobStatus);
+    const [liveSbomStatus, setLiveSbomStatus] = React.useState(sbomStatus || "pending");
 
-    // SSE subscription to track live job status
+    // SSE subscription to track live job status + SBOM status
     React.useEffect(() => {
-        if (liveStatus === "done" || liveStatus === "failed") return;
+        // Keep listening even after job is done — SBOM events arrive after terminal
+        const allDone = (liveStatus === "done" || liveStatus === "failed") && liveSbomStatus === "ready";
+        if (allDone) return;
 
         let closeRef: (() => void) | null = null;
         const promise = openSse(`/api/jobs/${scanId}/events`, {
@@ -172,6 +172,9 @@ export default function JobDetailTabs({
                     } else {
                         setLiveStatus((cur) => cur === "queued" ? "running" : cur);
                     }
+                    if (event.stage === "sbom_export_complete") {
+                        setLiveSbomStatus("ready");
+                    }
                 } catch { /* ignore */ }
             },
             onError: () => { /* SSE pool handles reconnect */ },
@@ -182,7 +185,7 @@ export default function JobDetailTabs({
             if (closeRef) closeRef();
             else promise.then((close) => close());
         };
-    }, [scanId, liveStatus]);
+    }, [scanId, liveStatus, liveSbomStatus]);
 
     const isDone = liveStatus === "done";
     const terminal = liveStatus === "done" || liveStatus === "failed";
@@ -256,7 +259,7 @@ export default function JobDetailTabs({
             {tab === "sbom" && (
                 <SbomTabView
                     jobId={scanId}
-                    sbomStatus={sbomStatus || "pending"}
+                    sbomStatus={liveSbomStatus}
                 />
             )}
         </div>
