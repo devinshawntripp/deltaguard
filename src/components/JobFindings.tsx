@@ -298,9 +298,17 @@ export default function JobFindings({ jobId }: { jobId: string }) {
                     </thead>
                     <tbody>
                         {loading ? (
-                            <tr>
-                                <td className="p-3 opacity-70" colSpan={14}>Loading findings...</td>
-                            </tr>
+                            <>
+                                {Array.from({ length: 5 }).map((_, i) => (
+                                    <tr key={`skel-${i}`} className="border-t border-black/5 dark:border-white/5">
+                                        {Array.from({ length: 14 }).map((_, j) => (
+                                            <td key={j} className="p-3">
+                                                <span className={`block h-4 rounded bg-black/10 dark:bg-white/10 animate-pulse ${j === 0 ? "w-24" : j === 13 ? "w-16" : "w-14"}`} />
+                                            </td>
+                                        ))}
+                                    </tr>
+                                ))}
+                            </>
                         ) : items.length === 0 ? (
                             <tr>
                                 <td className="p-3 opacity-70" colSpan={14}>No findings for current filters.</td>

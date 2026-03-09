@@ -38,15 +38,21 @@ function SeverityBox({
     count,
     bg,
     text,
+    loading,
 }: {
     label: string;
     count: number;
     bg: string;
     text: string;
+    loading?: boolean;
 }) {
     return (
         <div className={`flex flex-col items-center justify-center rounded-lg px-3 py-2 ${bg}`}>
-            <span className={`text-xl font-bold tabular-nums ${text}`}>{count}</span>
+            {loading ? (
+                <span className="w-8 h-6 rounded bg-black/10 dark:bg-white/10 animate-pulse" />
+            ) : (
+                <span className={`text-xl font-bold tabular-nums ${text}`}>{count}</span>
+            )}
             <span className={`text-xs font-medium ${text} opacity-80`}>{label}</span>
         </div>
     );
@@ -63,7 +69,7 @@ function FindingsSummaryCard({
     jobStatus: string;
     terminal: boolean;
 }) {
-    const [sev, setSev] = React.useState(() => {
+    const initialSev = React.useMemo(() => {
         const s = summaryJson?.summary ?? (summaryJson as Record<string, number> | null);
         if (s && typeof s === "object" && "critical" in s) {
             return {
@@ -73,8 +79,11 @@ function FindingsSummaryCard({
                 low: (s as Record<string, number>).low ?? 0,
             };
         }
-        return { critical: 0, high: 0, medium: 0, low: 0 };
-    });
+        return null;
+    }, [summaryJson]);
+
+    const [sev, setSev] = React.useState(initialSev ?? { critical: 0, high: 0, medium: 0, low: 0 });
+    const [loading, setLoading] = React.useState(!initialSev);
 
     React.useEffect(() => {
         let cancelled = false;
@@ -91,6 +100,7 @@ function FindingsSummaryCard({
                         medium: s.medium ?? 0,
                         low: s.low ?? 0,
                     });
+                    setLoading(false);
                 }
             } catch { /* non-fatal */ }
         }
@@ -122,10 +132,10 @@ function FindingsSummaryCard({
                 )}
             </div>
             <div className="grid grid-cols-4 gap-2">
-                <SeverityBox label="Critical" count={sev.critical} bg="bg-red-50 dark:bg-red-950/40" text="text-red-700 dark:text-red-300" />
-                <SeverityBox label="High" count={sev.high} bg="bg-orange-50 dark:bg-orange-950/40" text="text-orange-700 dark:text-orange-300" />
-                <SeverityBox label="Medium" count={sev.medium} bg="bg-yellow-50 dark:bg-yellow-950/40" text="text-yellow-700 dark:text-yellow-300" />
-                <SeverityBox label="Low" count={sev.low} bg="bg-blue-50 dark:bg-blue-950/40" text="text-blue-700 dark:text-blue-300" />
+                <SeverityBox label="Critical" count={sev.critical} bg="bg-red-50 dark:bg-red-950/40" text="text-red-700 dark:text-red-300" loading={loading} />
+                <SeverityBox label="High" count={sev.high} bg="bg-orange-50 dark:bg-orange-950/40" text="text-orange-700 dark:text-orange-300" loading={loading} />
+                <SeverityBox label="Medium" count={sev.medium} bg="bg-yellow-50 dark:bg-yellow-950/40" text="text-yellow-700 dark:text-yellow-300" loading={loading} />
+                <SeverityBox label="Low" count={sev.low} bg="bg-blue-50 dark:bg-blue-950/40" text="text-blue-700 dark:text-blue-300" loading={loading} />
             </div>
         </div>
     );
