@@ -158,24 +158,36 @@ function SeverityBar({
     total,
     bar,
     text,
+    loading,
 }: {
     label: string;
     count: number;
     total: number;
     bar: string;
     text: string;
+    loading?: boolean;
 }) {
     const pct = total > 0 ? (count / total) * 100 : 0;
     return (
         <div className="flex items-center gap-3">
             <span className={`w-16 text-xs font-medium text-right ${text}`}>{label}</span>
-            <div className="flex-1 h-2 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
-                <div
-                    className={`h-full rounded-full ${bar}`}
-                    style={{ width: `${pct}%` }}
-                />
-            </div>
-            <span className="w-8 text-xs tabular-nums muted text-right">{count}</span>
+            {loading ? (
+                <div className="flex-1 h-2 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
+                    <div className="h-full w-full animate-pulse bg-black/10 dark:bg-white/10 rounded-full" />
+                </div>
+            ) : (
+                <div className="flex-1 h-2 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
+                    <div
+                        className={`h-full rounded-full ${bar}`}
+                        style={{ width: `${pct}%` }}
+                    />
+                </div>
+            )}
+            {loading ? (
+                <span className="w-8 h-4 rounded bg-black/10 dark:bg-white/10 animate-pulse" />
+            ) : (
+                <span className="w-8 text-xs tabular-nums muted text-right">{count}</span>
+            )}
         </div>
     );
 }
@@ -400,16 +412,16 @@ export default function ScanDashboardView({
                                     <path d="M5 8l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                                 </svg>
                                 <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">
-                                    Scan complete — {totalFindings} finding{totalFindings !== 1 ? "s" : ""}
+                                    {sevLoading ? "Scan complete" : `Scan complete — ${totalFindings} finding${totalFindings !== 1 ? "s" : ""}`}
                                 </span>
                             </div>
 
                             {/* Severity bars */}
                             <div className="grid gap-2">
-                                <SeverityBar label="Critical" count={liveSev.critical} total={allSev} bar="bg-red-500" text="text-red-700 dark:text-red-300" />
-                                <SeverityBar label="High" count={liveSev.high} total={allSev} bar="bg-orange-500" text="text-orange-700 dark:text-orange-300" />
-                                <SeverityBar label="Medium" count={liveSev.medium} total={allSev} bar="bg-yellow-500" text="text-yellow-700 dark:text-yellow-300" />
-                                <SeverityBar label="Low" count={liveSev.low} total={allSev} bar="bg-blue-500" text="text-blue-700 dark:text-blue-300" />
+                                <SeverityBar label="Critical" count={liveSev.critical} total={allSev} bar="bg-red-500" text="text-red-700 dark:text-red-300" loading={sevLoading} />
+                                <SeverityBar label="High" count={liveSev.high} total={allSev} bar="bg-orange-500" text="text-orange-700 dark:text-orange-300" loading={sevLoading} />
+                                <SeverityBar label="Medium" count={liveSev.medium} total={allSev} bar="bg-yellow-500" text="text-yellow-700 dark:text-yellow-300" loading={sevLoading} />
+                                <SeverityBar label="Low" count={liveSev.low} total={allSev} bar="bg-blue-500" text="text-blue-700 dark:text-blue-300" loading={sevLoading} />
                             </div>
                         </div>
                     </div>
