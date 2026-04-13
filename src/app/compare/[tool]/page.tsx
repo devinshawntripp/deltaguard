@@ -148,10 +148,10 @@ const tools: Record<string, ToolData> = {
       },
     ],
     benchmarks: [
-      { image: "alpine:3.20", size: "8.7 MB", scanrookTime: "0.04s", scanrookFindings: 7, competitorTime: "0.1s", competitorFindings: 0 },
-      { image: "debian:12", size: "137 MB", scanrookTime: "1.2s", scanrookFindings: 196, competitorTime: "0.2s", competitorFindings: 92 },
-      { image: "ubuntu:24.04", size: "69 MB", scanrookTime: "2.2s", scanrookFindings: 174, competitorTime: "0.1s", competitorFindings: 13 },
-      { image: "rockylinux:9", size: "189 MB", scanrookTime: "1.8s", scanrookFindings: 481, competitorTime: "0.2s", competitorFindings: 176 },
+      { image: "alpine:3.20", size: "7.7 MB", scanrookTime: "0.4s", scanrookFindings: 301, competitorTime: "0.1s", competitorFindings: 16 },
+      { image: "debian:12", size: "116 MB", scanrookTime: "5.4s", scanrookFindings: 1110, competitorTime: "0.1s", competitorFindings: 123 },
+      { image: "ubuntu:24.04", size: "77 MB", scanrookTime: "3.4s", scanrookFindings: 1365, competitorTime: "0.1s", competitorFindings: 10 },
+      { image: "rockylinux:9", size: "173 MB", scanrookTime: "5.0s", scanrookFindings: 779, competitorTime: "0.2s", competitorFindings: 187 },
     ],
     differentiators: [
       {
@@ -282,10 +282,10 @@ const tools: Record<string, ToolData> = {
       },
     ],
     benchmarks: [
-      { image: "alpine:3.20", size: "8.7 MB", scanrookTime: "0.04s", scanrookFindings: 7, competitorTime: "1.1s", competitorFindings: 4 },
-      { image: "debian:12", size: "137 MB", scanrookTime: "1.2s", scanrookFindings: 196, competitorTime: "1.2s", competitorFindings: 86 },
-      { image: "ubuntu:24.04", size: "69 MB", scanrookTime: "2.2s", scanrookFindings: 174, competitorTime: "1.0s", competitorFindings: 26 },
-      { image: "rockylinux:9", size: "189 MB", scanrookTime: "1.8s", scanrookFindings: 481, competitorTime: "1.9s", competitorFindings: 539 },
+      { image: "alpine:3.20", size: "7.7 MB", scanrookTime: "0.4s", scanrookFindings: 301, competitorTime: "1.0s", competitorFindings: 20 },
+      { image: "debian:12", size: "116 MB", scanrookTime: "5.4s", scanrookFindings: 1110, competitorTime: "1.1s", competitorFindings: 117 },
+      { image: "ubuntu:24.04", size: "77 MB", scanrookTime: "3.4s", scanrookFindings: 1365, competitorTime: "1.0s", competitorFindings: 47 },
+      { image: "rockylinux:9", size: "173 MB", scanrookTime: "5.0s", scanrookFindings: 779, competitorTime: "2.3s", competitorFindings: 640 },
     ],
     differentiators: [
       {

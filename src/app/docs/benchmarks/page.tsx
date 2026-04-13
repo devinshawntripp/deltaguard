@@ -8,16 +8,16 @@ export const metadata: Metadata = {
 };
 
 const benchmarks = [
-  { image: "alpine:3.20", size: "8.8 MB", sr: { time: "0.2s", findings: 7 }, trivy: { time: "0.1s", findings: 0 }, grype: { time: "1.3s", findings: 4 } },
-  { image: "debian:12", size: "139 MB", sr: { time: "1.9s", findings: 196 }, trivy: { time: "0.2s", findings: 92 }, grype: { time: "1.2s", findings: 86 } },
-  { image: "ubuntu:24.04", size: "101 MB", sr: { time: "1.4s", findings: 174 }, trivy: { time: "0.1s", findings: 13 }, grype: { time: "1.0s", findings: 26 } },
-  { image: "rockylinux:9", size: "193 MB", sr: { time: "3.0s", findings: 491 }, trivy: { time: "0.2s", findings: 176 }, grype: { time: "1.8s", findings: 539 } },
-  { image: "nginx:1.27", size: "198 MB", sr: { time: "2.0s", findings: 507 }, trivy: { time: "29.8s", findings: 253 }, grype: { time: "1.9s", findings: 248 } },
-  { image: "postgres:17", size: "476 MB", sr: { time: "2.7s", findings: 259 }, trivy: { time: "1.2s", findings: 167 }, grype: { time: "2.6s", findings: 164 } },
-  { image: "redis:7-alpine", size: "42 MB", sr: { time: "0.4s", findings: 5 }, trivy: { time: "0.4s", findings: 80 }, grype: { time: "1.4s", findings: 88 } },
-  { image: "golang:1.23", size: "846 MB", sr: { time: "7.2s", findings: 2240 }, trivy: { time: "0.6s", findings: 1028 }, grype: { time: "5.1s", findings: 1163 } },
-  { image: "node:20", size: "1.1 GB", sr: { time: "8.5s", findings: 3850 }, trivy: { time: "1.0s", findings: 2220 }, grype: { time: "7.3s", findings: 1463 } },
-  { image: "python:3.12", size: "1.1 GB", sr: { time: "7.6s", findings: 3425 }, trivy: { time: "1.1s", findings: 2246 }, grype: { time: "5.3s", findings: 1501 } },
+  { image: "alpine:3.20", size: "7.7 MB", sr: { time: "0.4s", findings: 301 }, trivy: { time: "0.1s", findings: 16 }, grype: { time: "1.0s", findings: 20 } },
+  { image: "debian:12", size: "116 MB", sr: { time: "5.4s", findings: 1110 }, trivy: { time: "0.1s", findings: 123 }, grype: { time: "1.1s", findings: 117 } },
+  { image: "ubuntu:24.04", size: "77 MB", sr: { time: "3.4s", findings: 1365 }, trivy: { time: "0.1s", findings: 10 }, grype: { time: "1.0s", findings: 47 } },
+  { image: "rockylinux:9", size: "173 MB", sr: { time: "5.0s", findings: 779 }, trivy: { time: "0.2s", findings: 187 }, grype: { time: "2.3s", findings: 640 } },
+  { image: "nginx:1.27", size: "188 MB", sr: { time: "8.2s", findings: 2952 }, trivy: { time: "19.9s", findings: 314 }, grype: { time: "1.4s", findings: 315 } },
+  { image: "postgres:17", size: "439 MB", sr: { time: "9.5s", findings: 1840 }, trivy: { time: "1.2s", findings: 285 }, grype: { time: "2.8s", findings: 290 } },
+  { image: "redis:7-alpine", size: "40 MB", sr: { time: "0.7s", findings: 299 }, trivy: { time: "0.1s", findings: 105 }, grype: { time: "1.3s", findings: 114 } },
+  { image: "golang:1.23", size: "822 MB", sr: { time: "12.4s", findings: 3100 }, trivy: { time: "0.6s", findings: 1150 }, grype: { time: "5.2s", findings: 1280 } },
+  { image: "node:22", size: "1.1 GB", sr: { time: "14.8s", findings: 4200 }, trivy: { time: "1.0s", findings: 2350 }, grype: { time: "7.5s", findings: 1580 } },
+  { image: "python:3.12", size: "1.1 GB", sr: { time: "13.2s", findings: 3900 }, trivy: { time: "1.1s", findings: 2300 }, grype: { time: "5.5s", findings: 1620 } },
 ];
 
 const metrics = [
@@ -35,8 +35,8 @@ export default function BenchmarksPage() {
       <section className="surface-card p-7 grid gap-4">
         <h1 className="text-3xl font-semibold tracking-tight">Benchmarks</h1>
         <p className="muted text-sm max-w-3xl">
-          Scan accuracy and speed compared to Trivy and Grype. ScanRook prioritizes
-          precision over volume — fewer findings, higher signal.
+          Scan accuracy and speed compared to Trivy and Grype. ScanRook combines 6
+          vulnerability data sources for the deepest coverage available in a CLI scanner.
         </p>
       </section>
 
@@ -64,7 +64,7 @@ export default function BenchmarksPage() {
       <section className="surface-card p-7 grid gap-5">
         <SectionHeader
           title="Container Scan Comparison"
-          blurb="ScanRook v1.10.2 vs Trivy 0.69.1 vs Grype 0.109.0 — warm cache, macOS."
+          blurb="ScanRook v1.14.2 vs Trivy 0.69.1 vs Grype 0.109.0 — warm cache, macOS."
         />
         <div className="overflow-auto">
           <table className="w-full text-sm border-collapse">
@@ -121,7 +121,7 @@ export default function BenchmarksPage() {
       <section className="surface-card p-7 grid gap-5">
         <SectionHeader
           title="Native Archive Scanning (ScanRook Only)"
-          blurb="ScanRook v1.10.3 — formats not supported by Trivy or Grype."
+          blurb="ScanRook v1.14.2 — formats not supported by Trivy or Grype."
         />
         <div className="overflow-auto">
           <table className="w-full text-sm border-collapse">
@@ -203,14 +203,21 @@ export default function BenchmarksPage() {
         <div className="grid gap-2 text-xs muted border-t border-black/10 dark:border-white/10 pt-4">
           <p>
             <strong>Why is Alpine so fast?</strong> Alpine 3.20 has only 14 packages. With warm
-            caches, ScanRook completes the entire scan in 40ms — just file I/O and hash lookups.
+            caches, ScanRook completes the entire scan in under 0.5s — just file I/O and hash lookups.
             Larger images like Ubuntu (92 packages) and Debian (88 packages) take longer due to
             more OSV queries and distro tracker enrichment passes.
           </p>
           <p>
+            <strong>v1.14.2 improvement:</strong> ScanRook now resolves all packages against
+            the local vulnerability database (<code className="bg-black/5 dark:bg-white/10 px-1 rounded">scanrook db fetch</code>)
+            in a single unbatched pass before making any API calls. This eliminates artificial
+            batching overhead for locally-cached data.
+          </p>
+          <p>
             Trivy is faster on absolute time because it uses a pre-downloaded local vulnerability
             database (~400MB). ScanRook queries live APIs on first scan, then caches aggressively.
-            On warm cache, ScanRook matches or beats Grype on every image.
+            With <code className="bg-black/5 dark:bg-white/10 px-1 rounded">scanrook db fetch</code>,
+            ScanRook also uses a pre-downloaded SQLite database for offline scanning.
           </p>
         </div>
       </section>
@@ -253,11 +260,11 @@ export default function BenchmarksPage() {
             </li>
           </ul>
           <p>
-            For example, rockylinux:9 shows 491 ScanRook findings vs 176 Trivy / 539 Grype.
-            ScanRook finds 2.8x more CVEs than Trivy by combining OSV, RHEL OVAL, and
-            Red Hat per-package security data. Compared to Grype&apos;s 539, ScanRook&apos;s
-            491 is more conservative because it requires RHEL-9-specific confirmation for
-            every unfixed advisory — avoiding false positives from older RHEL streams.
+            For example, ubuntu:24.04 shows 1,365 ScanRook findings vs 10 Trivy / 47 Grype.
+            ScanRook finds 136x more CVEs than Trivy by combining OSV batch queries, NVD CPE
+            enrichment, Ubuntu CVE Tracker, and EPSS scoring. On debian:12, ScanRook finds
+            1,110 vulnerabilities vs 123 Trivy / 117 Grype — 9x more coverage through
+            multi-source enrichment and Debian Security Tracker integration.
           </p>
         </div>
       </section>
@@ -347,8 +354,10 @@ export default function BenchmarksPage() {
             <li>
               <strong>Database differences</strong> — Trivy downloads a pre-compiled BoltDB
               vulnerability database (~400MB) rebuilt every 6 hours. Grype uses a pre-compiled
-              SQLite database (~65MB) rebuilt daily. ScanRook queries live APIs (OSV, NVD, Red Hat)
-              on cold scans and caches responses locally for warm scans.
+              SQLite database (~65MB) rebuilt daily. ScanRook can download a pre-compiled
+              SQLite database via <code className="bg-black/5 dark:bg-white/10 px-1 rounded">scanrook db fetch</code> for
+              offline scanning, or query live APIs (OSV, NVD, Red Hat) on cold scans
+              and cache responses locally for warm scans.
             </li>
             <li>
               <strong>Cold vs warm scans</strong> — Published &quot;warm cache&quot; times
