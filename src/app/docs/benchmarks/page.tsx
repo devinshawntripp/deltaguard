@@ -15,9 +15,9 @@ const benchmarks = [
   { image: "nginx:1.27", size: "188 MB", sr: { time: "8.5s", findings: 2952 }, trivy: { time: "0.2s", findings: 314 }, grype: { time: "1.6s", findings: 315 } },
   { image: "postgres:17", size: "439 MB", sr: { time: "8.5s", findings: 2983 }, trivy: { time: "0.3s", findings: 224 }, grype: { time: "2.5s", findings: 222 } },
   { image: "redis:7-alpine", size: "40 MB", sr: { time: "0.7s", findings: 299 }, trivy: { time: "0.1s", findings: 105 }, grype: { time: "1.3s", findings: 114 } },
-  { image: "golang:1.23", size: "822 MB", sr: { time: "12.4s", findings: 3100 }, trivy: { time: "0.6s", findings: 1150 }, grype: { time: "5.2s", findings: 1280 } },
-  { image: "node:22", size: "1.1 GB", sr: { time: "14.8s", findings: 4200 }, trivy: { time: "1.0s", findings: 2350 }, grype: { time: "7.5s", findings: 1580 } },
-  { image: "python:3.12", size: "1.1 GB", sr: { time: "13.2s", findings: 3900 }, trivy: { time: "1.1s", findings: 2300 }, grype: { time: "5.5s", findings: 1620 } },
+  { image: "golang:1.23", size: "822 MB", sr: { time: "24.9s", findings: 18152 }, trivy: { time: "0.9s", findings: 3038 }, grype: { time: "4.8s", findings: 1466 } },
+  { image: "node:22", size: "1.1 GB", sr: { time: "48.0s", findings: 30726 }, trivy: { time: "1.1s", findings: 2384 }, grype: { time: "7.5s", findings: 1533 } },
+  { image: "python:3.12", size: "1.1 GB", sr: { time: "51.1s", findings: 31590 }, trivy: { time: "0.7s", findings: 1673 }, grype: { time: "5.9s", findings: 1269 } },
 ];
 
 const metrics = [
