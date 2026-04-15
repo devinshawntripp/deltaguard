@@ -53,11 +53,19 @@ spec:
                   mc ilm rule add minio/reports \
                     --expire-days 90 || true
 
+                  echo "Setting lifecycle rule on vulndb bucket (3-day expiration safety net)..."
+                  mc ilm rule add minio/vulndb \
+                    --expire-days 3 2>/dev/null || \
+                  mc ilm rule add minio/vulndb \
+                    --expire-days 3 || true
+
                   echo "Current lifecycle rules:"
                   echo "--- deltaguard (uploads) ---"
                   mc ilm rule ls minio/deltaguard || true
                   echo "--- reports ---"
                   mc ilm rule ls minio/reports || true
+                  echo "--- vulndb ---"
+                  mc ilm rule ls minio/vulndb || true
                   echo "Lifecycle configuration complete at $(date)"
               env:
                 - name: MINIO_ENDPOINT

@@ -1499,13 +1499,22 @@ def upload_to_minio(local_path: str, object_name: str):
     client.fput_object(bucket, object_name, local_path)
     log.info("Uploaded to MinIO: %s/%s (%.1f MB)", bucket, object_name, file_size / (1024 * 1024))
 
-    # Prune old DB files (keep last 14 days)
-    cutoff = datetime.now(timezone.utc) - timedelta(days=14)
+    # Prune old DB files — keep only the latest 3 snapshots by key name
+    # (each ~1.5 GB, so 3 snapshots = ~4.5 GB max)
+    keep_count = int(os.environ.get("VULNDB_KEEP", "3"))
     try:
-        for obj in client.list_objects(bucket, prefix="scanrook-db-"):
-            if obj.last_modified and obj.last_modified < cutoff:
-                client.remove_object(bucket, obj.object_name)
-                log.info("Pruned old DB: %s", obj.object_name)
+        all_dbs = sorted(
+            [obj.object_name for obj in client.list_objects(bucket, prefix="scanrook-db-")],
+            reverse=True,
+        )
+        to_delete = all_dbs[keep_count:]
+        for name in to_delete:
+            client.remove_object(bucket, name)
+            log.info("Pruned old DB: %s (keeping latest %d)", name, keep_count)
+        if to_delete:
+            log.info("Vulndb prune: kept %d, deleted %d", len(all_dbs) - len(to_delete), len(to_delete))
+        else:
+            log.info("Vulndb prune: %d snapshots, nothing to delete (keep=%d)", len(all_dbs), keep_count)
     except Exception as e:
         log.warning("Failed to prune old DBs: %s", e)
 
