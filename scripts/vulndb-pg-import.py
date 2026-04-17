@@ -1167,20 +1167,9 @@ def import_redhat_oval(conn, session: requests.Session):
 # Phase 2: Export PG → SQLite → gzip → MinIO
 # ===========================================================================
 
-def export_pg_to_sqlite(conn, sqlite_path: str, summary: dict):
-    """Export PG enrichment cache tables into a SQLite DB matching the Rust
-    scanner's query schema (zstd-compressed payloads for NVD/OSV)."""
-
-    log.info("=== SQLite export starting → %s ===", sqlite_path)
-    started = time.time()
-
-    if os.path.exists(sqlite_path):
-        os.remove(sqlite_path)
-
-    sconn = sqlite3.connect(sqlite_path)
-    sconn.executescript(SQLITE_SCHEMA)
-
-    # --- NVD (two-pass: sample for dict training, then compress with dict) ---
+def _export_nvd_to_sqlite(conn, sconn) -> int:
+    """Export NVD CVEs from PG to SQLite with zstd dictionary compression.
+    Returns the number of CVEs exported."""
     log.info("SQLite export: NVD CVEs — collecting samples for dictionary training...")
     nvd_samples = []
     with conn.cursor("nvd_sample") as cur:
@@ -1238,8 +1227,12 @@ def export_pg_to_sqlite(conn, sqlite_path: str, summary: dict):
     sconn.commit()
     del nvd_cctx
     log.info("SQLite export: %d NVD CVEs (dict-compressed)", nvd_count)
+    return nvd_count
 
-    # --- OSV (two-pass: sample for dict training, then compress with dict) ---
+
+def _export_osv_to_sqlite(conn, sconn) -> int:
+    """Export OSV vulns from PG to SQLite with zstd dictionary compression.
+    Returns the number of vulns exported."""
     log.info("SQLite export: OSV vulns — collecting samples for dictionary training...")
     osv_samples = []
     with conn.cursor("osv_sample") as cur:
@@ -1326,6 +1319,25 @@ def export_pg_to_sqlite(conn, sqlite_path: str, summary: dict):
     sconn.commit()
     del osv_cctx
     log.info("SQLite export: %d OSV vulns (dict-compressed)", osv_count)
+    return osv_count
+
+
+def export_pg_to_sqlite(conn, sqlite_path: str, summary: dict):
+    """Export PG enrichment cache tables into a SQLite DB matching the Rust
+    scanner's query schema (zstd-compressed payloads for NVD/OSV)."""
+
+    log.info("=== SQLite export starting (full) → %s ===", sqlite_path)
+    started = time.time()
+
+    if os.path.exists(sqlite_path):
+        os.remove(sqlite_path)
+
+    sconn = sqlite3.connect(sqlite_path)
+    sconn.executescript(SQLITE_SCHEMA)
+
+    # --- NVD and OSV via shared helpers ---
+    nvd_count = _export_nvd_to_sqlite(conn, sconn)
+    osv_count = _export_osv_to_sqlite(conn, sconn)
 
     # --- EPSS ---
     log.info("SQLite export: EPSS scores...")
@@ -1440,6 +1452,7 @@ def export_pg_to_sqlite(conn, sqlite_path: str, summary: dict):
     sconn.execute("INSERT OR REPLACE INTO metadata (key, value) VALUES ('build_date', ?)", (build_date,))
     sconn.execute("INSERT OR REPLACE INTO metadata (key, value) VALUES ('schema_version', '2')")
     sconn.execute("INSERT OR REPLACE INTO metadata (key, value) VALUES ('dict_compression', '1')")
+    sconn.execute("INSERT OR REPLACE INTO metadata (key, value) VALUES ('tier', 'full')")
     sconn.execute("INSERT OR REPLACE INTO metadata (key, value) VALUES ('nvd_count', ?)", (str(nvd_count),))
     sconn.execute("INSERT OR REPLACE INTO metadata (key, value) VALUES ('osv_count', ?)", (str(osv_count),))
     sconn.execute("INSERT OR REPLACE INTO metadata (key, value) VALUES ('epss_count', ?)", (str(epss_count),))
@@ -1456,9 +1469,47 @@ def export_pg_to_sqlite(conn, sqlite_path: str, summary: dict):
 
     elapsed = time.time() - started
     size_mb = os.path.getsize(sqlite_path) / (1024 * 1024)
-    log.info("SQLite export done: %.1f MB in %.0fs (nvd=%d osv=%d epss=%d kev=%d debian=%d ubuntu=%d alpine=%d)",
+    log.info("SQLite export done (full): %.1f MB in %.0fs (nvd=%d osv=%d epss=%d kev=%d debian=%d ubuntu=%d alpine=%d)",
              size_mb, elapsed, nvd_count, osv_count, epss_count, len(kev_rows),
              deb_count, ubuntu_count, alpine_count)
+
+
+def export_free_db(conn, sqlite_path: str, summary: dict):
+    """Export a free-tier SQLite DB containing only OSV ecosystem data + basic
+    NVD CVEs. No EPSS, KEV, OVAL, Debian, Ubuntu, or Alpine data."""
+
+    log.info("=== SQLite export starting (free) → %s ===", sqlite_path)
+    started = time.time()
+
+    if os.path.exists(sqlite_path):
+        os.remove(sqlite_path)
+
+    sconn = sqlite3.connect(sqlite_path)
+    sconn.executescript(SQLITE_SCHEMA)
+
+    # --- NVD and OSV via shared helpers ---
+    nvd_count = _export_nvd_to_sqlite(conn, sconn)
+    osv_count = _export_osv_to_sqlite(conn, sconn)
+
+    # --- Metadata ---
+    build_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    sconn.execute("INSERT OR REPLACE INTO metadata (key, value) VALUES ('build_date', ?)", (build_date,))
+    sconn.execute("INSERT OR REPLACE INTO metadata (key, value) VALUES ('schema_version', '2')")
+    sconn.execute("INSERT OR REPLACE INTO metadata (key, value) VALUES ('dict_compression', '1')")
+    sconn.execute("INSERT OR REPLACE INTO metadata (key, value) VALUES ('tier', 'free')")
+    sconn.execute("INSERT OR REPLACE INTO metadata (key, value) VALUES ('nvd_count', ?)", (str(nvd_count),))
+    sconn.execute("INSERT OR REPLACE INTO metadata (key, value) VALUES ('osv_count', ?)", (str(osv_count),))
+    sconn.commit()
+
+    # Optimize
+    sconn.execute("PRAGMA optimize")
+    sconn.execute("PRAGMA journal_mode=WAL")
+    sconn.close()
+
+    elapsed = time.time() - started
+    size_mb = os.path.getsize(sqlite_path) / (1024 * 1024)
+    log.info("SQLite export done (free): %.1f MB in %.0fs (nvd=%d osv=%d)",
+             size_mb, elapsed, nvd_count, osv_count)
 
 
 def gzip_file(src_path: str, dst_path: str):
@@ -1499,24 +1550,31 @@ def upload_to_minio(local_path: str, object_name: str):
     client.fput_object(bucket, object_name, local_path)
     log.info("Uploaded to MinIO: %s/%s (%.1f MB)", bucket, object_name, file_size / (1024 * 1024))
 
-    # Prune old DB files — keep only the latest 3 snapshots by key name
-    # (each ~1.5 GB, so 3 snapshots = ~4.5 GB max)
+    # Prune old DB files — keep only the latest 3 snapshots per prefix
+    # Full DBs (~1.5 GB each) and free DBs (~300-400 MB each)
     keep_count = int(os.environ.get("VULNDB_KEEP", "3"))
-    try:
-        all_dbs = sorted(
-            [obj.object_name for obj in client.list_objects(bucket, prefix="scanrook-db-")],
-            reverse=True,
-        )
-        to_delete = all_dbs[keep_count:]
-        for name in to_delete:
-            client.remove_object(bucket, name)
-            log.info("Pruned old DB: %s (keeping latest %d)", name, keep_count)
-        if to_delete:
-            log.info("Vulndb prune: kept %d, deleted %d", len(all_dbs) - len(to_delete), len(to_delete))
-        else:
-            log.info("Vulndb prune: %d snapshots, nothing to delete (keep=%d)", len(all_dbs), keep_count)
-    except Exception as e:
-        log.warning("Failed to prune old DBs: %s", e)
+    for prefix in ("scanrook-db-free-", "scanrook-db-"):
+        try:
+            all_dbs = sorted(
+                [obj.object_name for obj in client.list_objects(bucket, prefix=prefix)
+                 if obj.object_name.startswith(prefix)],
+                reverse=True,
+            )
+            # For the "scanrook-db-" prefix, exclude "scanrook-db-free-" matches
+            if prefix == "scanrook-db-":
+                all_dbs = [n for n in all_dbs if not n.startswith("scanrook-db-free-")]
+            to_delete = all_dbs[keep_count:]
+            for name in to_delete:
+                client.remove_object(bucket, name)
+                log.info("Pruned old DB: %s (keeping latest %d)", name, keep_count)
+            if to_delete:
+                log.info("Vulndb prune [%s]: kept %d, deleted %d",
+                         prefix.rstrip("-"), len(all_dbs) - len(to_delete), len(to_delete))
+            else:
+                log.info("Vulndb prune [%s]: %d snapshots, nothing to delete (keep=%d)",
+                         prefix.rstrip("-"), len(all_dbs), keep_count)
+        except Exception as e:
+            log.warning("Failed to prune old DBs [%s]: %s", prefix.rstrip("-"), e)
 
     return True
 
@@ -1604,14 +1662,16 @@ def main():
         use_ssl = os.environ.get("S3_USE_SSL", "false").lower() == "true"
         bucket = os.environ.get("VULNDB_BUCKET", "vulndb")
         date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-        today_obj = f"scanrook-db-{date_str}.sqlite"
+        today_full = f"scanrook-db-{date_str}.sqlite"
+        today_free = f"scanrook-db-free-{date_str}.sqlite"
         try:
             mc = Minio(endpoint, access_key=access_key, secret_key=secret_key, secure=use_ssl)
-            mc.stat_object(bucket, today_obj)
-            log.info("No sources updated and %s/%s already exists, skipping SQLite rebuild",
-                     bucket, today_obj)
+            mc.stat_object(bucket, today_full)
+            mc.stat_object(bucket, today_free)
+            log.info("No sources updated and both %s/%s and %s/%s already exist, skipping SQLite rebuild",
+                     bucket, today_full, bucket, today_free)
         except Exception:
-            log.info("No sources updated but %s/%s missing — exporting anyway", bucket, today_obj)
+            log.info("No sources updated but one or both DBs missing — exporting anyway")
             do_export = True
 
     if do_export:
@@ -1621,13 +1681,21 @@ def main():
             scratch = os.environ.get("SCRATCH_DIR", None)
             with tempfile.TemporaryDirectory(dir=scratch) as tmpdir:
                 date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-                sqlite_name = f"scanrook-db-{date_str}.sqlite"
-                sqlite_path = os.path.join(tmpdir, sqlite_name)
 
-                export_pg_to_sqlite(conn, sqlite_path, summary)
-                # Upload raw .sqlite — payloads inside are already zstd-compressed,
-                # so outer compression (gzip/zstd) is ineffective double-compression
-                upload_to_minio(sqlite_path, sqlite_name)
+                # --- Full DB (all sources) ---
+                full_name = f"scanrook-db-{date_str}.sqlite"
+                full_path = os.path.join(tmpdir, full_name)
+                export_pg_to_sqlite(conn, full_path, summary)
+                upload_to_minio(full_path, full_name)
+
+                # Remove full DB from disk before building free DB to save scratch space
+                os.remove(full_path)
+
+                # --- Free DB (OSV + NVD only) ---
+                free_name = f"scanrook-db-free-{date_str}.sqlite"
+                free_path = os.path.join(tmpdir, free_name)
+                export_free_db(conn, free_path, summary)
+                upload_to_minio(free_path, free_name)
         finally:
             conn.close()
 
