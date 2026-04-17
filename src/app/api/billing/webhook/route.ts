@@ -95,8 +95,7 @@ export async function POST(req: NextRequest) {
                 break;
             }
             case "customer.subscription.updated":
-            case "customer.subscription.created":
-            case "customer.subscription.deleted": {
+            case "customer.subscription.created": {
                 const sub = event.data.object as Stripe.Subscription;
                 const customerId = String(sub.customer || "");
                 if (!customerId) break;
@@ -110,6 +109,33 @@ LIMIT 1
                 const orgId = rows[0]?.org_id;
                 if (orgId) {
                     await updateOrgBillingFromSubscription(sub, orgId);
+                }
+                break;
+            }
+            case "customer.subscription.deleted": {
+                // Downgrade to FREE and clear subscription ID
+                const sub = event.data.object as Stripe.Subscription;
+                const customerId = String(sub.customer || "");
+                if (!customerId) break;
+
+                const rows = await prisma.$queryRaw<Array<{ org_id: string }>>`
+SELECT org_id::text AS org_id
+FROM org_billing
+WHERE stripe_customer_id=${customerId}
+LIMIT 1
+                `;
+                const orgId = rows[0]?.org_id;
+                if (orgId) {
+                    const freePlanId = await planIdByCode("FREE");
+                    await prisma.$executeRaw`
+UPDATE org_billing
+SET plan_id = ${freePlanId || null}::uuid,
+    stripe_subscription_id = NULL,
+    status = 'canceled',
+    current_period_end = NULL,
+    updated_at = now()
+WHERE org_id = ${orgId}::uuid
+                    `;
                 }
                 break;
             }

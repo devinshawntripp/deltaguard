@@ -12,8 +12,25 @@ export function getStripe(): Stripe | null {
 
 export function stripePriceIdForPlan(planCode: string): string {
     const normalized = String(planCode || "").toUpperCase();
-    if (normalized === "BASIC") return String(process.env.STRIPE_PRICE_BASIC || "");
-    if (normalized === "PRO") return String(process.env.STRIPE_PRICE_PRO || "");
+    if (normalized === "BASIC" || normalized === "DEVELOPER")
+        return String(process.env.STRIPE_PRICE_DEVELOPER || process.env.STRIPE_PRICE_BASIC || "");
+    if (normalized === "PRO" || normalized === "TEAM")
+        return String(process.env.STRIPE_PRICE_TEAM || process.env.STRIPE_PRICE_PRO || "");
     if (normalized === "ENTERPRISE") return String(process.env.STRIPE_PRICE_ENTERPRISE || "");
     return "";
+}
+
+/** Map plan aliases to canonical tier names stored in the DB */
+export function canonicalPlanTier(planCode: string): string {
+    const normalized = String(planCode || "").toUpperCase();
+    if (normalized === "DEVELOPER") return "BASIC";
+    if (normalized === "TEAM") return "PRO";
+    return normalized;
+}
+
+/** Minimum seats per plan (TEAM/PRO requires 5) */
+export function minSeatsForPlan(planCode: string): number {
+    const normalized = String(planCode || "").toUpperCase();
+    if (normalized === "TEAM" || normalized === "PRO") return 5;
+    return 1;
 }

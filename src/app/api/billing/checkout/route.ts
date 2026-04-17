@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireRequestActor } from "@/lib/authz";
 import { ADMIN_OVERRIDE, ROLE_BILLING_ADMIN, ROLE_ORG_OWNER } from "@/lib/roles";
-import { getStripe, stripePriceIdForPlan } from "@/lib/stripe";
+import { getStripe, stripePriceIdForPlan, canonicalPlanTier, minSeatsForPlan } from "@/lib/stripe";
 import { prisma, ensurePlatformSchema } from "@/lib/prisma";
 
 export const runtime = "nodejs";
@@ -26,15 +26,23 @@ export async function POST(req: NextRequest) {
     try {
         await ensurePlatformSchema();
         const body = await req.json();
-        const planCode = String(body?.plan_code || "").toUpperCase();
-        if (!["BASIC", "PRO", "ENTERPRISE"].includes(planCode)) {
-            return NextResponse.json({ error: "plan_code must be BASIC, PRO, or ENTERPRISE" }, { status: 400 });
+        // Accept both legacy (BASIC/PRO/ENTERPRISE) and new (DEVELOPER/TEAM) plan names
+        const rawPlan = String(body?.plan_code || body?.plan || "").toUpperCase();
+        if (!["BASIC", "PRO", "ENTERPRISE", "DEVELOPER", "TEAM"].includes(rawPlan)) {
+            return NextResponse.json({ error: "plan_code must be DEVELOPER, TEAM, BASIC, PRO, or ENTERPRISE" }, { status: 400 });
         }
 
-        const priceId = stripePriceIdForPlan(planCode);
+        const planCode = canonicalPlanTier(rawPlan); // normalize DEVELOPER→BASIC, TEAM→PRO
+
+        const priceId = stripePriceIdForPlan(rawPlan);
         if (!priceId) {
-            return NextResponse.json({ error: `Stripe price is not configured for ${planCode}` }, { status: 500 });
+            return NextResponse.json({ error: `Stripe price is not configured for ${rawPlan}` }, { status: 500 });
         }
+
+        // Determine quantity (seats). TEAM/PRO plans support multiple seats (min 5).
+        const minSeats = minSeatsForPlan(rawPlan);
+        const requestedSeats = Number(body?.seats) || minSeats;
+        const quantity = Math.max(requestedSeats, minSeats);
 
         const orgRows = await prisma.$queryRaw<Array<{ name: string; stripe_customer_id: string | null }>>`
 SELECT o.name, ob.stripe_customer_id
@@ -60,9 +68,9 @@ LIMIT 1
         const session = await stripe.checkout.sessions.create({
             mode: "subscription",
             customer: customerId,
-            line_items: [{ price: priceId, quantity: 1 }],
-            success_url: `${baseUrl}/dashboard/settings/billing?success=1`,
-            cancel_url: `${baseUrl}/dashboard/settings/billing?canceled=1`,
+            line_items: [{ price: priceId, quantity }],
+            success_url: `${baseUrl}/dashboard/settings/billing?success=true`,
+            cancel_url: `${baseUrl}/dashboard/settings/billing?canceled=true`,
             metadata: {
                 org_id: actor.orgId,
                 plan_code: planCode,
