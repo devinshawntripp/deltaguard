@@ -112,64 +112,88 @@ const shipped: RoadmapItem[] = [
       "Live scan progress streaming via PostgreSQL NOTIFY/LISTEN and Server-Sent Events. No polling \u2014 the browser receives stage updates, severity counts, and SBOM status in real time.",
     status: "shipped",
   },
+  {
+    title: "Multi-page documentation",
+    description:
+      "Structured documentation covering CLI quickstart, SBOM guide, CI/CD integration, architecture, data sources, benchmarks, FAQ, and self-hosted deployment.",
+    status: "shipped",
+  },
+  {
+    title: "Expanded benchmark matrix (v1.14.2)",
+    description:
+      "Benchmarks across 10 container images comparing ScanRook against Trivy and Grype. Published with warm-cache times, finding counts, and methodology transparency.",
+    status: "shipped",
+  },
 ];
 
 const inProgress: RoadmapItem[] = [
+  {
+    title: "Tiered vulnerability database (Free vs Pro)",
+    description:
+      "Two pre-compiled vulnerability databases: a free tier with OSV + basic NVD (comparable to Trivy/Grype), and a paid tier adding EPSS, CISA KEV, Red Hat OVAL, confidence tiers, and distro tracker cross-references.",
+    status: "in-progress",
+  },
+  {
+    title: "Per-developer pricing with API key enforcement",
+    description:
+      "CLI authenticates via API key to determine plan tier. Free users get OSV-only enrichment. Paid plans unlock full multi-source enrichment, JSON output, and the premium vulnerability database.",
+    status: "in-progress",
+  },
+  {
+    title: "Stripe billing integration",
+    description:
+      "Complete payment processing for Developer, Team, and Enterprise tiers. Per-developer pricing with self-serve checkout, plan management, and usage-based quota enforcement.",
+    status: "in-progress",
+  },
+  {
+    title: "GitHub Action with PR comments and policy gates",
+    description:
+      "Official GitHub Action that runs ScanRook in CI/CD pipelines. Posts findings as PR review comments with severity badges, and can block merges based on configurable policy thresholds.",
+    status: "in-progress",
+  },
   {
     title: "License detection completion",
     description:
       "Extending license identification across all supported ecosystems. Currently partial coverage; full parity with package inventory detection is the target.",
     status: "in-progress",
   },
-  {
-    title: "SBOM policy gates (CI/CD integration)",
-    description:
-      "Configurable policy rules that can fail a CI pipeline based on severity thresholds, license blocklists, or component age. Integrates with the SBOM diff workflow.",
-    status: "in-progress",
-  },
-  {
-    title: "Multi-page documentation",
-    description:
-      "Expanding the single-page docs into structured multi-page documentation covering CLI reference, API guides, deployment, and integration recipes.",
-    status: "in-progress",
-  },
-  {
-    title: "Expanded benchmark matrix",
-    description:
-      "Broader benchmark coverage across more container images, distro versions, and artifact types. Automated comparison reports against common scanning tools.",
-    status: "in-progress",
-  },
 ];
 
 const planned: RoadmapItem[] = [
   {
-    title: "SUSE Security OVAL integration",
-    description:
-      "Native integration with SUSE Security OVAL feeds for SLES and openSUSE. Will provide distro-specific advisory filtering for SUSE-based container images.",
-    status: "planned",
-  },
-  {
-    title: "Oracle Linux Security OVAL integration",
-    description:
-      "Direct consumption of Oracle Linux OVAL data for accurate RPM advisory matching on Oracle Linux containers.",
-    status: "planned",
-  },
-  {
-    title: "HorizontalPodAutoscaler",
-    description:
-      "Kubernetes HPA for the Go dispatcher, scaling scan pod concurrency based on queue depth and cluster resource utilization.",
-    status: "planned",
-  },
-  {
     title: "Scheduled recurring scans",
     description:
-      "Cron-based scan schedules for registry images. Automatically re-scan images on a configurable cadence to catch newly disclosed vulnerabilities.",
+      "Cron-based scan schedules for registry images. Automatically re-scan images on a configurable cadence and alert on newly disclosed vulnerabilities.",
     status: "planned",
   },
   {
-    title: "Webhook notifications",
+    title: "Slack and webhook notifications",
     description:
-      "Configurable webhook endpoints that fire on scan completion, new critical findings, or policy violations. Supports Slack, Discord, PagerDuty, and generic HTTP targets.",
+      "Configurable notification channels that fire on scan completion, new critical findings, or policy violations. Supports Slack, Discord, PagerDuty, Microsoft Teams, and generic HTTP webhooks.",
+    status: "planned",
+  },
+  {
+    title: "Compliance report generation",
+    description:
+      "Export audit-ready PDF and CSV reports for SOC 2, ISO 27001, and FedRAMP evidence collection. Includes vulnerability inventory, remediation status, and scan coverage timeline.",
+    status: "planned",
+  },
+  {
+    title: "Vulnerability trend dashboard",
+    description:
+      "Historical charts showing vulnerability counts, severity distribution, mean-time-to-remediate, and coverage metrics across all scanned artifacts over time.",
+    status: "planned",
+  },
+  {
+    title: "License risk scoring",
+    description:
+      "Risk-aware license analysis beyond detection. Score packages by license compatibility, copyleft obligations, and commercial use restrictions. Flag GPL/AGPL in proprietary codebases.",
+    status: "planned",
+  },
+  {
+    title: "SBOM policy gates in web platform",
+    description:
+      "Configurable policy engine in the dashboard (the CLI already supports policy gates). Define org-wide rules for severity thresholds, license blocklists, and component age limits.",
     status: "planned",
   },
   {
@@ -185,21 +209,67 @@ const planned: RoadmapItem[] = [
     status: "planned",
   },
   {
-    title: "GitHub / GitLab integration",
+    title: "SUSE Security OVAL integration",
     description:
-      "Native integration with GitHub Actions and GitLab CI to run scans as PR checks. Post findings as review comments with inline severity badges.",
+      "Native integration with SUSE Security OVAL feeds for SLES and openSUSE. Distro-specific advisory filtering for SUSE-based container images.",
+    status: "planned",
+  },
+  {
+    title: "Oracle Linux Security OVAL integration",
+    description:
+      "Direct consumption of Oracle Linux OVAL data for accurate RPM advisory matching on Oracle Linux containers.",
     status: "planned",
   },
 ];
 
 const deferred: RoadmapItem[] = [
   {
+    title: "Reachability analysis",
+    description:
+      "Determine whether a vulnerable dependency is actually reachable in the application's call graph, reducing false positives from unused transitive dependencies.",
+    status: "deferred",
+    reason:
+      "Requires language-specific static analysis (call graph resolution) per ecosystem. This is a multi-month research project. Snyk and Semgrep each have dedicated teams on this. We will evaluate integrating existing open-source call graph tools (e.g., Google's deps.dev) before building from scratch.",
+  },
+  {
+    title: "Auto-fix pull requests",
+    description:
+      "Automatically generate PRs that bump vulnerable dependencies to the minimum patched version.",
+    status: "deferred",
+    reason:
+      "Requires language-specific dependency resolution and lock file manipulation per ecosystem (npm, pip, Go, Maven, Cargo, etc.). Dependabot and Renovate already do this well. We will explore integration with these tools rather than building a competing implementation.",
+  },
+  {
+    title: "IDE plugins (VS Code, IntelliJ)",
+    description:
+      "Real-time vulnerability scanning in the editor with inline severity annotations and quick-fix suggestions.",
+    status: "deferred",
+    reason:
+      "Separate product surface with its own release cycle and maintenance burden. Prioritizing CI/CD integration first as it covers more workflows with less effort.",
+  },
+  {
+    title: "Secrets detection",
+    description:
+      "Scan artifacts for hardcoded API keys, tokens, passwords, and other sensitive credentials.",
+    status: "deferred",
+    reason:
+      "Separate scanning engine from vulnerability analysis. Tools like TruffleHog, Gitleaks, and Semgrep Secrets already handle this well. May integrate as an optional module in the future.",
+  },
+  {
+    title: "GitLab native integration",
+    description:
+      "GitLab CI integration with merge request comments and security dashboard reporting.",
+    status: "deferred",
+    reason:
+      "Prioritizing GitHub Action first due to larger market share. GitLab CI support planned after GitHub Action is stable.",
+  },
+  {
     title: "SBOM signature verification",
     description:
       "Cryptographic verification of SBOM provenance and integrity.",
     status: "deferred",
     reason:
-      "No widely adopted standard exists yet. We are watching the Sigstore/cosign ecosystem and will add support when the ecosystem matures.",
+      "No widely adopted standard exists yet. Watching the Sigstore/cosign ecosystem for maturity.",
   },
   {
     title: "Interactive terminal UI (TUI)",
@@ -207,31 +277,15 @@ const deferred: RoadmapItem[] = [
       "A rich terminal interface for interactive scan monitoring and result browsing.",
     status: "deferred",
     reason:
-      "Nice-to-have cosmetic improvement. Our structured NDJSON progress format already integrates well with CI/CD pipelines.",
+      "Nice-to-have cosmetic improvement. Structured NDJSON progress format already integrates well with CI/CD pipelines.",
   },
   {
-    title: "Multi-arch Docker builds",
+    title: "Multi-arch Docker builds (ARM64)",
     description:
       "Pre-built container images for ARM64 in addition to AMD64.",
     status: "deferred",
     reason:
       "Useful but not blocking core functionality. ARM64 builds planned for a future release.",
-  },
-  {
-    title: "HashiCorp Vault integration",
-    description:
-      "Secrets management via HashiCorp Vault for API keys and database credentials.",
-    status: "deferred",
-    reason:
-      "Kubernetes Secrets with etcd encryption-at-rest is sufficient for our self-hosted deployment model. Vault adds significant operational complexity.",
-  },
-  {
-    title: "Distributed tracing (Jaeger/OpenTelemetry)",
-    description:
-      "End-to-end request tracing across the UI, Worker, and Scanner services.",
-    status: "deferred",
-    reason:
-      "Deferred until basic monitoring (Prometheus/Grafana) is solid. Distributed tracing helps debug request flows across microservices -- useful for our 3-service architecture but not critical until we have baseline metrics.",
   },
 ];
 
