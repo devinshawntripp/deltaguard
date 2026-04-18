@@ -471,6 +471,18 @@ CREATE TABLE IF NOT EXISTS notification_channels (
 )
         `,
         `CREATE INDEX IF NOT EXISTS idx_notification_channels_org ON notification_channels(org_id)`,
+        `
+CREATE TABLE IF NOT EXISTS scan_policies (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  org_id UUID NOT NULL REFERENCES orgs(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  enabled BOOLEAN NOT NULL DEFAULT true,
+  rules JSONB NOT NULL DEFAULT '[]'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+)
+        `,
+        `CREATE INDEX IF NOT EXISTS idx_scan_policies_org ON scan_policies(org_id)`,
     ];
 
     for (const stmt of requiredStatements) {
@@ -794,6 +806,17 @@ CREATE TABLE IF NOT EXISTS notification_channels (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_notification_channels_org ON notification_channels(org_id);
+
+CREATE TABLE IF NOT EXISTS scan_policies (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  org_id UUID NOT NULL REFERENCES orgs(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  enabled BOOLEAN NOT NULL DEFAULT true,
+  rules JSONB NOT NULL DEFAULT '[]'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_scan_policies_org ON scan_policies(org_id);
 
 ALTER TABLE scan_jobs ADD COLUMN IF NOT EXISTS org_id UUID;
 ALTER TABLE scan_jobs ADD COLUMN IF NOT EXISTS created_by_user_id UUID;

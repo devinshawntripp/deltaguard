@@ -19,6 +19,7 @@ export default function DashboardNavClient({
             <Link href="/dashboard" className="app-nav-link">Dashboard</Link>
             <Link href="/dashboard/settings/scanner" className="app-nav-link">Scanner</Link>
             <Link href="/dashboard/settings/registries" className="app-nav-link">Registries</Link>
+            <Link href="/dashboard/policies" className="app-nav-link">Policies</Link>
             <Link href="/dashboard/reports" className="app-nav-link">Reports</Link>
             <Link href="/dashboard/licenses" className="app-nav-link">Licenses</Link>
             <Link href="/dashboard/trends" className="app-nav-link">Trends</Link>
