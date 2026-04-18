@@ -1,0 +1,38 @@
+# PodDisruptionBudgets for deltaguard namespace
+# Ensures minimum availability during voluntary disruptions (node drains, upgrades).
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: scanrook-web-pdb
+  labels:
+    app: scanrook-web
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: scanrook-web
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: scanrook-worker-pdb
+  labels:
+    app: scanrook-worker
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: scanrook-worker
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: scanrook-redis-pdb
+  labels:
+    app: scanrook-redis
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: scanrook-redis

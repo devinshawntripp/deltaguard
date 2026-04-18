@@ -1,0 +1,89 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: vulndb-pg-import
+  namespace: scanrook
+  labels:
+    app: scanrook
+    component: vulndb-pg-importer
+spec:
+  schedule: "0 */6 * * *"  # Every 6 hours (revalidation checks handle per-source freshness)
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 10800  # 3 hour max
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app: scanrook
+            component: vulndb-pg-importer
+        spec:
+          restartPolicy: OnFailure
+          dnsConfig:
+            options:
+              - name: ndots
+                value: "1"
+          volumes:
+            - name: scratch
+              emptyDir: {}
+          containers:
+            - name: vulndb-pg-import
+              image: devintripp/vulndb-pg-import:latest
+              imagePullPolicy: Always
+              volumeMounts:
+                - name: scratch
+                  mountPath: /scratch
+              env:
+                - name: SCRATCH_DIR
+                  value: "/scratch"
+                - name: DATABASE_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: scanrook-secrets
+                      key: DATABASE_URL
+                - name: NVD_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: scanrook-secrets
+                      key: NVD_API_KEY
+                      optional: true
+                # MinIO for SQLite DB upload
+                - name: S3_ENDPOINT
+                  value: "minio.storage.svc.cluster.local:9000"
+                - name: S3_USE_SSL
+                  value: "false"
+                - name: S3_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: scanrook-secrets
+                      key: S3_ACCESS_KEY
+                - name: S3_SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: scanrook-secrets
+                      key: S3_SECRET_KEY
+                - name: VULNDB_BUCKET
+                  value: "vulndb"
+                # Proxy settings for outbound API calls
+                - name: http_proxy
+                  value: "http://10.10.10.2:3128"
+                - name: https_proxy
+                  value: "http://10.10.10.2:3128"
+                - name: HTTP_PROXY
+                  value: "http://10.10.10.2:3128"
+                - name: HTTPS_PROXY
+                  value: "http://10.10.10.2:3128"
+                - name: NO_PROXY
+                  value: "10.0.0.0/8,192.168.0.0/16,172.16.0.0/12,.svc,.svc.cluster.local,.cluster.local,localhost,127.0.0.1,minio.storage.svc,minio.storage.svc.cluster.local,pg-shared-rw.db.svc,pg-shared-rw.db.svc.cluster.local"
+                - name: no_proxy
+                  value: "10.0.0.0/8,192.168.0.0/16,172.16.0.0/12,.svc,.svc.cluster.local,.cluster.local,localhost,127.0.0.1,minio.storage.svc,minio.storage.svc.cluster.local,pg-shared-rw.db.svc,pg-shared-rw.db.svc.cluster.local"
+              resources:
+                requests:
+                  cpu: 500m
+                  memory: 1Gi
+                limits:
+                  cpu: "2"
+                  memory: 4Gi

@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
 
     await ensurePlatformSchema();
     const rows = await prisma.$queryRaw<any[]>`
-        SELECT id, org_id, registry_config_id, image_ref, cron_expression, scan_mode,
+        SELECT id, org_id, registry_config_id, image_ref, cron_expr, scan_mode,
                enabled, last_run_at, next_run_at, created_at, updated_at
         FROM scan_schedules
         WHERE org_id = ${guard.actor.orgId}::uuid
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
     const imageRef = String(body?.image_ref || "").trim();
-    const cronExpression = String(body?.cron_expression || "0 0 * * *").trim();
+    const cronExpression = String(body?.cron_expr || "0 0 * * *").trim();
     const scanMode = String(body?.scan_mode || "light").trim();
     const registryConfigId = body?.registry_config_id ? String(body.registry_config_id).trim() : null;
 
@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
     const nextRunAt = computeNextRun(cronExpression);
 
     const rows = await prisma.$queryRaw<any[]>`
-        INSERT INTO scan_schedules (org_id, registry_config_id, image_ref, cron_expression, scan_mode, next_run_at)
+        INSERT INTO scan_schedules (org_id, registry_config_id, image_ref, cron_expr, scan_mode, next_run_at)
         VALUES (
             ${guard.actor.orgId}::uuid,
             ${registryConfigId}::uuid,

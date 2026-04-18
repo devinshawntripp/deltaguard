@@ -1,0 +1,12 @@
+# ResourceQuota for deltaguard namespace
+# Prevents runaway resource consumption across all pods in the namespace.
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: scanrook-quota
+spec:
+  hard:
+    requests.memory: 24Gi
+    limits.memory: 32Gi
+    pods: "20"

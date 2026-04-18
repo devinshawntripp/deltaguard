@@ -7,7 +7,7 @@ type Schedule = {
     org_id: string;
     registry_config_id: string | null;
     image_ref: string;
-    cron_expression: string;
+    cron_expr: string;
     scan_mode: string;
     enabled: boolean;
     last_run_at: string | null;
@@ -71,7 +71,7 @@ export default function SchedulesPage() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     image_ref: imageRef.trim(),
-                    cron_expression: cronExpression.trim(),
+                    cron_expr: cronExpression.trim(),
                     scan_mode: scanMode,
                 }),
             });
@@ -244,7 +244,7 @@ export default function SchedulesPage() {
                                         </span>
                                     </div>
                                     <div className="text-xs text-zinc-400 space-x-4">
-                                        <span>Cron: <code className="text-zinc-300">{s.cron_expression}</code></span>
+                                        <span>Cron: <code className="text-zinc-300">{s.cron_expr}</code></span>
                                         <span>Last run: {formatDate(s.last_run_at)}</span>
                                         <span>Next run: {formatDate(s.next_run_at)}</span>
                                     </div>

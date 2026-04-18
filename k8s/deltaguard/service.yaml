@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: scanrook-web
+  labels:
+    app: scanrook-web
+spec:
+  type: ClusterIP
+  selector:
+    app: scanrook-web
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000
+
+

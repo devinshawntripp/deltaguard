@@ -23,7 +23,7 @@ export async function GET(req: NextRequest, ctx: RouteContext) {
     await ensurePlatformSchema();
 
     const rows = await prisma.$queryRaw<any[]>`
-        SELECT id, org_id, registry_config_id, image_ref, cron_expression, scan_mode,
+        SELECT id, org_id, registry_config_id, image_ref, cron_expr, scan_mode,
                enabled, last_run_at, next_run_at, created_at, updated_at
         FROM scan_schedules
         WHERE id = ${id}::uuid AND org_id = ${guard.actor.orgId}::uuid
@@ -62,12 +62,12 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
         sets.push("enabled = $" + (values.length + 1));
         values.push(Boolean(body.enabled));
     }
-    if (body.cron_expression !== undefined) {
-        const cron = String(body.cron_expression).trim();
+    if (body.cron_expr !== undefined) {
+        const cron = String(body.cron_expr).trim();
         if (!isValidCron(cron)) {
             return NextResponse.json({ error: "Invalid cron expression" }, { status: 400 });
         }
-        sets.push("cron_expression = $" + (values.length + 1));
+        sets.push("cron_expr = $" + (values.length + 1));
         values.push(cron);
         const nextRun = computeNextRun(cron);
         sets.push("next_run_at = $" + (values.length + 1));

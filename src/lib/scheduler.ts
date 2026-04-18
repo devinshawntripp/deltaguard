@@ -8,7 +8,7 @@ export type ScanSchedule = {
     org_id: string;
     registry_config_id: string | null;
     image_ref: string;
-    cron_expression: string;
+    cron_expr: string;
     scan_mode: string;
     enabled: boolean;
     last_run_at: string | null;
@@ -41,7 +41,7 @@ export async function checkAndRunSchedules(): Promise<{
     const errors: string[] = [];
 
     const dueSchedules = await prisma.$queryRaw<ScanSchedule[]>`
-        SELECT id, org_id, registry_config_id, image_ref, cron_expression, scan_mode,
+        SELECT id, org_id, registry_config_id, image_ref, cron_expr, scan_mode,
                enabled, last_run_at::text, next_run_at::text, created_at::text, updated_at::text
         FROM scan_schedules
         WHERE enabled = true
@@ -63,7 +63,7 @@ export async function checkAndRunSchedules(): Promise<{
                 settings_snapshot: settings,
             });
 
-            const nextRun = computeNextRun(schedule.cron_expression);
+            const nextRun = computeNextRun(schedule.cron_expr);
 
             await prisma.$executeRaw`
                 UPDATE scan_schedules

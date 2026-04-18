@@ -1,0 +1,128 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scanrook-worker
+  labels:
+    app: scanrook-worker
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: scanrook-worker
+  template:
+    metadata:
+      labels:
+        app: scanrook-worker
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: scanrook-worker
+                topologyKey: kubernetes.io/hostname
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      dnsConfig:
+        options:
+          - name: ndots
+            value: "1"
+      containers:
+        - name: worker
+          image: devintripp/rust-scanner-worker:v1.9.2
+          imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            readOnlyRootFilesystem: false  # Scanner writes to scratch dir
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: HTTP_ADDR
+              value: ":8080"
+            - name: WORKER_CONCURRENCY
+              value: "1"
+            - name: WORKER_STALE_JOB_TIMEOUT_SECONDS
+              value: "1800"
+            - name: WORKER_STALE_SWEEP_SECONDS
+              value: "60"
+            - name: WORKER_HEARTBEAT_SECONDS
+              value: "60"
+            - name: SCRATCH_DIR
+              value: /scratch
+            - name: SCANNER_PATH
+              value: /usr/local/bin/scanner
+            - name: SCANNER_FORCE_IPV4
+              value: "true"
+            - name: SCANNER_OSV_TIMEOUT_SECS
+              value: "75"
+            - name: SCANNER_OSV_RETRIES
+              value: "5"
+            - name: SCANNER_OSV_BACKOFF_MS
+              value: "1000"
+            - name: SCANNER_NVD_ENRICH
+              value: "1"
+            - name: SCANNER_NVD_CONC
+              value: "1"
+            - name: SCANNER_NVD_SLEEP_MS
+              value: "800"
+            - name: SCANNER_NVD_SKIP_FULLY_ENRICHED
+              value: "true"
+            - name: SCANNER_REDHAT_ENRICH
+              value: "1"
+            - name: SCANNER_REDHAT_TIMEOUT_SECS
+              value: "20"
+            - name: SCANNER_REDHAT_SLEEP_MS
+              value: "50"
+            - name: SCANNER_REDHAT_TTL_DAYS
+              value: "30"
+            - name: S3_ENDPOINT
+              value: minio.storage.svc.cluster.local:9000
+            - name: HTTP_PROXY
+              value: http://10.10.10.2:3128
+            - name: HTTPS_PROXY
+              value: http://10.10.10.2:3128
+            - name: http_proxy
+              value: http://10.10.10.2:3128
+            - name: https_proxy
+              value: http://10.10.10.2:3128
+            - name: NO_PROXY
+              value: .svc,.svc.cluster.local,.cluster.local,10.96.0.0/12,10.0.0.0/8,192.168.0.0/16,172.16.0.0/12,s3.apps.onetripp.com,minio.apps.onetripp.com,minio.storage.svc.cluster.local,minio.storage.svc.cluster.local.
+            - name: no_proxy
+              value: .svc,.svc.cluster.local,.cluster.local,10.96.0.0/12,10.0.0.0/8,192.168.0.0/16,172.16.0.0/12,s3.apps.onetripp.com,minio.apps.onetripp.com,minio.storage.svc.cluster.local,minio.storage.svc.cluster.local.
+          envFrom:
+            - secretRef:
+                name: scanrook-secrets
+            - configMapRef:
+                name: scanrook-config
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          resources:
+            limits:
+              cpu: "1"
+              memory: 5Gi
+            requests:
+              cpu: 250m
+              memory: 1500Mi
+          volumeMounts:
+            - name: scratch
+              mountPath: /scratch
+      volumes:
+        - name: scratch
+          emptyDir: {}

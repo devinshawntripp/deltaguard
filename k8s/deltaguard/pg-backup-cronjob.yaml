@@ -1,0 +1,135 @@
+# PostgreSQL daily backup CronJob (Phase 5.6)
+# Dumps pg-shared database and uploads to MinIO backups bucket.
+# Retains backups for 30 days.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: pg-backup
+  labels:
+    app: pg-backup
+spec:
+  schedule: "0 2 * * *"  # Daily at 2:00 AM UTC
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 1800  # 30 min max
+      template:
+        metadata:
+          labels:
+            app: pg-backup
+        spec:
+          restartPolicy: OnFailure
+          dnsConfig:
+            options:
+              - name: ndots
+                value: "1"
+          initContainers:
+            # Step 1: Run pg_dump
+            - name: pg-dump
+              image: postgres:16-alpine
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -e
+                  TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+                  DUMP_FILE="/backup/pg-shared-${TIMESTAMP}.sql.gz"
+                  echo "Starting pg_dump at $(date)"
+                  pg_dump \
+                    --host=pg-shared-rw.db.svc \
+                    --port=5432 \
+                    --username="${PGUSER}" \
+                    --no-password \
+                    --format=custom \
+                    --compress=6 \
+                    "${PGDATABASE}" > "${DUMP_FILE}"
+                  echo "pg_dump completed: ${DUMP_FILE} ($(du -h ${DUMP_FILE} | cut -f1))"
+                  echo "${DUMP_FILE}" > /backup/.latest
+              env:
+                - name: PGUSER
+                  valueFrom:
+                    secretKeyRef:
+                      name: pg-backup-secrets
+                      key: PGUSER
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: pg-backup-secrets
+                      key: PGPASSWORD
+                - name: PGDATABASE
+                  valueFrom:
+                    secretKeyRef:
+                      name: pg-backup-secrets
+                      key: PGDATABASE
+              resources:
+                limits:
+                  cpu: 200m
+                  memory: 256Mi
+                requests:
+                  cpu: 100m
+                  memory: 128Mi
+              volumeMounts:
+                - name: backup-scratch
+                  mountPath: /backup
+          containers:
+            # Step 2: Upload to MinIO and prune old backups
+            - name: minio-upload
+              image: minio/mc:latest
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -e
+                  DUMP_FILE=$(cat /backup/.latest)
+                  BASENAME=$(basename "${DUMP_FILE}")
+
+                  echo "Configuring MinIO client..."
+                  mc alias set minio \
+                    "http://${MINIO_ENDPOINT}" \
+                    "${MINIO_ACCESS_KEY}" \
+                    "${MINIO_SECRET_KEY}"
+
+                  # Ensure backups bucket exists
+                  mc mb --ignore-existing minio/backups
+
+                  echo "Uploading ${BASENAME} to minio/backups/postgres/"
+                  mc cp "${DUMP_FILE}" "minio/backups/postgres/${BASENAME}"
+                  echo "Upload complete."
+
+                  # Prune backups older than 30 days
+                  echo "Pruning backups older than 30 days..."
+                  mc rm --recursive --force --older-than 30d minio/backups/postgres/ || true
+                  echo "Backup job finished at $(date)"
+              env:
+                - name: MINIO_ENDPOINT
+                  valueFrom:
+                    secretKeyRef:
+                      name: pg-backup-secrets
+                      key: MINIO_ENDPOINT
+                - name: MINIO_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: pg-backup-secrets
+                      key: MINIO_ACCESS_KEY
+                - name: MINIO_SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: pg-backup-secrets
+                      key: MINIO_SECRET_KEY
+              resources:
+                limits:
+                  cpu: 200m
+                  memory: 256Mi
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+              volumeMounts:
+                - name: backup-scratch
+                  mountPath: /backup
+          volumes:
+            - name: backup-scratch
+              emptyDir:
+                sizeLimit: 2Gi

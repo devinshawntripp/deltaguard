@@ -1,0 +1,9 @@
+# DEPRECATED: Replaced by vulndb-pg-import-cronjob.yaml
+# The Python-based vulndb-pg-import CronJob handles:
+#   1. Bulk import into PG enrichment cache tables (for cluster workers)
+#   2. SQLite export + gzip compression (for CLI users via 'scanrook db fetch')
+#   3. Upload compressed SQLite to MinIO vulndb bucket
+#
+# This manifest is kept for reference but should NOT be applied.
+# To remove the old CronJob from the cluster:
+#   kubectl delete cronjob vulndb-build -n deltaguard
