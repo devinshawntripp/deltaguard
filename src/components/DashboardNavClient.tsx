@@ -27,6 +27,7 @@ export default function DashboardNavClient({
             <Link href="/dashboard/settings/notifications" className="app-nav-link">Notifications</Link>
             <Link href="/dashboard/settings/org" className="app-nav-link">Org</Link>
             {isAdminOverride ? <Link href="/dashboard/settings/admin" className="app-nav-link">Master Admin</Link> : null}
+            {isAdminOverride ? <Link href="/dashboard/admin/features" className="app-nav-link">Features</Link> : null}
             <Link href="/dashboard/settings/api-keys" className="app-nav-link">API Keys</Link>
             <Link href="/dashboard/settings/api-docs" className="app-nav-link">API Docs</Link>
             <Link href="/docs" className="app-nav-link">Docs</Link>
