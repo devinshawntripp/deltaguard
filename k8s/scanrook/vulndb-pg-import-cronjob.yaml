@@ -31,7 +31,7 @@ spec:
               emptyDir: {}
           containers:
             - name: vulndb-pg-import
-              image: devintripp/vulndb-pg-import:latest
+              image: devintripp/vulndb-pg-import:v1.16.0
               imagePullPolicy: Always
               volumeMounts:
                 - name: scratch
