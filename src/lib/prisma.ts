@@ -442,6 +442,35 @@ CREATE TABLE IF NOT EXISTS registry_configs (
         `CREATE INDEX IF NOT EXISTS idx_admin_content_versions_key_created_at ON admin_content_versions(key, created_at DESC)`,
         `CREATE INDEX IF NOT EXISTS idx_admin_target_accounts_fit_score ON admin_target_accounts(fit_score DESC)`,
         `CREATE INDEX IF NOT EXISTS idx_admin_target_accounts_status ON admin_target_accounts(status)`,
+        `
+CREATE TABLE IF NOT EXISTS scan_schedules (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  org_id UUID NOT NULL REFERENCES orgs(id) ON DELETE CASCADE,
+  registry_config_id UUID REFERENCES registry_configs(id) ON DELETE SET NULL,
+  image_ref TEXT NOT NULL,
+  cron_expression TEXT NOT NULL DEFAULT '0 0 * * *',
+  scan_mode TEXT NOT NULL DEFAULT 'light',
+  enabled BOOLEAN NOT NULL DEFAULT true,
+  last_run_at TIMESTAMPTZ,
+  next_run_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+)
+        `,
+        `CREATE INDEX IF NOT EXISTS idx_scan_schedules_org ON scan_schedules(org_id)`,
+        `CREATE INDEX IF NOT EXISTS idx_scan_schedules_enabled_next ON scan_schedules(enabled, next_run_at)`,
+        `
+CREATE TABLE IF NOT EXISTS notification_channels (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  org_id UUID NOT NULL REFERENCES orgs(id) ON DELETE CASCADE,
+  channel_type TEXT NOT NULL,
+  name TEXT NOT NULL,
+  config JSONB NOT NULL DEFAULT '{}'::jsonb,
+  enabled BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+)
+        `,
+        `CREATE INDEX IF NOT EXISTS idx_notification_channels_org ON notification_channels(org_id)`,
     ];
 
     for (const stmt of requiredStatements) {
@@ -738,6 +767,33 @@ CREATE TABLE IF NOT EXISTS registry_configs (
     UNIQUE(org_id, name)
 );
 CREATE INDEX IF NOT EXISTS idx_registry_configs_org ON registry_configs(org_id);
+
+CREATE TABLE IF NOT EXISTS scan_schedules (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  org_id UUID NOT NULL REFERENCES orgs(id) ON DELETE CASCADE,
+  registry_config_id UUID REFERENCES registry_configs(id) ON DELETE SET NULL,
+  image_ref TEXT NOT NULL,
+  cron_expression TEXT NOT NULL DEFAULT '0 0 * * *',
+  scan_mode TEXT NOT NULL DEFAULT 'light',
+  enabled BOOLEAN NOT NULL DEFAULT true,
+  last_run_at TIMESTAMPTZ,
+  next_run_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_scan_schedules_org ON scan_schedules(org_id);
+CREATE INDEX IF NOT EXISTS idx_scan_schedules_enabled_next ON scan_schedules(enabled, next_run_at);
+
+CREATE TABLE IF NOT EXISTS notification_channels (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  org_id UUID NOT NULL REFERENCES orgs(id) ON DELETE CASCADE,
+  channel_type TEXT NOT NULL,
+  name TEXT NOT NULL,
+  config JSONB NOT NULL DEFAULT '{}'::jsonb,
+  enabled BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_notification_channels_org ON notification_channels(org_id);
 
 ALTER TABLE scan_jobs ADD COLUMN IF NOT EXISTS org_id UUID;
 ALTER TABLE scan_jobs ADD COLUMN IF NOT EXISTS created_by_user_id UUID;
