@@ -534,27 +534,6 @@ def import_nvd(conn, session: requests.Session):
         time.sleep(sleep_time)
 
     log.info("NVD import done: %d CVEs upserted", total_inserted)
-
-    # Revalidate stale entries: if NVD didn't return a CVE in the incremental
-    # update, it hasn't been modified — but it's still valid.  Bump
-    # last_checked_at so the scanner's TTL check doesn't treat it as expired.
-    # This only runs after incremental imports (not full imports, which
-    # already touch every row).
-    if last_modified_str:
-        revalidation_ttl_days = int(os.environ.get("NVD_REVALIDATION_TTL_DAYS", "30"))
-        with conn.cursor() as cur:
-            cur.execute(
-                """UPDATE nvd_cve_cache
-                   SET last_checked_at = NOW()
-                   WHERE last_checked_at < NOW() - make_interval(days => %s)""",
-                (revalidation_ttl_days,),
-            )
-            revalidated = cur.rowcount
-        conn.commit()
-        if revalidated > 0:
-            log.info("NVD: revalidated %d stale entries (older than %d days)",
-                     revalidated, revalidation_ttl_days)
-
     return total_inserted
 
 
@@ -633,23 +612,6 @@ def import_osv(conn, session: requests.Session):
 
     log.info("OSV import done: %d upserted, %d unchanged skipped",
              total_inserted, total_skipped)
-
-    # Revalidate stale OSV entries: unchanged vulns are still valid, bump
-    # last_checked_at so the scanner's TTL doesn't expire them.
-    revalidation_ttl_days = int(os.environ.get("OSV_REVALIDATION_TTL_DAYS", "30"))
-    with conn.cursor() as cur:
-        cur.execute(
-            """UPDATE osv_vuln_cache
-               SET last_checked_at = NOW()
-               WHERE last_checked_at < NOW() - make_interval(days => %s)""",
-            (revalidation_ttl_days,),
-        )
-        revalidated = cur.rowcount
-    conn.commit()
-    if revalidated > 0:
-        log.info("OSV: revalidated %d stale entries (older than %d days)",
-                 revalidated, revalidation_ttl_days)
-
     return total_inserted
 
 
@@ -1682,6 +1644,36 @@ def main():
                 any_updated = True
 
     log.info("=== PG import phase complete === %s", json.dumps(summary, default=str))
+
+    # --- Revalidate stale cache entries ---
+    # After source imports, bump last_checked_at on entries older than the
+    # revalidation threshold. This runs every cycle regardless of whether any
+    # source was updated, because the import only touches modified entries —
+    # unchanged entries still need their TTL refreshed so the scanner doesn't
+    # treat them as expired.
+    revalidation_ttl_days = int(os.environ.get("CACHE_REVALIDATION_TTL_DAYS", "30"))
+    revalidation_conn = pg_connect(db_url)
+    try:
+        for table_name in ("nvd_cve_cache", "osv_vuln_cache"):
+            with revalidation_conn.cursor() as cur:
+                cur.execute(
+                    f"""UPDATE {table_name}
+                       SET last_checked_at = NOW()
+                       WHERE last_checked_at < NOW() - make_interval(days => %s)""",
+                    (revalidation_ttl_days,),
+                )
+                count = cur.rowcount
+            revalidation_conn.commit()
+            if count > 0:
+                log.info("Revalidated %d stale entries in %s (older than %d days)",
+                         count, table_name, revalidation_ttl_days)
+                any_updated = True
+            else:
+                log.info("No stale entries in %s (threshold=%d days)", table_name, revalidation_ttl_days)
+    except Exception as e:
+        log.warning("Revalidation failed: %s", e)
+    finally:
+        revalidation_conn.close()
 
     # --- SQLite export + MinIO upload ---
     skip_export = os.environ.get("SKIP_SQLITE_EXPORT", "0") == "1"
