@@ -22,9 +22,15 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "forbidden" }, { status: 403 });
     }
 
-    const result = await checkAndRunSchedules();
-    console.log(
-        `[cron/schedules] Triggered ${result.triggered} schedules${result.errors.length > 0 ? `, ${result.errors.length} errors` : ""}`,
-    );
-    return NextResponse.json(result);
+    try {
+        const result = await checkAndRunSchedules();
+        console.log(
+            `[cron/schedules] Triggered ${result.triggered} schedules${result.errors.length > 0 ? `, ${result.errors.length} errors` : ""}`,
+        );
+        return NextResponse.json(result);
+    } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : String(e);
+        console.error("[cron/schedules] Fatal error:", msg);
+        return NextResponse.json({ error: msg, triggered: 0, errors: [msg] }, { status: 500 });
+    }
 }

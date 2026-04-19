@@ -1,4 +1,4 @@
-import { prisma, ensurePlatformSchema } from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import { createRegistryJob } from "@/lib/jobs";
 import { getScannerSettings } from "@/lib/scannerSettings";
 import { CronExpressionParser } from "cron-parser";
@@ -35,7 +35,6 @@ export async function checkAndRunSchedules(): Promise<{
     triggered: number;
     errors: string[];
 }> {
-    await ensurePlatformSchema();
     const now = new Date();
     let triggered = 0;
     const errors: string[] = [];
