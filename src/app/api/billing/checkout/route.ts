@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireRequestActor } from "@/lib/authz";
 import { ADMIN_OVERRIDE, ROLE_BILLING_ADMIN, ROLE_ORG_OWNER } from "@/lib/roles";
 import { getStripe, stripePriceIdForPlan, canonicalPlanTier, minSeatsForPlan } from "@/lib/stripe";
-import { prisma, ensurePlatformSchema } from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -24,7 +24,6 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-        await ensurePlatformSchema();
         const body = await req.json();
         // Accept both legacy (BASIC/PRO/ENTERPRISE) and new (DEVELOPER/TEAM) plan names
         const rawPlan = String(body?.plan_code || body?.plan || "").toUpperCase();
