@@ -81,21 +81,24 @@ export default function BlogLayoutClient({ children }: { children: React.ReactNo
         <div className="min-w-0 blog-content-area">
           {children}
           {relatedPosts.length > 0 && (
-            <div className="mt-8 mx-auto max-w-3xl px-6 pb-8">
-              <h3 className="text-sm font-semibold uppercase tracking-wide muted mb-4">Related Posts</h3>
+            <section className="surface-card p-7 grid gap-4">
+              <div>
+                <h2 className="text-xl font-semibold tracking-tight">Related Posts</h2>
+                <p className="text-xs muted mt-0.5">More on this topic.</p>
+              </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 {relatedPosts.map((p) => (
                   <Link
                     key={p.href}
                     href={p.href}
-                    className="surface-card p-4 rounded-xl hover:border-[var(--dg-accent)] transition grid gap-1"
+                    className="rounded-xl border border-black/10 dark:border-white/10 bg-black/[.02] dark:bg-white/[.02] p-4 hover:border-[var(--dg-accent)] transition grid gap-1"
                   >
                     <span className="text-sm font-semibold">{p.title}</span>
                     <span className="text-xs muted">{p.description}</span>
                   </Link>
                 ))}
               </div>
-            </div>
+            </section>
           )}
         </div>
       </div>

@@ -496,14 +496,64 @@ a {
   cursor: not-allowed;
 }
 
-/* Blog post content — override the narrow max-w-3xl */
+/* Blog post content — match docs layout style */
 .blog-content-area main {
-  max-width: 52rem; /* ~832px, wider than 3xl but still readable */
+  max-width: none;
+  padding-left: 0;
+  padding-right: 0;
+  padding-top: 0;
+  gap: 1.5rem;
 }
 
 .blog-content-area article.surface-card {
-  /* Break out of the narrow constraint for better readability */
   max-width: none;
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  display: grid;
+  gap: 1.5rem;
+}
+
+/* Blog post header becomes its own card */
+.blog-content-area article.surface-card > header {
+  border-radius: var(--radius-xl, 1rem);
+  border: 1px solid var(--dg-border);
+  background: var(--dg-bg-elevated);
+  padding: 1.75rem;
+}
+
+/* Each section becomes its own card (matching docs surface-card pattern) */
+.blog-content-area article.surface-card > section {
+  border-radius: var(--radius-xl, 1rem);
+  border: 1px solid var(--dg-border);
+  background: var(--dg-bg-elevated);
+  padding: 1.75rem;
+  display: grid;
+  gap: 0.75rem;
+}
+
+/* Paragraphs and lists inside blog sections get proper spacing */
+.blog-content-area article.surface-card > section p,
+.blog-content-area article.surface-card > section ul,
+.blog-content-area article.surface-card > section ol {
+  line-height: 1.75;
+}
+
+/* Code blocks inside blog posts */
+.blog-content-area article.surface-card pre {
+  border-radius: 0.75rem;
+  border: 1px solid var(--dg-border);
+  padding: 1rem;
+  overflow-x: auto;
+  font-size: 0.8rem;
+}
+
+/* Blog h2 headers match docs SectionHeader style */
+.blog-content-area article.surface-card > section > h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .muted {
