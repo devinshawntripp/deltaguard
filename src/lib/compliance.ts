@@ -369,25 +369,70 @@ function escapeCSV(val: any): string {
   return s;
 }
 
-export function formatAsCSV(findings: Finding[], _reportType: ComplianceReportType): string {
-  const header = "cve_id,severity,cvss_score,epss_score,package,version,ecosystem,image,scan_date,status,first_seen,description";
-  const rows = findings.map(f =>
-    [
-      f.cve_id,
-      f.severity,
-      f.cvss_score ?? "",
-      f.epss_score ?? "",
-      f.package_name,
-      f.version,
-      f.ecosystem,
-      f.image,
-      f.scan_date,
-      f.status,
-      f.first_seen,
-      f.description,
-    ].map(escapeCSV).join(",")
-  );
-  return [header, ...rows].join("\n");
+export function formatAsCSV(findings: Finding[], reportType: ComplianceReportType, scans: ScanRecord[] = []): string {
+  const lines: string[] = [];
+  const now = new Date().toISOString().split("T")[0];
+  const sevCounts = severityCounts(findings);
+
+  // Report-type-specific preamble
+  if (reportType === "soc2") {
+    lines.push("# SOC 2 Type II - Vulnerability Management Evidence");
+    lines.push(`# Generated: ${now}`);
+    lines.push(`# Total Scans: ${scans.length}`);
+    lines.push(`# Total Findings: ${findings.length}`);
+    lines.push(`# Critical: ${sevCounts.critical}, High: ${sevCounts.high}, Medium: ${sevCounts.medium}, Low: ${sevCounts.low}`);
+    lines.push(`# Remediation Rate: ${remediationRate(findings)}%`);
+    lines.push("");
+    lines.push("# CC7.1 - Vulnerability Management Controls");
+    lines.push("# This report demonstrates continuous vulnerability scanning and tracking of remediation.");
+    lines.push("");
+  } else if (reportType === "iso27001") {
+    lines.push("# ISO 27001:2022 - Annex A.12.6 Technical Vulnerability Management");
+    lines.push(`# Generated: ${now}`);
+    lines.push(`# Assets Scanned: ${new Set(scans.map(s => s.registry_image || s.file_name)).size}`);
+    lines.push(`# Total Vulnerabilities: ${findings.length}`);
+    lines.push(`# EPSS >90th percentile: ${findings.filter(f => (f.epss_score ?? 0) >= 0.9).length}`);
+    lines.push(`# EPSS >50th percentile: ${findings.filter(f => (f.epss_score ?? 0) >= 0.5).length}`);
+    lines.push("");
+    lines.push("# A.12.6.1 - Management of technical vulnerabilities");
+    lines.push("# Evidence of timely identification and risk assessment of technical vulnerabilities.");
+    lines.push("");
+  } else if (reportType === "fedramp") {
+    lines.push("# FedRAMP POA&M (Plan of Action & Milestones)");
+    lines.push(`# Generated: ${now}`);
+    lines.push(`# Total Findings: ${findings.length}`);
+    lines.push(`# CAT I (Critical/High): ${sevCounts.critical + sevCounts.high}`);
+    lines.push(`# CAT II (Medium): ${sevCounts.medium}`);
+    lines.push(`# CAT III (Low): ${sevCounts.low}`);
+    lines.push("");
+  }
+
+  // Column headers differ by report type
+  if (reportType === "fedramp") {
+    lines.push("poam_id,weakness_name,nist_category,severity,cve_id,package,version,detection_date,scheduled_completion,status,milestones");
+    findings.forEach((f, i) => {
+      const cat = ["CRITICAL","HIGH"].includes(f.severity.toUpperCase()) ? "CAT I"
+        : f.severity.toUpperCase() === "MEDIUM" ? "CAT II" : "CAT III";
+      const deadline = ["CRITICAL","HIGH"].includes(f.severity.toUpperCase()) ? "30 days"
+        : f.severity.toUpperCase() === "MEDIUM" ? "90 days" : "180 days";
+      lines.push([
+        `POAM-${String(i+1).padStart(4,"0")}`, f.cve_id, cat, f.severity, f.cve_id,
+        f.package_name, f.version, f.scan_date, deadline, f.status,
+        `Upgrade ${f.package_name} to patched version`,
+      ].map(escapeCSV).join(","));
+    });
+  } else {
+    lines.push("cve_id,severity,cvss_score,epss_score,package,version,ecosystem,image,scan_date,status,first_seen,description");
+    findings.forEach(f => {
+      lines.push([
+        f.cve_id, f.severity, f.cvss_score ?? "", f.epss_score ?? "",
+        f.package_name, f.version, f.ecosystem, f.image,
+        f.scan_date, f.status, f.first_seen, f.description,
+      ].map(escapeCSV).join(","));
+    });
+  }
+
+  return lines.join("\n");
 }
 
 /* ------------------------------------------------------------------ */
@@ -409,7 +454,7 @@ export async function generateComplianceReport(
   const dateSuffix = new Date().toISOString().split("T")[0];
 
   if (format === "csv") {
-    const csv = formatAsCSV(findings, type);
+    const csv = formatAsCSV(findings, type, scans);
     return {
       content: csv,
       contentType: "text/csv",
