@@ -35,7 +35,7 @@ spec:
                   echo "Triggering scheduled scans at $(date)..."
                   HTTP_CODE=$(curl -sf -o /dev/null -w "%{http_code}" \
                     -X POST \
-                    -H "Authorization: Bearer ${CLEANUP_SECRET}" \
+                    -H "x-cleanup-secret: ${CLEANUP_SECRET}" \
                     -H "Content-Type: application/json" \
                     "http://scanrook-web.scanrook.svc:3000/api/cron/schedules")
                   echo "Response: ${HTTP_CODE}"
