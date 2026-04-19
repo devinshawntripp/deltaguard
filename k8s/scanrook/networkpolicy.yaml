@@ -15,11 +15,20 @@ spec:
     - Ingress
     - Egress
   ingress:
-    # Allow traffic from ingress-nginx controller
+    # Allow traffic from ingress-nginx controller and internal CronJobs
     - from:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: ingress-nginx
+        - podSelector:
+            matchLabels:
+              app: schedules-cron
+        - podSelector:
+            matchLabels:
+              app: s3-reaper
+        - podSelector:
+            matchLabels:
+              app: minio-lifecycle
       ports:
         - protocol: TCP
           port: 3000
