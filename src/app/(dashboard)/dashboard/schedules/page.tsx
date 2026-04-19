@@ -41,6 +41,11 @@ export default function SchedulesPage() {
     const [deleting, setDeleting] = useState<Record<string, boolean>>({});
     const [toggling, setToggling] = useState<Record<string, boolean>>({});
 
+    // Edit state
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [editForm, setEditForm] = useState({ image_ref: "", cron_expr: "", scan_mode: "light" });
+    const [saving, setSaving] = useState(false);
+
     async function load() {
         setLoading(true);
         setError(null);
@@ -117,6 +122,36 @@ export default function SchedulesPage() {
             setError(e instanceof Error ? e.message : String(e));
         } finally {
             setDeleting((p) => ({ ...p, [id]: false }));
+        }
+    }
+
+    function startEdit(s: Schedule) {
+        setEditingId(s.id);
+        setEditForm({ image_ref: s.image_ref, cron_expr: s.cron_expr, scan_mode: s.scan_mode });
+    }
+
+    function cancelEdit() {
+        setEditingId(null);
+    }
+
+    async function handleSave(id: string) {
+        setSaving(true);
+        try {
+            const res = await fetch(`/api/schedules/${id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(editForm),
+            });
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data.error || `HTTP ${res.status}`);
+            }
+            setEditingId(null);
+            await load();
+        } catch (e: unknown) {
+            setError(e instanceof Error ? e.message : String(e));
+        } finally {
+            setSaving(false);
         }
     }
 
@@ -228,61 +263,136 @@ export default function SchedulesPage() {
                                     : "border-zinc-800 bg-zinc-900/50 opacity-60"
                             }`}
                         >
-                            <div className="flex items-start justify-between">
-                                <div className="space-y-1">
-                                    <div className="flex items-center gap-2">
-                                        <code className="text-sm font-medium text-zinc-100">{s.image_ref}</code>
-                                        <span className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${
-                                            s.enabled
-                                                ? "bg-green-900/40 text-green-400 border border-green-800"
-                                                : "bg-zinc-800 text-zinc-500 border border-zinc-700"
-                                        }`}>
-                                            {s.enabled ? "Active" : "Paused"}
-                                        </span>
-                                        <span className="inline-block rounded bg-zinc-800 px-2 py-0.5 text-xs text-zinc-400 border border-zinc-700">
-                                            {s.scan_mode}
-                                        </span>
+                            {editingId === s.id ? (
+                                <div className="space-y-3">
+                                    <div>
+                                        <label className="block text-sm font-medium text-zinc-300 mb-1">Image Reference</label>
+                                        <input
+                                            type="text"
+                                            value={editForm.image_ref}
+                                            onChange={(e) => setEditForm((f) => ({ ...f, image_ref: e.target.value }))}
+                                            className="w-full rounded border border-zinc-600 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500"
+                                        />
                                     </div>
-                                    <div className="text-xs text-zinc-400 space-x-4">
-                                        <span>Cron: <code className="text-zinc-300">{s.cron_expr}</code></span>
-                                        <span>Last run: {formatDate(s.last_run_at)}</span>
-                                        <span>Next run: {formatDate(s.next_run_at)}</span>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <button
-                                        onClick={() => handleToggle(s.id, !s.enabled)}
-                                        disabled={toggling[s.id]}
-                                        className="rounded border border-zinc-600 px-3 py-1 text-xs text-zinc-300 hover:bg-zinc-700 disabled:opacity-50 transition-colors"
-                                    >
-                                        {toggling[s.id] ? "..." : s.enabled ? "Pause" : "Resume"}
-                                    </button>
-                                    {confirmDelete === s.id ? (
-                                        <div className="flex items-center gap-1">
-                                            <button
-                                                onClick={() => handleDelete(s.id)}
-                                                disabled={deleting[s.id]}
-                                                className="rounded bg-red-700 px-3 py-1 text-xs text-white hover:bg-red-600 disabled:opacity-50"
-                                            >
-                                                {deleting[s.id] ? "..." : "Confirm"}
-                                            </button>
-                                            <button
-                                                onClick={() => setConfirmDelete(null)}
-                                                className="rounded border border-zinc-600 px-3 py-1 text-xs text-zinc-300 hover:bg-zinc-700"
-                                            >
-                                                Cancel
-                                            </button>
+                                    <div>
+                                        <label className="block text-sm font-medium text-zinc-300 mb-1">Schedule</label>
+                                        <div className="flex flex-wrap gap-1.5 mb-2">
+                                            {COMMON_CRONS.map((c) => (
+                                                <button
+                                                    key={c.value}
+                                                    type="button"
+                                                    onClick={() => setEditForm((f) => ({ ...f, cron_expr: c.value }))}
+                                                    className={`rounded px-2 py-1 text-xs transition-colors ${
+                                                        editForm.cron_expr === c.value
+                                                            ? "bg-indigo-600 text-white"
+                                                            : "border border-zinc-600 text-zinc-400 hover:bg-zinc-700"
+                                                    }`}
+                                                >
+                                                    {c.label}
+                                                </button>
+                                            ))}
                                         </div>
-                                    ) : (
-                                        <button
-                                            onClick={() => setConfirmDelete(s.id)}
-                                            className="rounded border border-red-800 px-3 py-1 text-xs text-red-400 hover:bg-red-900/30 transition-colors"
+                                        <input
+                                            type="text"
+                                            value={editForm.cron_expr}
+                                            onChange={(e) => setEditForm((f) => ({ ...f, cron_expr: e.target.value }))}
+                                            className="w-full rounded border border-zinc-600 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 font-mono"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-zinc-300 mb-1">Scan Mode</label>
+                                        <select
+                                            value={editForm.scan_mode}
+                                            onChange={(e) => setEditForm((f) => ({ ...f, scan_mode: e.target.value }))}
+                                            className="w-full rounded border border-zinc-600 bg-zinc-900 px-3 py-2 text-sm text-zinc-100"
                                         >
-                                            Delete
+                                            <option value="light">Light</option>
+                                            <option value="deep">Deep</option>
+                                        </select>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => handleSave(s.id)}
+                                            disabled={saving || !editForm.image_ref.trim()}
+                                            className="rounded bg-indigo-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-50 transition-colors"
+                                        >
+                                            {saving ? "Saving..." : "Save"}
                                         </button>
-                                    )}
+                                        <button
+                                            onClick={cancelEdit}
+                                            className="rounded border border-zinc-600 px-4 py-1.5 text-sm text-zinc-300 hover:bg-zinc-700 transition-colors"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
+                            ) : (
+                                <div className="flex items-start justify-between">
+                                    <div className="space-y-1">
+                                        <div className="flex items-center gap-2">
+                                            <code className="text-sm font-medium text-zinc-100">{s.image_ref}</code>
+                                            <span className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${
+                                                s.enabled
+                                                    ? "bg-green-900/40 text-green-400 border border-green-800"
+                                                    : "bg-zinc-800 text-zinc-500 border border-zinc-700"
+                                            }`}>
+                                                {s.enabled ? "Active" : "Paused"}
+                                            </span>
+                                            <span className="inline-block rounded bg-zinc-800 px-2 py-0.5 text-xs text-zinc-400 border border-zinc-700">
+                                                {s.scan_mode}
+                                            </span>
+                                        </div>
+                                        <div className="text-xs text-zinc-400 space-x-4">
+                                            <span>Cron: <code className="text-zinc-300">{s.cron_expr}</code></span>
+                                            <span>Last run: {formatDate(s.last_run_at)}</span>
+                                            <span>Next run: {formatDate(s.next_run_at)}</span>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => startEdit(s)}
+                                            className="rounded border border-zinc-600 p-1.5 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700 transition-colors"
+                                            title="Edit schedule"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                            </svg>
+                                        </button>
+                                        <button
+                                            onClick={() => handleToggle(s.id, !s.enabled)}
+                                            disabled={toggling[s.id]}
+                                            className="rounded border border-zinc-600 px-3 py-1 text-xs text-zinc-300 hover:bg-zinc-700 disabled:opacity-50 transition-colors"
+                                        >
+                                            {toggling[s.id] ? "..." : s.enabled ? "Pause" : "Resume"}
+                                        </button>
+                                        {confirmDelete === s.id ? (
+                                            <div className="flex items-center gap-1">
+                                                <button
+                                                    onClick={() => handleDelete(s.id)}
+                                                    disabled={deleting[s.id]}
+                                                    className="rounded bg-red-700 px-3 py-1 text-xs text-white hover:bg-red-600 disabled:opacity-50"
+                                                >
+                                                    {deleting[s.id] ? "..." : "Confirm"}
+                                                </button>
+                                                <button
+                                                    onClick={() => setConfirmDelete(null)}
+                                                    className="rounded border border-zinc-600 px-3 py-1 text-xs text-zinc-300 hover:bg-zinc-700"
+                                                >
+                                                    Cancel
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <button
+                                                onClick={() => setConfirmDelete(s.id)}
+                                                className="rounded border border-red-800 px-3 py-1 text-xs text-red-400 hover:bg-red-900/30 transition-colors"
+                                            >
+                                                Delete
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     ))}
                 </div>

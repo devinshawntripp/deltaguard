@@ -216,6 +216,21 @@ export default function PoliciesPage() {
     const [expanded, setExpanded] = useState<Record<string, boolean>>({});
     const [evalExpanded, setEvalExpanded] = useState<Record<string, boolean>>({});
 
+    // Edit state
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [editName, setEditName] = useState("");
+    const [editRules, setEditRules] = useState<PolicyRule[]>([]);
+    const [editSaving, setEditSaving] = useState(false);
+
+    // Edit rule builder (separate from create rule builder)
+    const [editRuleType, setEditRuleType] = useState<PolicyRule["type"]>("severity_threshold");
+    const [editRuleAction, setEditRuleAction] = useState<PolicyRule["action"]>("fail");
+    const [editRuleSeverity, setEditRuleSeverity] = useState("critical");
+    const [editRuleMaxCount, setEditRuleMaxCount] = useState(0);
+    const [editRuleLicenses, setEditRuleLicenses] = useState("");
+    const [editRulePackages, setEditRulePackages] = useState("");
+    const [editRuleMaxDays, setEditRuleMaxDays] = useState(30);
+
     async function load() {
         setLoading(true);
         setError(null);
@@ -321,6 +336,71 @@ export default function PoliciesPage() {
             setError(e instanceof Error ? e.message : String(e));
         } finally {
             setDeleting((prev) => ({ ...prev, [id]: false }));
+        }
+    }
+
+    function startEditPolicy(policy: Policy) {
+        setEditingId(policy.id);
+        setEditName(policy.name);
+        setEditRules([...policy.rules]);
+        setEditRuleType("severity_threshold");
+        setEditRuleAction("fail");
+        setEditRuleSeverity("critical");
+        setEditRuleMaxCount(0);
+        setEditRuleLicenses("");
+        setEditRulePackages("");
+        setEditRuleMaxDays(30);
+    }
+
+    function cancelEditPolicy() {
+        setEditingId(null);
+    }
+
+    function addEditRule() {
+        const rule: PolicyRule = { type: editRuleType, action: editRuleAction };
+        switch (editRuleType) {
+            case "severity_threshold":
+                rule.severity = editRuleSeverity;
+                rule.max_count = editRuleMaxCount;
+                break;
+            case "license_blocklist":
+                rule.licenses = editRuleLicenses.split(",").map((s) => s.trim()).filter(Boolean);
+                if (rule.licenses.length === 0) return;
+                break;
+            case "package_blocklist":
+                rule.packages = editRulePackages.split(",").map((s) => s.trim()).filter(Boolean);
+                if (rule.packages.length === 0) return;
+                break;
+            case "min_scan_age":
+                rule.max_days = editRuleMaxDays;
+                break;
+        }
+        setEditRules((prev) => [...prev, rule]);
+    }
+
+    function removeEditRule(idx: number) {
+        setEditRules((prev) => prev.filter((_, i) => i !== idx));
+    }
+
+    async function handleSavePolicy(id: string) {
+        if (!editName.trim() || editRules.length === 0) return;
+        setEditSaving(true);
+        try {
+            const res = await fetch(`/api/policies/${id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name: editName.trim(), rules: editRules }),
+            });
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data.error || `HTTP ${res.status}`);
+            }
+            setEditingId(null);
+            await load();
+        } catch (e: unknown) {
+            setError(e instanceof Error ? e.message : String(e));
+        } finally {
+            setEditSaving(false);
         }
     }
 
@@ -573,128 +653,284 @@ export default function PoliciesPage() {
                     {policies.map((policy) => {
                         const rules = policy.rules || [];
                         const isExpanded = expanded[policy.id] ?? false;
+                        const isEditing = editingId === policy.id;
 
                         return (
                             <div
                                 key={policy.id}
                                 className="rounded-xl border border-[var(--dg-border)] bg-[color-mix(in_srgb,var(--dg-bg-elevated)_84%,transparent)] shadow-[var(--dg-shadow)] overflow-hidden transition-all duration-200"
                             >
-                                {/* Card header */}
-                                <div className="p-5">
-                                    <div className="flex items-start justify-between gap-4">
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-3">
-                                                <h3 className="text-base font-semibold truncate">{policy.name}</h3>
-                                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-[var(--dg-bg-muted)] text-[var(--dg-text-muted)] border border-[var(--dg-border)]">
-                                                    {rules.length} rule{rules.length !== 1 ? "s" : ""}
-                                                </span>
-                                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider ${
-                                                    policy.enabled
-                                                        ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                                                        : "bg-zinc-500/10 text-zinc-400 border border-zinc-500/20"
-                                                }`}>
-                                                    {policy.enabled ? "Active" : "Disabled"}
-                                                </span>
-                                            </div>
-                                            <p className="text-xs text-[var(--dg-text-muted)] mt-1">
-                                                Updated {timeAgo(policy.updated_at)}
-                                            </p>
+                                {isEditing ? (
+                                    <div className="p-5 space-y-5">
+                                        <div>
+                                            <label className="label">Policy Name</label>
+                                            <input
+                                                className="input"
+                                                value={editName}
+                                                onChange={(e) => setEditName(e.target.value)}
+                                                placeholder="e.g. Production Gate"
+                                            />
                                         </div>
 
-                                        <div className="flex items-center gap-3 shrink-0">
-                                            <Toggle
-                                                checked={policy.enabled}
-                                                onChange={() => togglePolicy(policy.id, policy.enabled)}
-                                                disabled={toggling[policy.id]}
-                                            />
-                                            {confirmDelete === policy.id ? (
-                                                <div className="flex items-center gap-1.5">
-                                                    <button
-                                                        className="px-2 py-1 text-xs font-medium rounded-md bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-colors"
-                                                        disabled={deleting[policy.id]}
-                                                        onClick={() => deletePolicy(policy.id)}
-                                                    >
-                                                        {deleting[policy.id] ? "..." : "Confirm"}
-                                                    </button>
-                                                    <button
-                                                        className="px-2 py-1 text-xs font-medium rounded-md text-[var(--dg-text-muted)] hover:text-[var(--dg-text)] transition-colors"
-                                                        onClick={() => setConfirmDelete(null)}
-                                                    >
-                                                        Cancel
-                                                    </button>
+                                        {/* Edit draft rules as pills */}
+                                        {editRules.length > 0 && (
+                                            <div>
+                                                <h3 className="text-xs font-medium text-[var(--dg-text-muted)] uppercase tracking-wider mb-2">
+                                                    Rules ({editRules.length})
+                                                </h3>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {editRules.map((rule, i) => (
+                                                        <span
+                                                            key={i}
+                                                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium ${rulePillColor(rule)}`}
+                                                        >
+                                                            {ruleLabel(rule)}
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => removeEditRule(i)}
+                                                                className="opacity-60 hover:opacity-100 transition-opacity"
+                                                            >
+                                                                <XIcon />
+                                                            </button>
+                                                        </span>
+                                                    ))}
                                                 </div>
-                                            ) : (
+                                            </div>
+                                        )}
+
+                                        {/* Edit rule builder */}
+                                        <div className="rounded-lg border border-[var(--dg-border)] bg-[var(--dg-bg)]/50 p-4 space-y-4">
+                                            <h3 className="text-sm font-medium">Add Rule</h3>
+
+                                            <div className="space-y-3">
+                                                <div>
+                                                    <label className="label mb-1.5">Type</label>
+                                                    <PillTabs options={ruleTypeOptions} value={editRuleType} onChange={setEditRuleType} />
+                                                </div>
+
+                                                <div>
+                                                    <label className="label mb-1.5">Action</label>
+                                                    <PillTabs options={actionOptions} value={editRuleAction} onChange={setEditRuleAction} />
+                                                </div>
+                                            </div>
+
+                                            {editRuleType === "severity_threshold" && (
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    <div>
+                                                        <label className="label">Severity</label>
+                                                        <select className="input" value={editRuleSeverity} onChange={(e) => setEditRuleSeverity(e.target.value)}>
+                                                            {SEVERITY_OPTIONS.map((s) => (
+                                                                <option key={s} value={s}>
+                                                                    {s.charAt(0).toUpperCase() + s.slice(1)}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+                                                    <div>
+                                                        <label className="label">Max Count</label>
+                                                        <input
+                                                            className="input"
+                                                            type="number"
+                                                            min={0}
+                                                            value={editRuleMaxCount}
+                                                            onChange={(e) => setEditRuleMaxCount(Number(e.target.value))}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {editRuleType === "license_blocklist" && (
+                                                <div>
+                                                    <label className="label">Blocked Licenses (comma-separated)</label>
+                                                    <input
+                                                        className="input"
+                                                        value={editRuleLicenses}
+                                                        onChange={(e) => setEditRuleLicenses(e.target.value)}
+                                                        placeholder="AGPL-3.0-only, GPL-3.0-only, SSPL-1.0"
+                                                    />
+                                                </div>
+                                            )}
+
+                                            {editRuleType === "package_blocklist" && (
+                                                <div>
+                                                    <label className="label">Blocked Packages (comma-separated)</label>
+                                                    <input
+                                                        className="input"
+                                                        value={editRulePackages}
+                                                        onChange={(e) => setEditRulePackages(e.target.value)}
+                                                        placeholder="lodash@<4.17.21, event-stream"
+                                                    />
+                                                </div>
+                                            )}
+
+                                            {editRuleType === "min_scan_age" && (
+                                                <div>
+                                                    <label className="label">Max Days Since Scan</label>
+                                                    <input
+                                                        className="input"
+                                                        type="number"
+                                                        min={1}
+                                                        value={editRuleMaxDays}
+                                                        onChange={(e) => setEditRuleMaxDays(Number(e.target.value))}
+                                                    />
+                                                </div>
+                                            )}
+
+                                            <button
+                                                type="button"
+                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-[var(--dg-border)] bg-[var(--dg-bg-elevated)] text-[var(--dg-text)] hover:bg-[var(--dg-bg-muted)] transition-colors"
+                                                onClick={addEditRule}
+                                            >
+                                                <PlusIcon /> Add Rule
+                                            </button>
+                                        </div>
+
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={() => handleSavePolicy(policy.id)}
+                                                disabled={editSaving || editRules.length === 0 || !editName.trim()}
+                                                className="btn-primary px-4 py-2 text-sm font-medium rounded-lg disabled:opacity-50"
+                                            >
+                                                {editSaving ? "Saving..." : "Save"}
+                                            </button>
+                                            <button
+                                                onClick={cancelEditPolicy}
+                                                className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg border border-[var(--dg-border)] bg-[var(--dg-bg-elevated)] text-[var(--dg-text)] hover:bg-[var(--dg-bg-muted)] transition-colors"
+                                            >
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <>
+                                        {/* Card header */}
+                                        <div className="p-5">
+                                            <div className="flex items-start justify-between gap-4">
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-3">
+                                                        <h3 className="text-base font-semibold truncate">{policy.name}</h3>
+                                                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-[var(--dg-bg-muted)] text-[var(--dg-text-muted)] border border-[var(--dg-border)]">
+                                                            {rules.length} rule{rules.length !== 1 ? "s" : ""}
+                                                        </span>
+                                                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider ${
+                                                            policy.enabled
+                                                                ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                                                                : "bg-zinc-500/10 text-zinc-400 border border-zinc-500/20"
+                                                        }`}>
+                                                            {policy.enabled ? "Active" : "Disabled"}
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-xs text-[var(--dg-text-muted)] mt-1">
+                                                        Updated {timeAgo(policy.updated_at)}
+                                                    </p>
+                                                </div>
+
+                                                <div className="flex items-center gap-3 shrink-0">
+                                                    <button
+                                                        className="p-1.5 rounded-md text-[var(--dg-text-muted)] hover:text-[var(--dg-accent)] hover:bg-[var(--dg-accent)]/10 transition-all duration-200"
+                                                        onClick={() => startEditPolicy(policy)}
+                                                        title="Edit policy"
+                                                    >
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                                        </svg>
+                                                    </button>
+                                                    <Toggle
+                                                        checked={policy.enabled}
+                                                        onChange={() => togglePolicy(policy.id, policy.enabled)}
+                                                        disabled={toggling[policy.id]}
+                                                    />
+                                                    {confirmDelete === policy.id ? (
+                                                        <div className="flex items-center gap-1.5">
+                                                            <button
+                                                                className="px-2 py-1 text-xs font-medium rounded-md bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-colors"
+                                                                disabled={deleting[policy.id]}
+                                                                onClick={() => deletePolicy(policy.id)}
+                                                            >
+                                                                {deleting[policy.id] ? "..." : "Confirm"}
+                                                            </button>
+                                                            <button
+                                                                className="px-2 py-1 text-xs font-medium rounded-md text-[var(--dg-text-muted)] hover:text-[var(--dg-text)] transition-colors"
+                                                                onClick={() => setConfirmDelete(null)}
+                                                            >
+                                                                Cancel
+                                                            </button>
+                                                        </div>
+                                                    ) : (
+                                                        <button
+                                                            className="p-1.5 rounded-md text-[var(--dg-text-muted)] hover:text-red-400 hover:bg-red-500/10 transition-all duration-200"
+                                                            onClick={() => setConfirmDelete(policy.id)}
+                                                            title="Delete policy"
+                                                        >
+                                                            <TrashIcon />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {/* Rule summary pills */}
+                                            {rules.length > 0 && (
+                                                <div className="flex flex-wrap gap-1.5 mt-3">
+                                                    {rules.slice(0, isExpanded ? rules.length : 4).map((rule, i) => (
+                                                        <span
+                                                            key={i}
+                                                            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium ${rulePillColor(rule)}`}
+                                                        >
+                                                            {ruleLabel(rule)}
+                                                        </span>
+                                                    ))}
+                                                    {!isExpanded && rules.length > 4 && (
+                                                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-medium bg-[var(--dg-bg-muted)] text-[var(--dg-text-muted)]">
+                                                            +{rules.length - 4} more
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            )}
+
+                                            {/* Expand toggle */}
+                                            {rules.length > 0 && (
                                                 <button
-                                                    className="p-1.5 rounded-md text-[var(--dg-text-muted)] hover:text-red-400 hover:bg-red-500/10 transition-all duration-200"
-                                                    onClick={() => setConfirmDelete(policy.id)}
-                                                    title="Delete policy"
+                                                    className="mt-3 inline-flex items-center gap-1 text-xs text-[var(--dg-text-muted)] hover:text-[var(--dg-text)] transition-colors"
+                                                    onClick={() => setExpanded((prev) => ({ ...prev, [policy.id]: !isExpanded }))}
                                                 >
-                                                    <TrashIcon />
+                                                    <ChevronIcon expanded={isExpanded} />
+                                                    {isExpanded ? "Hide details" : "Show details"}
                                                 </button>
                                             )}
                                         </div>
-                                    </div>
 
-                                    {/* Rule summary pills */}
-                                    {rules.length > 0 && (
-                                        <div className="flex flex-wrap gap-1.5 mt-3">
-                                            {rules.slice(0, isExpanded ? rules.length : 4).map((rule, i) => (
-                                                <span
-                                                    key={i}
-                                                    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium ${rulePillColor(rule)}`}
-                                                >
-                                                    {ruleLabel(rule)}
-                                                </span>
-                                            ))}
-                                            {!isExpanded && rules.length > 4 && (
-                                                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-medium bg-[var(--dg-bg-muted)] text-[var(--dg-text-muted)]">
-                                                    +{rules.length - 4} more
-                                                </span>
-                                            )}
-                                        </div>
-                                    )}
-
-                                    {/* Expand toggle */}
-                                    {rules.length > 0 && (
-                                        <button
-                                            className="mt-3 inline-flex items-center gap-1 text-xs text-[var(--dg-text-muted)] hover:text-[var(--dg-text)] transition-colors"
-                                            onClick={() => setExpanded((prev) => ({ ...prev, [policy.id]: !isExpanded }))}
+                                        {/* Expanded rule details */}
+                                        <div
+                                            className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                                                isExpanded ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
+                                            }`}
                                         >
-                                            <ChevronIcon expanded={isExpanded} />
-                                            {isExpanded ? "Hide details" : "Show details"}
-                                        </button>
-                                    )}
-                                </div>
-
-                                {/* Expanded rule details */}
-                                <div
-                                    className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                                        isExpanded ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
-                                    }`}
-                                >
-                                    <div className="px-5 pb-5 pt-0">
-                                        <div className="rounded-lg border border-[var(--dg-border)] bg-[var(--dg-bg)]/50 divide-y divide-[var(--dg-border)]">
-                                            {rules.map((rule, i) => (
-                                                <div key={i} className="px-4 py-3 flex items-center gap-3">
-                                                    <span className="inline-flex items-center justify-center w-7 h-7 rounded-md bg-[var(--dg-bg-muted)] text-[var(--dg-text-muted)] text-xs font-bold shrink-0">
-                                                        {RULE_TYPE_LABELS[rule.type]?.icon || "?"}
-                                                    </span>
-                                                    <div className="flex-1 min-w-0">
-                                                        <p className="text-sm font-medium">{RULE_TYPE_LABELS[rule.type]?.label || rule.type}</p>
-                                                        <p className="text-xs text-[var(--dg-text-muted)]">{ruleLabel(rule)}</p>
-                                                    </div>
-                                                    <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase ${
-                                                        rule.action === "fail"
-                                                            ? "bg-red-500/10 text-red-400"
-                                                            : "bg-yellow-500/10 text-yellow-400"
-                                                    }`}>
-                                                        {rule.action}
-                                                    </span>
+                                            <div className="px-5 pb-5 pt-0">
+                                                <div className="rounded-lg border border-[var(--dg-border)] bg-[var(--dg-bg)]/50 divide-y divide-[var(--dg-border)]">
+                                                    {rules.map((rule, i) => (
+                                                        <div key={i} className="px-4 py-3 flex items-center gap-3">
+                                                            <span className="inline-flex items-center justify-center w-7 h-7 rounded-md bg-[var(--dg-bg-muted)] text-[var(--dg-text-muted)] text-xs font-bold shrink-0">
+                                                                {RULE_TYPE_LABELS[rule.type]?.icon || "?"}
+                                                            </span>
+                                                            <div className="flex-1 min-w-0">
+                                                                <p className="text-sm font-medium">{RULE_TYPE_LABELS[rule.type]?.label || rule.type}</p>
+                                                                <p className="text-xs text-[var(--dg-text-muted)]">{ruleLabel(rule)}</p>
+                                                            </div>
+                                                            <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase ${
+                                                                rule.action === "fail"
+                                                                    ? "bg-red-500/10 text-red-400"
+                                                                    : "bg-yellow-500/10 text-yellow-400"
+                                                            }`}>
+                                                                {rule.action}
+                                                            </span>
+                                                        </div>
+                                                    ))}
                                                 </div>
-                                            ))}
+                                            </div>
                                         </div>
-                                    </div>
-                                </div>
+                                    </>
+                                )}
                             </div>
                         );
                     })}
