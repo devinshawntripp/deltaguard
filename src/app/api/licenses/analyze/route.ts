@@ -16,6 +16,14 @@ type PackageLicense = {
   info: LicenseInfo;
 };
 
+/** Best-effort license inference when the scanner doesn't emit license data */
+function inferLicenseFromEcosystem(ecosystem: string): string {
+  // The scanner doesn't currently emit license fields, so we return "unknown"
+  // to allow the license classifier to handle it. This keeps the packages
+  // visible in the UI rather than silently filtering them out.
+  return "unknown";
+}
+
 async function extractLicensesFromReport(reportBucket: string, reportKey: string): Promise<PackageLicense[]> {
   const res = await s3Internal.send(new GetObjectCommand({ Bucket: reportBucket, Key: reportKey }));
   const body = await res.Body?.transformToString("utf-8");
@@ -25,36 +33,47 @@ async function extractLicensesFromReport(reportBucket: string, reportKey: string
   const packages: PackageLicense[] = [];
   const seen = new Set<string>();
 
-  // Walk report structure — scanner reports have packages at top level or nested in files
-  const pkgList = report.packages || report.summary?.packages || [];
+  // The scanner report has `findings[]` with nested `package: {name, ecosystem, version}`
+  // and optionally a `files[]` array with file entries. There is no top-level `packages` array.
+  // Packages may also appear in `summary.packages` or `components` if present.
+
+  // 1. Try top-level packages/components array (e.g. SBOM imports, future scanner versions)
+  const pkgList = report.packages || report.summary?.packages || report.components || [];
   for (const pkg of pkgList) {
     const license = pkg.license || pkg.license_id || "";
-    if (!license) continue;
-    const key = `${pkg.name}@${pkg.version}@${license}`;
+    const name = pkg.name || "unknown";
+    const version = pkg.version || "unknown";
+    const ecosystem = pkg.ecosystem || pkg.type || "unknown";
+    // Use license if available, otherwise infer from ecosystem
+    const effectiveLicense = license || inferLicenseFromEcosystem(ecosystem);
+    const key = `${name}@${version}`;
     if (seen.has(key)) continue;
     seen.add(key);
     packages.push({
-      name: pkg.name || "unknown",
-      version: pkg.version || "unknown",
-      ecosystem: pkg.ecosystem || pkg.type || "unknown",
-      license,
-      info: classifyLicense(license),
+      name,
+      version,
+      ecosystem,
+      license: effectiveLicense,
+      info: classifyLicense(effectiveLicense),
     });
   }
 
-  // Also check findings for license-related data
+  // 2. Extract unique packages from findings (primary source for scanner reports)
   const findings = report.findings || report.vulnerabilities || [];
   for (const f of findings) {
     const pkg = f.package || {};
-    const license = pkg.license || pkg.license_id || "";
-    if (!license) continue;
-    const key = `${pkg.name}@${pkg.version}@${license}`;
+    const name = pkg.name || f.package_name || "";
+    const version = pkg.version || f.version || "";
+    const ecosystem = pkg.ecosystem || pkg.type || f.ecosystem || "unknown";
+    if (!name) continue;
+    const key = `${name}@${version}`;
     if (seen.has(key)) continue;
     seen.add(key);
+    const license = pkg.license || pkg.license_id || inferLicenseFromEcosystem(ecosystem);
     packages.push({
-      name: pkg.name || "unknown",
-      version: pkg.version || "unknown",
-      ecosystem: pkg.ecosystem || pkg.type || "unknown",
+      name,
+      version: version || "unknown",
+      ecosystem,
       license,
       info: classifyLicense(license),
     });

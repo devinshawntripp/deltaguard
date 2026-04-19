@@ -68,29 +68,62 @@ export async function gatherScanData(
     ORDER BY created_at DESC
   `;
 
-  // Flatten findings from summary_json where available
+  // Query findings from the scan_findings table (populated by the worker during ingestion).
+  // The summary_json column only stores aggregate counts, not individual findings.
+  const jobIds = scans.filter(s => s.status === "done").map(s => s.id);
   const findings: Finding[] = [];
-  for (const scan of scans) {
-    if (scan.status !== "done" || !scan.summary_json) continue;
-    const summary = typeof scan.summary_json === "string"
-      ? JSON.parse(scan.summary_json)
-      : scan.summary_json;
 
-    const vulns: any[] = summary.vulnerabilities || summary.findings || [];
-    for (const v of vulns) {
+  if (jobIds.length > 0) {
+    const scanMap = new Map(scans.map(s => [s.id, s]));
+    const findingRows = await prisma.$queryRaw<Array<{
+      job_id: string;
+      finding_id: string;
+      package_name: string | null;
+      package_ecosystem: string | null;
+      package_version: string | null;
+      severity: string | null;
+      cvss_base: number | null;
+      fixed: boolean | null;
+      fixed_in: string | null;
+      description: string | null;
+      raw: any;
+      created_at: string;
+    }>>`
+      SELECT
+        job_id::text AS job_id,
+        finding_id,
+        package_name,
+        package_ecosystem,
+        package_version,
+        severity,
+        cvss_base,
+        fixed,
+        fixed_in,
+        description,
+        raw,
+        created_at::text AS created_at
+      FROM scan_findings
+      WHERE job_id = ANY(${jobIds}::uuid[])
+      ORDER BY job_id, finding_id
+    `;
+
+    for (const row of findingRows) {
+      const scan = scanMap.get(row.job_id);
+      const rawData = typeof row.raw === "string" ? JSON.parse(row.raw) : (row.raw || {});
+      const status = row.fixed ? "fixed" : (row.fixed_in ? "fix_available" : "open");
       findings.push({
-        cve_id: v.cve_id || v.id || v.advisory_id || "N/A",
-        severity: v.severity || "UNKNOWN",
-        cvss_score: v.cvss_score ?? v.cvss ?? null,
-        epss_score: v.epss_score ?? v.epss ?? null,
-        package_name: v.package_name || v.package || v.name || "",
-        version: v.version || v.installed_version || "",
-        ecosystem: v.ecosystem || v.source || "",
-        image: scan.registry_image || scan.file_name,
-        scan_date: scan.created_at,
-        status: v.status || (v.fixed_version ? "fix_available" : "open"),
-        first_seen: scan.created_at,
-        description: v.description || v.summary || "",
+        cve_id: row.finding_id || "N/A",
+        severity: row.severity || "UNKNOWN",
+        cvss_score: row.cvss_base ?? null,
+        epss_score: rawData.epss_score ?? null,
+        package_name: row.package_name || "",
+        version: row.package_version || "",
+        ecosystem: row.package_ecosystem || "",
+        image: scan?.registry_image || scan?.file_name || "",
+        scan_date: scan?.created_at || row.created_at,
+        status,
+        first_seen: row.created_at,
+        description: row.description || "",
       });
     }
   }

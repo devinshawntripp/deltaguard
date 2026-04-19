@@ -30,7 +30,7 @@ type AnalysisResult = {
   total_packages: number;
 };
 
-type JobOption = { id: string; created_at: string; status: string };
+type JobOption = { id: string; created_at: string; status: string; object_key?: string; registry_image?: string };
 
 const RISK_COLORS: Record<LicenseRisk, string> = {
   critical: "bg-red-600 text-white",
@@ -203,11 +203,14 @@ export default function LicensesPage() {
           >
             {loadingJobs && <option>Loading jobs...</option>}
             {!loadingJobs && jobs.length === 0 && <option>No completed scans</option>}
-            {jobs.map((j) => (
-              <option key={j.id} value={j.id}>
-                {j.id.slice(0, 8)}... — {new Date(j.created_at).toLocaleDateString()}
-              </option>
-            ))}
+            {jobs.map((j) => {
+              const label = j.registry_image || j.object_key || "";
+              return (
+                <option key={j.id} value={j.id}>
+                  {j.id.slice(0, 8)}...{label ? ` — ${label}` : ""} — {new Date(j.created_at).toLocaleDateString()}
+                </option>
+              );
+            })}
           </select>
         </div>
         <button
