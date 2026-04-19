@@ -1,7 +1,12 @@
 /**
  * Docker Registry V2 API proxy client.
  * Handles the WWW-Authenticate token dance for Docker Hub, GHCR, etc.
+ *
+ * Uses proxyFetch() so requests go through HTTP_PROXY when configured
+ * (Node.js built-in fetch does not respect proxy env vars).
  */
+
+import { proxyFetch } from "@/lib/proxyFetch";
 
 type AuthConfig = {
     username?: string | null;
@@ -37,7 +42,7 @@ async function fetchBearerToken(
         headers["Authorization"] = "Basic " + Buffer.from(`${auth.username}:${auth.token}`).toString("base64");
     }
 
-    const res = await fetch(url.toString(), { headers });
+    const res = await proxyFetch(url.toString(), { headers });
     if (!res.ok) return null;
 
     const body: TokenResponse = await res.json();
@@ -61,7 +66,7 @@ async function registryFetch(
     };
 
     // First attempt — may get 401
-    let res = await fetch(url, { headers });
+    let res = await proxyFetch(url, { headers });
 
     if (res.status === 401) {
         const wwwAuth = res.headers.get("www-authenticate") || "";
@@ -69,12 +74,12 @@ async function registryFetch(
             const bearerToken = await fetchBearerToken(wwwAuth, auth);
             if (bearerToken) {
                 headers["Authorization"] = `Bearer ${bearerToken}`;
-                res = await fetch(url, { headers });
+                res = await proxyFetch(url, { headers });
             }
         } else if (auth.username && auth.token) {
             // Basic auth fallback
             headers["Authorization"] = "Basic " + Buffer.from(`${auth.username}:${auth.token}`).toString("base64");
-            res = await fetch(url, { headers });
+            res = await proxyFetch(url, { headers });
         }
     }
 

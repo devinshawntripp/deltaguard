@@ -6,7 +6,21 @@ export function getStripe(): Stripe | null {
     if (stripe) return stripe;
     const key = (process.env.STRIPE_SECRET_KEY || "").trim();
     if (!key) return null;
-    stripe = new Stripe(key);
+    const proxy = process.env.HTTPS_PROXY || process.env.HTTP_PROXY;
+    if (proxy) {
+        // Stripe SDK uses fetch internally — configure it to use the proxy
+        const { ProxyAgent } = require("undici");
+        const dispatcher = new ProxyAgent(proxy);
+        stripe = new Stripe(key, {
+            httpClient: Stripe.createFetchHttpClient(),
+            fetchApi: (url: any, init: any) => {
+                const undici = require("undici");
+                return undici.fetch(url, { ...init, dispatcher });
+            },
+        } as any);
+    } else {
+        stripe = new Stripe(key);
+    }
     return stripe;
 }
 
