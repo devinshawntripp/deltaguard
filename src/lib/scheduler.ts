@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { createRegistryJob } from "@/lib/jobs";
 import { getScannerSettings } from "@/lib/scannerSettings";
+import { incrementUsage } from "@/lib/usage";
 import { CronExpressionParser } from "cron-parser";
 
 export type ScanSchedule = {
@@ -61,6 +62,9 @@ export async function checkAndRunSchedules(): Promise<{
                 created_by_api_key_id: null,
                 settings_snapshot: settings,
             });
+
+            // Count scheduled scans toward the org's monthly usage
+            await incrementUsage(schedule.org_id, "api");
 
             const nextRun = computeNextRun(schedule.cron_expr);
 

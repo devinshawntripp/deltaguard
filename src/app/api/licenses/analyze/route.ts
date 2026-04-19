@@ -115,7 +115,9 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    console.log(`[licenses] Fetching report from S3: ${job.report_bucket}/${job.report_key}`);
     const packages = await extractLicensesFromReport(job.report_bucket, job.report_key);
+    console.log(`[licenses] Extracted ${packages.length} packages from report`);
     const licenseIds = packages.map((p) => p.license);
     const { score, risk, issues } = scoreLicenseRisk(licenseIds);
 
