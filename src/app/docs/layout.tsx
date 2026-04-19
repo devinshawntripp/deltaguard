@@ -32,6 +32,8 @@ const navItems: NavItem[] = [
             { href: "/docs/concepts/supply-chain-security", label: "Supply Chain Security" },
             { href: "/docs/concepts/scan-status", label: "Scan Status" },
             { href: "/docs/concepts/vulnerability-database", label: "Vulnerability Database" },
+            { href: "/docs/concepts/license-scanning", label: "License Scanning" },
+            { href: "/docs/concepts/license-types", label: "License Types" },
         ],
     },
     { href: "/docs/benchmarks", label: "Benchmarks" },
@@ -71,6 +73,8 @@ const breadcrumbLabels: Record<string, string> = {
     "gitlab-ci": "GitLab CI",
     "scan-status": "Scan Status",
     "vulnerability-database": "Vulnerability Database",
+    "license-scanning": "License Scanning",
+    "license-types": "License Types",
     architecture: "Architecture",
 };
 

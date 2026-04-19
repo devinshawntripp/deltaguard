@@ -88,6 +88,20 @@ export const posts: BlogPost[] = [
       "Penalties for non-compliance, scanning frequency requirements by framework, and how to build a compliant vulnerability scanning program.",
   },
   {
+    href: "/blog/what-we-learned-from-black-duck",
+    category: "License Compliance",
+    title: "What We Learned from Black Duck (And How We Made License Scanning Better)",
+    description:
+      "How Black Duck pioneered license scanning with snippet matching and proprietary databases, what has changed since 2005, and how modern tools deliver the same results at a fraction of the cost.",
+  },
+  {
+    href: "/blog/open-source-license-compliance-guide",
+    category: "License Compliance",
+    title: "The Complete Guide to Open Source License Compliance in 2026",
+    description:
+      "A comprehensive guide to open source license compliance covering legal risks, common mistakes, building a compliance program, tooling comparisons, and SBOM integration.",
+  },
+  {
     href: "/blog/on-prem-vs-saas-scanning",
     category: "Architecture",
     title: "On-Prem vs SaaS Vulnerability Scanning: Which Is Right for You?",
@@ -106,5 +120,7 @@ export const categoryColors: Record<string, string> = {
   "Best practices": "bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300",
   "Deep scanning": "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300",
   Compliance: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300",
+  "License Compliance":
+    "bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-300",
   Architecture: "bg-slate-100 text-slate-800 dark:bg-slate-800/40 dark:text-slate-300",
 };
