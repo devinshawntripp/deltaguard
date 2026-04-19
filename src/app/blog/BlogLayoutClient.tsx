@@ -4,10 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { posts } from "@/lib/blogPosts";
-import {
-  BlogRelatedPostsMobile,
-  BlogRelatedPostsDesktop,
-} from "@/components/BlogRelatedPosts";
 
 function BlogSidebar({ currentHref, mobile }: { currentHref: string; mobile?: boolean }) {
   return (
@@ -38,6 +34,12 @@ function BlogSidebar({ currentHref, mobile }: { currentHref: string; mobile?: bo
   );
 }
 
+function getRelatedPosts(currentHref: string, category: string) {
+  return posts
+    .filter((p) => p.category === category && p.href !== currentHref)
+    .slice(0, 4);
+}
+
 export default function BlogLayoutClient({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -48,9 +50,18 @@ export default function BlogLayoutClient({ children }: { children: React.ReactNo
     return <>{children}</>;
   }
 
+  const relatedPosts = getRelatedPosts(pathname, currentPost.category);
+
   return (
     <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6">
-      {/* Mobile sidebar toggle + related posts */}
+      {/* Breadcrumbs */}
+      <nav className="text-sm muted mb-4 flex items-center gap-1.5">
+        <Link href="/blog" className="hover:text-[var(--dg-accent)] transition-colors">Blog</Link>
+        <span>/</span>
+        <span className="truncate">{currentPost.title}</span>
+      </nav>
+
+      {/* Mobile sidebar toggle */}
       <div className="lg:hidden mb-4 flex items-center gap-2">
         <button
           type="button"
@@ -64,12 +75,29 @@ export default function BlogLayoutClient({ children }: { children: React.ReactNo
         </button>
       </div>
       {sidebarOpen && <div className="lg:hidden mb-4"><BlogSidebar currentHref={pathname} mobile /></div>}
-      <BlogRelatedPostsMobile currentHref={pathname} category={currentPost.category} />
 
-      <div className="lg:grid lg:grid-cols-[200px_minmax(0,1fr)] xl:grid-cols-[200px_minmax(0,1fr)_200px] lg:gap-10 lg:items-start mt-4 lg:mt-0">
+      <div className="lg:grid lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-10 lg:items-start">
         <BlogSidebar currentHref={pathname} />
-        <div className="min-w-0 overflow-hidden">{children}</div>
-        <BlogRelatedPostsDesktop currentHref={pathname} category={currentPost.category} />
+        <div className="min-w-0 blog-content-area">
+          {children}
+          {relatedPosts.length > 0 && (
+            <div className="mt-8 mx-auto max-w-3xl px-6 pb-8">
+              <h3 className="text-sm font-semibold uppercase tracking-wide muted mb-4">Related Posts</h3>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {relatedPosts.map((p) => (
+                  <Link
+                    key={p.href}
+                    href={p.href}
+                    className="surface-card p-4 rounded-xl hover:border-[var(--dg-accent)] transition grid gap-1"
+                  >
+                    <span className="text-sm font-semibold">{p.title}</span>
+                    <span className="text-xs muted">{p.description}</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

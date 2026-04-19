@@ -1,0 +1,16 @@
+# Add this to the Caddyfile on edge-proxy for scanrook.sh
+# Purpose: redirect all scanrook.sh paths to scanrook.io EXCEPT /install
+# This prevents duplicate content across both domains.
+
+scanrook.sh {
+    # Serve the install script directly
+    @install path /install
+    handle @install {
+        reverse_proxy 192.168.1.81:80
+    }
+
+    # Redirect everything else to scanrook.io with 301
+    handle {
+        redir https://scanrook.io{uri} 301
+    }
+}

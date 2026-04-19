@@ -496,6 +496,16 @@ a {
   cursor: not-allowed;
 }
 
+/* Blog post content — override the narrow max-w-3xl */
+.blog-content-area main {
+  max-width: 52rem; /* ~832px, wider than 3xl but still readable */
+}
+
+.blog-content-area article.surface-card {
+  /* Break out of the narrow constraint for better readability */
+  max-width: none;
+}
+
 .muted {
   color: var(--dg-text-muted);
 }

@@ -60,6 +60,9 @@ export const metadata: Metadata = {
     description: APP_DESCRIPTION,
     images: ["/brand/scanrook-lockup.svg"],
   },
+  alternates: {
+    canonical: "/",
+  },
   robots: {
     index: true,
     follow: true,
