@@ -49,7 +49,7 @@ export default function BlogLayoutClient({ children }: { children: React.ReactNo
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+    <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6">
       {/* Mobile sidebar toggle + related posts */}
       <div className="lg:hidden mb-4 flex items-center gap-2">
         <button
@@ -66,7 +66,7 @@ export default function BlogLayoutClient({ children }: { children: React.ReactNo
       {sidebarOpen && <div className="lg:hidden mb-4"><BlogSidebar currentHref={pathname} mobile /></div>}
       <BlogRelatedPostsMobile currentHref={pathname} category={currentPost.category} />
 
-      <div className="lg:grid lg:grid-cols-[240px_minmax(0,1fr)_240px] lg:gap-10 lg:items-start mt-4 lg:mt-0">
+      <div className="lg:grid lg:grid-cols-[200px_minmax(0,1fr)] xl:grid-cols-[200px_minmax(0,1fr)_200px] lg:gap-10 lg:items-start mt-4 lg:mt-0">
         <BlogSidebar currentHref={pathname} />
         <div className="min-w-0 overflow-hidden">{children}</div>
         <BlogRelatedPostsDesktop currentHref={pathname} category={currentPost.category} />

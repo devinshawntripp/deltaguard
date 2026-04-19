@@ -1,11 +1,9 @@
 import type { ReactNode } from "react";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import AuthExpiredOverlay from "@/components/AuthExpiredOverlay";
-import BrandLogo from "@/components/BrandLogo";
 import { APP_NAME } from "@/lib/brand";
 import UploadIndicator from "@/components/UploadIndicator";
 import DashboardNavClient from "@/components/DashboardNavClient";
@@ -23,24 +21,16 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   const isAdminOverride = String(rolesMask) === "9223372036854775807";
 
   return (
-    <div className="app-shell">
+    <div className="app-shell-sidebar">
       <AuthExpiredOverlay />
-      <header className="app-header">
-        <div className="app-header-inner flex-wrap">
-          <Link href="/dashboard" className="app-brand">
-            <BrandLogo />
-          </Link>
-          <DashboardNavClient email={email} isAdminOverride={isAdminOverride} />
-        </div>
-      </header>
-      <main className="app-main">{children}</main>
-      <UploadIndicator />
-      <footer className="app-footer">
-        <div className="inline-flex items-center gap-2">
-          <BrandLogo compact />
-          <span>{APP_NAME} • Installed-state-first vulnerability workflow</span>
-        </div>
-      </footer>
+      <DashboardNavClient email={email} isAdminOverride={isAdminOverride} />
+      <div className="app-content-area">
+        <main className="app-main-sidebar">{children}</main>
+        <UploadIndicator />
+        <footer className="app-footer-sidebar">
+          <span>{APP_NAME} &bull; Installed-state-first vulnerability workflow</span>
+        </footer>
+      </div>
     </div>
   );
 }

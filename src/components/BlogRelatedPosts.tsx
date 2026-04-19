@@ -107,7 +107,7 @@ export function BlogRelatedPostsDesktop({ currentHref, category }: BlogRelatedPo
   if (related.length === 0) return null;
 
   return (
-    <aside className="hidden lg:block">
+    <aside className="hidden xl:block">
       <div className="sticky top-24 rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-black/20 backdrop-blur p-4 grid gap-3">
         <div className="text-xs uppercase tracking-wide muted">Related posts</div>
         <RelatedPostList related={related} category={category} />
