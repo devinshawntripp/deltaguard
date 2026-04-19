@@ -534,6 +534,27 @@ def import_nvd(conn, session: requests.Session):
         time.sleep(sleep_time)
 
     log.info("NVD import done: %d CVEs upserted", total_inserted)
+
+    # Revalidate stale entries: if NVD didn't return a CVE in the incremental
+    # update, it hasn't been modified — but it's still valid.  Bump
+    # last_checked_at so the scanner's TTL check doesn't treat it as expired.
+    # This only runs after incremental imports (not full imports, which
+    # already touch every row).
+    if last_modified_str:
+        revalidation_ttl_days = int(os.environ.get("NVD_REVALIDATION_TTL_DAYS", "30"))
+        with conn.cursor() as cur:
+            cur.execute(
+                """UPDATE nvd_cve_cache
+                   SET last_checked_at = NOW()
+                   WHERE last_checked_at < NOW() - make_interval(days => %s)""",
+                (revalidation_ttl_days,),
+            )
+            revalidated = cur.rowcount
+        conn.commit()
+        if revalidated > 0:
+            log.info("NVD: revalidated %d stale entries (older than %d days)",
+                     revalidated, revalidation_ttl_days)
+
     return total_inserted
 
 
@@ -612,6 +633,23 @@ def import_osv(conn, session: requests.Session):
 
     log.info("OSV import done: %d upserted, %d unchanged skipped",
              total_inserted, total_skipped)
+
+    # Revalidate stale OSV entries: unchanged vulns are still valid, bump
+    # last_checked_at so the scanner's TTL doesn't expire them.
+    revalidation_ttl_days = int(os.environ.get("OSV_REVALIDATION_TTL_DAYS", "30"))
+    with conn.cursor() as cur:
+        cur.execute(
+            """UPDATE osv_vuln_cache
+               SET last_checked_at = NOW()
+               WHERE last_checked_at < NOW() - make_interval(days => %s)""",
+            (revalidation_ttl_days,),
+        )
+        revalidated = cur.rowcount
+    conn.commit()
+    if revalidated > 0:
+        log.info("OSV: revalidated %d stale entries (older than %d days)",
+                 revalidated, revalidation_ttl_days)
+
     return total_inserted
 
 
