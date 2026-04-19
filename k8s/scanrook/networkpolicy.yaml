@@ -184,7 +184,7 @@ spec:
     - Ingress
     - Egress
   ingress:
-    # Only web and worker pods can reach Redis
+    # Only web, worker, and scan pods can reach Redis
     - from:
         - podSelector:
             matchLabels:
@@ -192,6 +192,9 @@ spec:
         - podSelector:
             matchLabels:
               app: scanrook-worker
+        - podSelector:
+            matchLabels:
+              app: scanrook-scan
       ports:
         - protocol: TCP
           port: 6379
@@ -252,6 +255,14 @@ spec:
       ports:
         - protocol: TCP
           port: 9000
+    # Redis (in-namespace)
+    - to:
+        - podSelector:
+            matchLabels:
+              app: scanrook-redis
+      ports:
+        - protocol: TCP
+          port: 6379
     # Internet egress (OSV, NVD, Red Hat APIs, scanrook upgrade)
     - to:
         - ipBlock:
