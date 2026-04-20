@@ -34,7 +34,7 @@ spec:
             value: "1"
       containers:
         - name: web
-          image: devintripp/deltaguard-ui:sha-2256cdb
+          image: devintripp/deltaguard-ui:sha-2ebc81f
           imagePullPolicy: Always
           command: ["npm", "run", "start"]
           securityContext:
