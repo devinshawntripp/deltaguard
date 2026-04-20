@@ -1,4 +1,5 @@
 import { prisma, ensurePlatformSchema } from "@/lib/prisma";
+import { proxyFetch } from "@/lib/proxyFetch";
 import crypto from "node:crypto";
 
 export type NotificationChannel = {
@@ -69,7 +70,7 @@ function buildWebhookPayload(summary: ScanSummary) {
 
 export async function sendSlackNotification(webhookUrl: string, summary: ScanSummary): Promise<void> {
     const payload = buildSlackPayload(summary);
-    const res = await fetch(webhookUrl, {
+    const res = await proxyFetch(webhookUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -81,7 +82,7 @@ export async function sendSlackNotification(webhookUrl: string, summary: ScanSum
 
 export async function sendDiscordNotification(webhookUrl: string, summary: ScanSummary): Promise<void> {
     const payload = buildDiscordPayload(summary);
-    const res = await fetch(webhookUrl, {
+    const res = await proxyFetch(webhookUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -102,14 +103,20 @@ export async function sendWebhookNotification(
         const signature = crypto.createHmac("sha256", secret).update(payload).digest("hex");
         headers["X-Scanrook-Signature"] = signature;
     }
-    const res = await fetch(url, { method: "POST", headers, body: payload });
+    const res = await proxyFetch(url, { method: "POST", headers, body: payload });
     if (!res.ok) {
         throw new Error(`Webhook failed: ${res.status} ${await res.text()}`);
     }
 }
 
 export async function sendEmailNotification(addresses: string[], summary: ScanSummary): Promise<void> {
-    // Placeholder — email requires SMTP configuration
+    const smtpHost = process.env.SMTP_HOST;
+    if (!smtpHost) {
+        throw new Error(
+            "Email notifications are not configured. Set SMTP_HOST, SMTP_PORT, SMTP_USER, and SMTP_PASS environment variables to enable email delivery.",
+        );
+    }
+    // TODO: Implement SMTP sending with nodemailer when SMTP is configured
     console.log(
         `[notifications] Would send email to ${addresses.join(", ")} for job ${summary.jobId}: ${summary.total} findings`,
     );
