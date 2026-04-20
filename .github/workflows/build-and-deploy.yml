@@ -17,6 +17,9 @@ concurrency:
   group: build-deploy
   cancel-in-progress: true
 
+permissions:
+  contents: write
+
 env:
   IMAGE: devintripp/deltaguard-ui
 
