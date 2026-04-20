@@ -110,12 +110,12 @@ export async function sendWebhookNotification(
 }
 
 export async function sendEmailNotification(addresses: string[], summary: ScanSummary): Promise<void> {
-    const apiKey = process.env.SMTP_PASS; // Brevo uses the SMTP key as API key too
+    const apiKey = process.env.BREVO_API_KEY || process.env.SMTP_PASS;
     const smtpFrom = process.env.SMTP_FROM || "info@scanrook.io";
 
     if (!apiKey) {
         throw new Error(
-            "Email notifications are not configured. Set SMTP_PASS (Brevo API key) environment variable.",
+            "Email notifications are not configured. Set BREVO_API_KEY environment variable.",
         );
     }
 
