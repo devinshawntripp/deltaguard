@@ -45,6 +45,10 @@ spec:
           ports:
             - containerPort: 3000
           env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
             - name: UPLOADS_DIR
               value: /var/uploads
             - name: PROGRESS_DIR

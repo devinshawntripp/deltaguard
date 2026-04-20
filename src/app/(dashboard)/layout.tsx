@@ -29,6 +29,9 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         <UploadIndicator />
         <footer className="app-footer-sidebar">
           <span>{APP_NAME} &bull; Installed-state-first vulnerability workflow</span>
+          <span className="text-[10px] opacity-40 ml-auto">
+            {process.env.APP_VERSION || "dev"} &bull; {(process.env.APP_COMMIT || "local").slice(0, 7)}
+          </span>
         </footer>
       </div>
     </div>

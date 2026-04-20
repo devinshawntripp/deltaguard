@@ -21,8 +21,12 @@ COPY . .
 # Prisma (adjust path if your schema lives elsewhere)
 RUN npx prisma generate --schema=prisma/schema.prisma
 
-# Build the UI
+# Build the UI — inject version info at build time
+ARG APP_VERSION=dev
+ARG APP_COMMIT=unknown
 ENV NODE_ENV=production
+ENV APP_VERSION=${APP_VERSION}
+ENV APP_COMMIT=${APP_COMMIT}
 RUN npm run build
 
 FROM --platform=linux/amd64 node:22-bookworm-slim
