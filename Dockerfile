@@ -3,7 +3,7 @@
 ########################
 # Build UI (this repo)
 ########################
-FROM --platform=linux/amd64 node:22-bookworm-slim AS ui-build
+FROM --platform=linux/amd64 node:22-alpine AS ui-build
 WORKDIR /app
 
 ARG http_proxy
@@ -29,14 +29,16 @@ ENV APP_VERSION=${APP_VERSION}
 ENV APP_COMMIT=${APP_COMMIT}
 RUN npm run build
 
-FROM --platform=linux/amd64 node:22-bookworm-slim
+########################
+# Runtime (Alpine-based — minimal attack surface)
+########################
+FROM --platform=linux/amd64 node:22-alpine
 WORKDIR /app
 
 # Copy built UI app and any runtime files
 COPY --from=ui-build /app ./
 
-# Ensure entrypoint script is LF and executable in the image
-# (git can keep it +x; this line is still safe)
+# Ensure entrypoint script is executable
 RUN chmod 0755 /app/entrypoint.sh
 
 # Reasonable defaults
@@ -46,25 +48,14 @@ ENV NODE_ENV=production \
     NO_PROXY=".svc,.svc.cluster.local,.cluster.local,10.96.0.0/12,10.0.0.0/8,192.168.0.0/16,172.16.0.0/12" \
     no_proxy=".svc,.svc.cluster.local,.cluster.local,10.96.0.0/12,10.0.0.0/8,192.168.0.0/16,172.16.0.0/12"
 
-# Drop privileges
-RUN useradd -r -u 10001 -g nogroup appuser && chown -R appuser:nogroup /app
+# Drop privileges (Alpine uses adduser syntax)
+RUN adduser -D -u 10001 appuser && chown -R appuser:nogroup /app
 USER appuser
 
 EXPOSE 3000
 
-# *** Critical: clear Node’s default ENTRYPOINT ***
+# *** Critical: clear Node's default ENTRYPOINT ***
 ENTRYPOINT []
 
 # Run your script directly
 CMD ["/app/entrypoint.sh"]
-
-
-
-# crictl run \
-#     -e GITEA_INSTANCE_URL=https://gitea.apps.onetripp.com \
-#     -e GITEA_RUNNER_REGISTRATION_TOKEN=xTItao9JN9qElomix65A8ARxZ7Rh4rXzZI4lLT34 \
-#     -e GITEA_RUNNER_NAME=deltaguard-runner \
-#     --name deltaguard-runner \
-#     -d docker.io/gitea/act_runner:latest
-
-# crictl run --entrypoint="" --rm -it docker.io/gitea/act_runner:latest act_runner generate-config > config.yaml
