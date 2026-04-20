@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { proxyFetch } from "@/lib/proxyFetch";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,7 +13,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   const pkg = req.nextUrl.searchParams.get("package") || "openssl";
   try {
-    const res = await fetch("https://api.osv.dev/v1/query", {
+    const res = await proxyFetch("https://api.osv.dev/v1/query", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
