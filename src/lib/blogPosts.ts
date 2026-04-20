@@ -108,6 +108,14 @@ export const posts: BlogPost[] = [
     description:
       "Data sovereignty, air-gapped environments, cost comparison, and when on-prem scanning is required versus when SaaS makes sense.",
   },
+  {
+    href: "/blog/redhat-backporting-explained",
+    category: "Security Concepts",
+    title:
+      "How Red Hat Backports Security Patches: A Complete Guide to RHEL Vulnerability Management",
+    description:
+      "Understand how Red Hat backports security fixes, why package versions don't tell the full story, and how OVAL/CSAF data enables accurate RHEL vulnerability scanning.",
+  },
 ];
 
 export const categoryColors: Record<string, string> = {
@@ -123,4 +131,6 @@ export const categoryColors: Record<string, string> = {
   "License Compliance":
     "bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-300",
   Architecture: "bg-slate-100 text-slate-800 dark:bg-slate-800/40 dark:text-slate-300",
+  "Security Concepts":
+    "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300",
 };
