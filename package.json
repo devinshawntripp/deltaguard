@@ -1,6 +1,6 @@
 {
   "name": "delta-guard",
-  "version": "0.1.0",
+  "version": "1.17.3",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
