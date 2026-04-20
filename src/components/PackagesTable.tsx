@@ -4,9 +4,36 @@ import React from "react";
 import Link from "next/link";
 import JobDetailTabs from "./JobDetailTabs";
 
+/** Compute a human-friendly name for a scan job. */
+function jobDisplayName(j: Job): string {
+  // Registry scans: show the image name
+  if (j.registry_image) return j.registry_image;
+  // Uploaded files: strip the UUID prefix and path noise
+  if (j.object_key) {
+    const key = j.object_key;
+    // "registry-pulls/.../image.tar" → use registry_image (already handled above)
+    // "uploads/abc123/my-image.tar" → "my-image.tar"
+    // "1234_my-file.tar" → "my-file.tar"
+    const parts = key.split("/");
+    const filename = parts[parts.length - 1] || key;
+    return filename.replace(/^\d+_/, "");
+  }
+  return j.id.slice(0, 8) + "...";
+}
+
+/** Source badge text. */
+function jobSourceLabel(j: Job): string | null {
+  if (j.source_type === "registry" || j.registry_image) return "Registry";
+  if (j.source_type === "upload") return "Upload";
+  if (j.source_type === "api") return "API";
+  return null;
+}
+
 type Job = {
   id: string;
   object_key?: string;
+  registry_image?: string | null;
+  source_type?: string | null;
   status: "queued" | "running" | "done" | "failed";
   created_at: string;
   started_at?: string | null;
@@ -193,10 +220,17 @@ export default function PackagesTable() {
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-mono truncate opacity-60" title={j.id}>{j.id}</p>
-                  <p className="text-sm font-medium truncate mt-0.5" title={j.object_key || ""}>{j.object_key || "-"}</p>
-                  {typeLabel && (
-                    <span className="inline-block px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/5 text-[10px] font-medium muted mt-0.5">{typeLabel}</span>
-                  )}
+                  <p className="text-sm font-medium truncate mt-0.5" title={jobDisplayName(j)}>{jobDisplayName(j)}</p>
+                  <div className="flex gap-1 mt-0.5">
+                    {jobSourceLabel(j) && (
+                      <span className="inline-block px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] font-medium">
+                        {jobSourceLabel(j)}
+                      </span>
+                    )}
+                    {typeLabel && (
+                      <span className="inline-block px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/5 text-[10px] font-medium muted">{typeLabel}</span>
+                    )}
+                  </div>
                 </div>
                 <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full font-medium ${
                   j.status === "done" ? "bg-green-100 dark:bg-green-950 text-green-800 dark:text-green-200"
@@ -287,7 +321,7 @@ export default function PackagesTable() {
           <tr>
             <th className="p-3 w-8"></th>
             <th className="p-3 w-[18%]">Job</th>
-            <th className="p-3 w-[24%]">File</th>
+            <th className="p-3 w-[24%]">Target</th>
             <th className="p-3 w-[8%]">Status</th>
             <th className="p-3 w-[24%]">Progress</th>
             <th className="p-3 w-[12%]">Started</th>
@@ -328,12 +362,19 @@ export default function PackagesTable() {
                     <span className="block truncate" title={j.id}>{j.id}</span>
                   </td>
                   <td className="p-3 opacity-80 text-xs min-w-0">
-                    <span className="block truncate" title={j.object_key || ""}>{j.object_key || ""}</span>
-                    {j.summary_json?.target?.type && (
-                      <span className="inline-block px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/5 text-[10px] font-medium muted mt-0.5">
-                        {({ iso: "ISO", container: "Container", binary: "Binary", source: "Source" } as Record<string, string>)[j.summary_json.target.type] ?? j.summary_json.target.type}
-                      </span>
-                    )}
+                    <span className="block truncate font-medium" title={jobDisplayName(j)}>{jobDisplayName(j)}</span>
+                    <div className="flex gap-1 mt-0.5">
+                      {jobSourceLabel(j) && (
+                        <span className="inline-block px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] font-medium">
+                          {jobSourceLabel(j)}
+                        </span>
+                      )}
+                      {j.summary_json?.target?.type && (
+                        <span className="inline-block px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/5 text-[10px] font-medium muted">
+                          {({ iso: "ISO", container: "Container", binary: "Binary", source: "Source" } as Record<string, string>)[j.summary_json.target.type] ?? j.summary_json.target.type}
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="p-3 opacity-80">{j.status}</td>
                   <td className="p-3 min-w-0">
@@ -397,7 +438,7 @@ export default function PackagesTable() {
                           summaryJson={j.summary_json}
                           startedAt={j.started_at}
                           finishedAt={j.finished_at}
-                          displayName={j.object_key?.replace(/^\d+_/, "") || j.id}
+                          displayName={jobDisplayName(j)}
                           progressPct={j.progress_pct}
                           progressMsg={j.progress_msg}
                         />
