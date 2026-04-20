@@ -3,13 +3,13 @@
 import { useState } from "react";
 
 interface CveResult {
+  id: string;
   CVE: string;
+  aliases: string[];
   severity: string;
-  public_date: string;
-  bugzilla_description: string;
-  advisories: string[];
-  affected_packages: string[];
-  resource_url: string;
+  summary: string;
+  modified: string;
+  advisory_url: string;
 }
 
 export default function BackportChecker() {
@@ -29,6 +29,7 @@ export default function BackportChecker() {
       );
       if (!res.ok) throw new Error(`API returned ${res.status}`);
       const data = await res.json();
+      if (data.error) throw new Error(data.error);
       setResults(Array.isArray(data) ? data : []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Request failed");
@@ -86,65 +87,46 @@ export default function BackportChecker() {
         <div className="rounded-xl border border-black/10 dark:border-white/10 overflow-hidden">
           <div className="p-3 bg-red-500/10 text-red-700 dark:text-red-300 text-xs font-semibold flex items-center justify-between">
             <span>
-              {results.length} CVE{results.length === 1 ? "" : "s"} found for
-              &ldquo;{pkg}&rdquo;
+              {results.length} advisor{results.length === 1 ? "y" : "ies"} found for &ldquo;{pkg}&rdquo;
             </span>
             <span className="font-normal opacity-70">
-              via Red Hat Security Data API
+              via OSV (Red Hat ecosystem)
             </span>
           </div>
-          <div className="divide-y divide-black/5 dark:divide-white/5 max-h-80 overflow-y-auto">
-            {results.slice(0, 20).map((cve) => (
-              <div key={cve.CVE} className="p-3 text-sm grid gap-1">
+          <div className="divide-y divide-black/5 dark:divide-white/5 max-h-96 overflow-y-auto">
+            {results.slice(0, 30).map((cve) => (
+              <div key={cve.id} className="p-3 text-sm grid gap-1">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-mono text-xs font-semibold">
-                    {cve.CVE}
+                    {cve.id}
                   </span>
+                  {cve.aliases.length > 0 && cve.aliases[0] !== cve.id && (
+                    <span className="font-mono text-xs muted">
+                      ({cve.aliases.join(", ")})
+                    </span>
+                  )}
                   <span
                     className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${severityColor(cve.severity)}`}
                   >
-                    {cve.severity || "unknown"}
+                    {cve.severity}
                   </span>
-                  {cve.public_date && (
-                    <span className="text-[10px] muted">
-                      {new Date(cve.public_date).toLocaleDateString()}
-                    </span>
-                  )}
                 </div>
-                <div className="text-xs muted">
-                  {cve.bugzilla_description || "No description"}
+                <div className="text-xs muted line-clamp-2">
+                  {cve.summary || "No description available"}
                 </div>
-                {cve.advisories && cve.advisories.length > 0 && (
-                  <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
-                    <span className="text-[10px] font-medium text-green-700 dark:text-green-400">
-                      Patched:
-                    </span>
-                    {cve.advisories.map((adv) => (
-                      <a
-                        key={adv}
-                        href={`https://access.redhat.com/errata/${adv}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[10px] font-mono text-red-600 dark:text-red-400 hover:underline"
-                      >
-                        {adv}
-                      </a>
-                    ))}
-                  </div>
-                )}
                 <a
-                  href={`https://access.redhat.com/security/cve/${cve.CVE}`}
+                  href={cve.advisory_url}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-xs text-red-600 dark:text-red-400 hover:underline"
                 >
-                  View on Red Hat &rarr;
+                  View advisory &rarr;
                 </a>
               </div>
             ))}
-            {results.length > 20 && (
+            {results.length > 30 && (
               <div className="p-3 text-xs muted text-center">
-                Showing 20 of {results.length} results.
+                Showing 30 of {results.length} results.
               </div>
             )}
           </div>
@@ -153,18 +135,17 @@ export default function BackportChecker() {
 
       {results && results.length === 0 && (
         <div className="text-sm muted text-center py-6 rounded-xl border border-black/10 dark:border-white/10">
-          No CVEs found for &ldquo;{pkg}&rdquo; in Red Hat&apos;s security
-          database.
+          No advisories found for &ldquo;{pkg}&rdquo; in Red Hat&apos;s ecosystem.
+          Try a common package like <button onClick={() => { setPkg("openssl"); }} className="underline">openssl</button>,{" "}
+          <button onClick={() => { setPkg("curl"); }} className="underline">curl</button>, or{" "}
+          <button onClick={() => { setPkg("glibc"); }} className="underline">glibc</button>.
         </div>
       )}
 
       <p className="text-[11px] muted">
-        This tool queries Red Hat&apos;s public security data API via a
-        server-side proxy. You can also run this query directly:{" "}
-        <code className="text-xs rounded bg-black/[.06] dark:bg-white/[.06] px-1.5 py-0.5">
-          curl
-          &quot;https://access.redhat.com/hydra/rest/search/cve.json?package={pkg}&per_page=20&quot;
-        </code>
+        Queries Red Hat advisory data from the{" "}
+        <a href="https://osv.dev" target="_blank" rel="noopener noreferrer" className="underline">OSV database</a>{" "}
+        (Red Hat ecosystem). Includes RHSA, RHBA, and CVE cross-references.
       </p>
     </div>
   );
