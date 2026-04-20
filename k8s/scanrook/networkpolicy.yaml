@@ -70,7 +70,7 @@ spec:
       ports:
         - protocol: TCP
           port: 6379
-    # Internet egress (OAuth providers, etc.)
+    # Internet egress (OAuth providers, SMTP, etc.)
     # Allow all external IPs not in cluster/private ranges
     - to:
         - ipBlock:
@@ -84,6 +84,8 @@ spec:
           port: 443
         - protocol: TCP
           port: 80
+        - protocol: TCP
+          port: 587
     # Allow traffic to home-proxy (Squid) for outbound HTTP/HTTPS
     - to:
         - ipBlock:
