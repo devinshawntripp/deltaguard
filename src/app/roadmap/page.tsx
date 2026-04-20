@@ -124,76 +124,142 @@ const shipped: RoadmapItem[] = [
       "Benchmarks across 10 container images comparing ScanRook against Trivy and Grype. Published with warm-cache times, finding counts, and methodology transparency.",
     status: "shipped",
   },
-];
-
-const inProgress: RoadmapItem[] = [
   {
     title: "Tiered vulnerability database (Free vs Pro)",
     description:
       "Two pre-compiled vulnerability databases: a free tier with OSV + basic NVD (comparable to Trivy/Grype), and a paid tier adding EPSS, CISA KEV, Red Hat OVAL, confidence tiers, and distro tracker cross-references.",
-    status: "in-progress",
+    status: "shipped",
   },
   {
     title: "Per-developer pricing with API key enforcement",
     description:
       "CLI authenticates via API key to determine plan tier. Free users get OSV-only enrichment. Paid plans unlock full multi-source enrichment, JSON output, and the premium vulnerability database.",
-    status: "in-progress",
+    status: "shipped",
   },
   {
     title: "Stripe billing integration",
     description:
-      "Complete payment processing for Developer, Team, and Enterprise tiers. Per-developer pricing with self-serve checkout, plan management, and usage-based quota enforcement.",
-    status: "in-progress",
+      "Payment processing for Developer, Team, and Enterprise tiers. Per-developer pricing with self-serve checkout via Stripe, subscription management, and usage-based quota enforcement.",
+    status: "shipped",
   },
   {
     title: "GitHub Action with PR comments and policy gates",
     description:
-      "Official GitHub Action that runs ScanRook in CI/CD pipelines. Posts findings as PR review comments with severity badges, and can block merges based on configurable policy thresholds.",
+      "Official GitHub Action that runs ScanRook in CI/CD pipelines. Posts findings as PR review comments with severity badges, and can block merges based on configurable policy thresholds. Supports Docker image and artifact scanning.",
+    status: "shipped",
+  },
+  {
+    title: "Scheduled recurring scans",
+    description:
+      "Cron-based scan schedules for registry images. Automatically re-scan images on a configurable cadence and alert on newly disclosed vulnerabilities. Managed via the dashboard with inline editing.",
+    status: "shipped",
+  },
+  {
+    title: "Slack and webhook notifications",
+    description:
+      "Configurable notification channels that fire on scan completion. Supports Slack, Discord, generic HTTP webhooks with HMAC signing, and email. Test notifications from the dashboard.",
+    status: "shipped",
+  },
+  {
+    title: "Compliance report generation (SOC 2, ISO 27001, FedRAMP)",
+    description:
+      "Export audit-ready CSV and JSON reports with framework-specific headers. SOC 2 includes CC7.1 controls, ISO 27001 includes A.12.6 annex references, FedRAMP uses POA&M format with NIST categories.",
+    status: "shipped",
+  },
+  {
+    title: "Vulnerability trend dashboard",
+    description:
+      "Historical stacked bar charts showing severity distribution over time. Summary cards for total scans, average findings, trend direction, and most-scanned images.",
+    status: "shipped",
+  },
+  {
+    title: "License risk scoring and detection",
+    description:
+      "Extracts licenses from RPM headers, APK metadata, dpkg copyright files, npm package.json, pip METADATA, and Cargo.toml. Classifies 22+ SPDX license types with risk tiers (Critical/High/Medium/Low/None). Flags copyleft and non-commercial licenses.",
+    status: "shipped",
+  },
+  {
+    title: "SBOM policy gates in web platform",
+    description:
+      "Configurable policy engine in the dashboard with inline rule builder. Supports severity thresholds, license blocklists, package blocklists, and scan age rules. Evaluate policies against any completed scan.",
+    status: "shipped",
+  },
+  {
+    title: "Kubernetes cluster scanning (CLI)",
+    description:
+      "The `scanrook k8s` subcommand connects to a cluster via kubeconfig, discovers all running workloads, pulls their container images, and scans each one. Reports per-image findings with workload mapping.",
+    status: "shipped",
+  },
+  {
+    title: "Kubernetes operator with admission webhook",
+    description:
+      "Go-based operator that watches Deployments, StatefulSets, and DaemonSets. Creates ImageScan CRDs for each container image. Optional validating admission webhook blocks pods with critical vulnerabilities. Installable via Helm chart.",
+    status: "shipped",
+  },
+  {
+    title: "Cross-version SBOM diff",
+    description:
+      "SBOM diff now compares across versions of the same image (e.g., myapp:v1.2 vs myapp:v1.3) instead of requiring exact tag matches. Shows added, removed, and changed packages between builds.",
+    status: "shipped",
+  },
+  {
+    title: "Sidebar navigation with icons",
+    description:
+      "Collapsible left sidebar with grouped sections (Scanning, Security, Infrastructure, Organization, Admin). SVG icons for each item. Mobile overlay with backdrop. Collapse state persists via localStorage.",
+    status: "shipped",
+  },
+];
+
+const inProgress: RoadmapItem[] = [
+  {
+    title: "License fingerprint database",
+    description:
+      "Building a code fingerprint database from the top 100K packages per ecosystem (npm, PyPI, Maven, Go, Cargo). MinHash signatures for fuzzy snippet matching to detect copied/modified open source code and identify its license.",
     status: "in-progress",
   },
   {
-    title: "License detection completion",
+    title: "ClearlyDefined API integration",
     description:
-      "Extending license identification across all supported ecosystems. Currently partial coverage; full parity with package inventory detection is the target.",
+      "Fallback license lookup via the ClearlyDefined API for packages where local metadata extraction doesn't provide license info (Go modules, some pip packages, Maven JARs).",
+    status: "in-progress",
+  },
+  {
+    title: "License obligation tracking",
+    description:
+      "Map each SPDX license to its specific legal obligations: attribution requirements, source disclosure, patent grants, network use triggers. Track compliance status per component.",
+    status: "in-progress",
+  },
+  {
+    title: "License conflict detection",
+    description:
+      "Rule engine that identifies incompatible license combinations in a project's dependency tree (e.g., GPL + proprietary, AGPL in SaaS without disclosure).",
     status: "in-progress",
   },
 ];
 
 const planned: RoadmapItem[] = [
   {
-    title: "Scheduled recurring scans",
+    title: "Source code repository scanning",
     description:
-      "Cron-based scan schedules for registry images. Automatically re-scan images on a configurable cadence and alert on newly disclosed vulnerabilities.",
+      "Accept git repo URLs or zip uploads. Parse all dependency manifests (package.json, requirements.txt, go.mod, Cargo.toml, pom.xml). Resolve full dependency trees including transitive deps. License detection for every dependency.",
     status: "planned",
   },
   {
-    title: "Slack and webhook notifications",
+    title: "License file scanning (LICENSE/COPYING/NOTICE)",
     description:
-      "Configurable notification channels that fire on scan completion, new critical findings, or policy violations. Supports Slack, Discord, PagerDuty, Microsoft Teams, and generic HTTP webhooks.",
+      "Scan extracted containers and source repos for LICENSE, COPYING, and NOTICE files. Parse both machine-readable DEP-5 format and free-text license declarations using ScanCode-compatible patterns.",
     status: "planned",
   },
   {
-    title: "Compliance report generation",
+    title: "Legal review workflow",
     description:
-      "Export audit-ready PDF and CSV reports for SOC 2, ISO 27001, and FedRAMP evidence collection. Includes vulnerability inventory, remediation status, and scan coverage timeline.",
+      "Dashboard workflow for reviewing and approving open source components. Lawyers and compliance officers can approve, reject, or flag packages. Full audit trail of decisions.",
     status: "planned",
   },
   {
-    title: "Vulnerability trend dashboard",
+    title: "Binary component fingerprinting",
     description:
-      "Historical charts showing vulnerability counts, severity distribution, mean-time-to-remediate, and coverage metrics across all scanned artifacts over time.",
-    status: "planned",
-  },
-  {
-    title: "License risk scoring",
-    description:
-      "Risk-aware license analysis beyond detection. Score packages by license compatibility, copyleft obligations, and commercial use restrictions. Flag GPL/AGPL in proprietary codebases.",
-    status: "planned",
-  },
-  {
-    title: "SBOM policy gates in web platform",
-    description:
-      "Configurable policy engine in the dashboard (the CLI already supports policy gates). Define org-wide rules for severity thresholds, license blocklists, and component age limits.",
+      "Hash binary segments (ELF sections, PE resources) and match against a database of known open source components to identify embedded libraries and their licenses.",
     status: "planned",
   },
   {
@@ -205,7 +271,7 @@ const planned: RoadmapItem[] = [
   {
     title: "Scan comparison view",
     description:
-      "Side-by-side diff of two scan results for the same image showing new, resolved, and unchanged findings across versions.",
+      "Side-by-side diff of two scan results showing new, resolved, and unchanged findings between any two scans. Works across versions, tags, and time periods.",
     status: "planned",
   },
   {
