@@ -95,11 +95,34 @@ function isDockerHub(registryUrl: string): boolean {
 }
 
 /**
- * Extract Docker Hub namespace from auth config or URL.
- * For Docker Hub, username is typically the namespace.
+ * Login to Docker Hub and resolve the actual namespace (username).
+ * Docker Hub allows login with email, but the namespace is the username.
+ * Returns { token, namespace } or null on failure.
  */
-function dockerHubNamespace(auth: AuthConfig): string {
-    return auth.username?.trim() || "library";
+async function dockerHubLogin(auth: AuthConfig): Promise<{ token: string; namespace: string } | null> {
+    if (!auth.username || !auth.token) return null;
+
+    const loginRes = await proxyFetch("https://hub.docker.com/v2/users/login/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: auth.username, password: auth.token }),
+    });
+    if (!loginRes.ok) return null;
+
+    const loginBody = await loginRes.json() as { token?: string };
+    if (!loginBody.token) return null;
+
+    // Resolve actual username (email != namespace)
+    let namespace = auth.username.trim();
+    const userRes = await proxyFetch("https://hub.docker.com/v2/user/", {
+        headers: { Authorization: `Bearer ${loginBody.token}` },
+    });
+    if (userRes.ok) {
+        const userBody = await userRes.json() as { username?: string };
+        if (userBody.username) namespace = userBody.username;
+    }
+
+    return { token: loginBody.token, namespace };
 }
 
 /**
@@ -114,12 +137,10 @@ export async function listRepos(
     auth: AuthConfig,
     limit = 100,
 ): Promise<{ repositories: string[] }> {
-    // Docker Hub special case
     if (isDockerHub(registryUrl)) {
         return listDockerHubRepos(auth, limit);
     }
 
-    // Standard v2 registry _catalog
     const res = await registryFetch(registryUrl, `_catalog?n=${limit}`, auth);
     if (!res.ok) {
         const text = await res.text();
@@ -129,36 +150,22 @@ export async function listRepos(
 }
 
 /**
- * List repositories on Docker Hub via the Hub API (not the registry v2 API).
- * https://hub.docker.com/v2/repositories/{namespace}/?page_size=100
+ * List repositories on Docker Hub via the Hub API.
  */
 async function listDockerHubRepos(
     auth: AuthConfig,
     limit = 100,
 ): Promise<{ repositories: string[] }> {
-    const namespace = dockerHubNamespace(auth);
-    const url = `https://hub.docker.com/v2/repositories/${namespace}/?page_size=${limit}`;
+    const headers: Record<string, string> = { Accept: "application/json" };
+    let namespace = "library";
 
-    const headers: Record<string, string> = {
-        Accept: "application/json",
-    };
-
-    // Docker Hub API supports Basic auth or JWT token
-    if (auth.username && auth.token) {
-        // Get a Hub API token via login
-        const loginRes = await proxyFetch("https://hub.docker.com/v2/users/login/", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username: auth.username, password: auth.token }),
-        });
-        if (loginRes.ok) {
-            const loginBody = await loginRes.json() as { token?: string };
-            if (loginBody.token) {
-                headers["Authorization"] = `Bearer ${loginBody.token}`;
-            }
-        }
+    const login = await dockerHubLogin(auth);
+    if (login) {
+        headers["Authorization"] = `Bearer ${login.token}`;
+        namespace = login.namespace;
     }
 
+    const url = `https://hub.docker.com/v2/repositories/${namespace}/?page_size=${limit}`;
     const res = await proxyFetch(url, { headers });
     if (!res.ok) {
         const text = await res.text();
@@ -167,20 +174,17 @@ async function listDockerHubRepos(
 
     const data = await res.json() as { results?: Array<{ name: string; namespace: string }> };
     const repos = (data.results || []).map(r => `${r.namespace}/${r.name}`);
-
     return { repositories: repos };
 }
 
 /**
  * List tags for a repository.
- * For Docker Hub, uses the Hub API which returns richer data.
  */
 export async function listTags(
     registryUrl: string,
     repository: string,
     auth: AuthConfig,
 ): Promise<{ name: string; tags: string[] }> {
-    // Docker Hub: use Hub API for tag listing (more reliable)
     if (isDockerHub(registryUrl)) {
         return listDockerHubTags(repository, auth);
     }
@@ -200,26 +204,15 @@ async function listDockerHubTags(
     repository: string,
     auth: AuthConfig,
 ): Promise<{ name: string; tags: string[] }> {
-    // Ensure repo has namespace prefix
     const repo = repository.includes("/") ? repository : `library/${repository}`;
-    const url = `https://hub.docker.com/v2/repositories/${repo}/tags/?page_size=100&ordering=last_updated`;
-
     const headers: Record<string, string> = { Accept: "application/json" };
 
-    if (auth.username && auth.token) {
-        const loginRes = await proxyFetch("https://hub.docker.com/v2/users/login/", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username: auth.username, password: auth.token }),
-        });
-        if (loginRes.ok) {
-            const loginBody = await loginRes.json() as { token?: string };
-            if (loginBody.token) {
-                headers["Authorization"] = `Bearer ${loginBody.token}`;
-            }
-        }
+    const login = await dockerHubLogin(auth);
+    if (login) {
+        headers["Authorization"] = `Bearer ${login.token}`;
     }
 
+    const url = `https://hub.docker.com/v2/repositories/${repo}/tags/?page_size=100&ordering=last_updated`;
     const res = await proxyFetch(url, { headers });
     if (!res.ok) {
         const text = await res.text();
@@ -228,7 +221,6 @@ async function listDockerHubTags(
 
     const data = await res.json() as { results?: Array<{ name: string }> };
     const tags = (data.results || []).map(t => t.name);
-
     return { name: repo, tags };
 }
 
