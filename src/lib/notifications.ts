@@ -111,15 +111,55 @@ export async function sendWebhookNotification(
 
 export async function sendEmailNotification(addresses: string[], summary: ScanSummary): Promise<void> {
     const smtpHost = process.env.SMTP_HOST;
-    if (!smtpHost) {
+    const smtpPort = parseInt(process.env.SMTP_PORT || "587", 10);
+    const smtpUser = process.env.SMTP_USER;
+    const smtpPass = process.env.SMTP_PASS;
+    const smtpFrom = process.env.SMTP_FROM || "notifications@scanrook.io";
+
+    if (!smtpHost || !smtpUser || !smtpPass) {
         throw new Error(
-            "Email notifications are not configured. Set SMTP_HOST, SMTP_PORT, SMTP_USER, and SMTP_PASS environment variables to enable email delivery.",
+            "Email notifications are not configured. Set SMTP_HOST, SMTP_PORT, SMTP_USER, and SMTP_PASS environment variables.",
         );
     }
-    // TODO: Implement SMTP sending with nodemailer when SMTP is configured
-    console.log(
-        `[notifications] Would send email to ${addresses.join(", ")} for job ${summary.jobId}: ${summary.total} findings`,
-    );
+
+    if (!addresses.length) {
+        throw new Error("No email addresses configured for this channel.");
+    }
+
+    const nodemailer = await import("nodemailer");
+    const transporter = nodemailer.createTransport({
+        host: smtpHost,
+        port: smtpPort,
+        secure: smtpPort === 465,
+        auth: { user: smtpUser, pass: smtpPass },
+    });
+
+    const image = summary.imageRef || "Unknown";
+    const dashboardUrl = `${BASE_URL}/dashboard/${summary.jobId}`;
+
+    const html = `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="margin: 0 0 16px; color: #1a1a1a;">ScanRook Scan Complete</h2>
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 16px;">
+                <tr><td style="padding: 8px 0; color: #666;">Image</td><td style="padding: 8px 0; font-weight: 600;"><code>${image}</code></td></tr>
+                <tr><td style="padding: 8px 0; color: #666;">Total Findings</td><td style="padding: 8px 0; font-weight: 600;">${summary.total}</td></tr>
+                <tr><td style="padding: 8px 0; color: #666;">Critical</td><td style="padding: 8px 0; color: ${summary.critical > 0 ? '#dc2626' : '#16a34a'}; font-weight: 600;">${summary.critical}</td></tr>
+                <tr><td style="padding: 8px 0; color: #666;">High</td><td style="padding: 8px 0; color: ${summary.high > 0 ? '#ea580c' : '#16a34a'}; font-weight: 600;">${summary.high}</td></tr>
+                <tr><td style="padding: 8px 0; color: #666;">Medium</td><td style="padding: 8px 0;">${summary.medium}</td></tr>
+                <tr><td style="padding: 8px 0; color: #666;">Low</td><td style="padding: 8px 0;">${summary.low}</td></tr>
+            </table>
+            <a href="${dashboardUrl}" style="display: inline-block; background: #2563eb; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: 500;">View Full Results</a>
+            <p style="margin-top: 24px; font-size: 12px; color: #999;">Sent by <a href="https://scanrook.io" style="color: #2563eb;">ScanRook</a></p>
+        </div>
+    `;
+
+    await transporter.sendMail({
+        from: `"ScanRook" <${smtpFrom}>`,
+        to: addresses.join(", "),
+        subject: `ScanRook: ${summary.total} findings in ${image}`,
+        html,
+        text: `ScanRook Scan Complete\n\nImage: ${image}\nTotal: ${summary.total} (Critical: ${summary.critical}, High: ${summary.high}, Medium: ${summary.medium}, Low: ${summary.low})\n\nView results: ${dashboardUrl}`,
+    });
 }
 
 async function sendToChannel(channel: NotificationChannel, summary: ScanSummary): Promise<void> {
