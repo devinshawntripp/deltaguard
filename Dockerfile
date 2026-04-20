@@ -30,22 +30,13 @@ ENV APP_COMMIT=${APP_COMMIT}
 RUN npm run build
 
 ########################
-# Runtime — standalone output (no node_modules bloat)
+# Runtime (Alpine-based — minimal attack surface)
 ########################
 FROM --platform=linux/amd64 node:22-alpine
 WORKDIR /app
 
-# Next.js standalone output includes only the files needed to run.
-# This eliminates unused transitive dependencies (babel-traverse,
-# minimist, lodash, etc.) that would otherwise show up as vulns.
-COPY --from=ui-build /app/.next/standalone ./
-COPY --from=ui-build /app/.next/static ./.next/static
-COPY --from=ui-build /app/public ./public
-COPY --from=ui-build /app/prisma ./prisma
-COPY --from=ui-build /app/entrypoint.sh ./entrypoint.sh
-
-# Ensure entrypoint script is executable
-RUN chmod 0755 /app/entrypoint.sh
+# Copy built UI app and any runtime files
+COPY --from=ui-build /app ./
 
 # Reasonable defaults
 ENV NODE_ENV=production \
@@ -63,6 +54,4 @@ USER appuser
 EXPOSE 3000
 
 ENTRYPOINT []
-# Standalone mode — server.js is the self-contained Next.js server.
-# Schema bootstrap happens in-code via ensurePlatformSchema() on first request.
-CMD ["node", "server.js"]
+CMD ["npm", "run", "start"]
