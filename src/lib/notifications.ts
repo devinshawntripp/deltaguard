@@ -110,29 +110,18 @@ export async function sendWebhookNotification(
 }
 
 export async function sendEmailNotification(addresses: string[], summary: ScanSummary): Promise<void> {
-    const smtpHost = process.env.SMTP_HOST;
-    const smtpPort = parseInt(process.env.SMTP_PORT || "587", 10);
-    const smtpUser = process.env.SMTP_USER;
-    const smtpPass = process.env.SMTP_PASS;
-    const smtpFrom = process.env.SMTP_FROM || "notifications@scanrook.io";
+    const apiKey = process.env.SMTP_PASS; // Brevo uses the SMTP key as API key too
+    const smtpFrom = process.env.SMTP_FROM || "info@scanrook.io";
 
-    if (!smtpHost || !smtpUser || !smtpPass) {
+    if (!apiKey) {
         throw new Error(
-            "Email notifications are not configured. Set SMTP_HOST, SMTP_PORT, SMTP_USER, and SMTP_PASS environment variables.",
+            "Email notifications are not configured. Set SMTP_PASS (Brevo API key) environment variable.",
         );
     }
 
     if (!addresses.length) {
         throw new Error("No email addresses configured for this channel.");
     }
-
-    const nodemailer = await import("nodemailer");
-    const transporter = nodemailer.createTransport({
-        host: smtpHost,
-        port: smtpPort,
-        secure: smtpPort === 465,
-        auth: { user: smtpUser, pass: smtpPass },
-    });
 
     const image = summary.imageRef || "Unknown";
     const dashboardUrl = `${BASE_URL}/dashboard/${summary.jobId}`;
@@ -153,13 +142,28 @@ export async function sendEmailNotification(addresses: string[], summary: ScanSu
         </div>
     `;
 
-    await transporter.sendMail({
-        from: `"ScanRook" <${smtpFrom}>`,
-        to: addresses.join(", "),
-        subject: `ScanRook: ${summary.total} findings in ${image}`,
-        html,
-        text: `ScanRook Scan Complete\n\nImage: ${image}\nTotal: ${summary.total} (Critical: ${summary.critical}, High: ${summary.high}, Medium: ${summary.medium}, Low: ${summary.low})\n\nView results: ${dashboardUrl}`,
+    // Use Brevo's HTTP API (port 443) instead of SMTP (port 587)
+    // because the cluster's Squid proxy blocks CONNECT to port 587.
+    const res = await proxyFetch("https://api.brevo.com/v3/smtp/email", {
+        method: "POST",
+        headers: {
+            "api-key": apiKey,
+            "Content-Type": "application/json",
+            Accept: "application/json",
+        },
+        body: JSON.stringify({
+            sender: { name: "ScanRook", email: smtpFrom },
+            to: addresses.map(email => ({ email })),
+            subject: `ScanRook: ${summary.total} findings in ${image}`,
+            htmlContent: html,
+            textContent: `ScanRook Scan Complete\n\nImage: ${image}\nTotal: ${summary.total} (Critical: ${summary.critical}, High: ${summary.high}, Medium: ${summary.medium}, Low: ${summary.low})\n\nView results: ${dashboardUrl}`,
+        }),
     });
+
+    if (!res.ok) {
+        const body = await res.text();
+        throw new Error(`Brevo API failed (${res.status}): ${body.slice(0, 200)}`);
+    }
 }
 
 async function sendToChannel(channel: NotificationChannel, summary: ScanSummary): Promise<void> {
