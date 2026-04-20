@@ -18,7 +18,7 @@ RUN npm ci
 # Copy the rest of the UI source
 COPY . .
 
-# Prisma (adjust path if your schema lives elsewhere)
+# Prisma
 RUN npx prisma generate --schema=prisma/schema.prisma
 
 # Build the UI — inject version info at build time
@@ -30,32 +30,39 @@ ENV APP_COMMIT=${APP_COMMIT}
 RUN npm run build
 
 ########################
-# Runtime (Alpine-based — minimal attack surface)
+# Runtime — standalone output (no node_modules bloat)
 ########################
 FROM --platform=linux/amd64 node:22-alpine
 WORKDIR /app
 
-# Copy built UI app and any runtime files
-COPY --from=ui-build /app ./
+# Next.js standalone output includes only the files needed to run.
+# This eliminates unused transitive dependencies (babel-traverse,
+# minimist, lodash, etc.) that would otherwise show up as vulns.
+COPY --from=ui-build /app/.next/standalone ./
+COPY --from=ui-build /app/.next/static ./.next/static
+COPY --from=ui-build /app/public ./public
+COPY --from=ui-build /app/prisma ./prisma
+COPY --from=ui-build /app/entrypoint.sh ./entrypoint.sh
 
 # Ensure entrypoint script is executable
 RUN chmod 0755 /app/entrypoint.sh
 
 # Reasonable defaults
 ENV NODE_ENV=production \
+    PORT=3000 \
+    HOSTNAME="0.0.0.0" \
     SCANNER_NVD_TTL_DAYS=7 \
     SCANNER_NVD_CONC=5 \
     NO_PROXY=".svc,.svc.cluster.local,.cluster.local,10.96.0.0/12,10.0.0.0/8,192.168.0.0/16,172.16.0.0/12" \
     no_proxy=".svc,.svc.cluster.local,.cluster.local,10.96.0.0/12,10.0.0.0/8,192.168.0.0/16,172.16.0.0/12"
 
-# Drop privileges (Alpine uses adduser syntax)
+# Drop privileges
 RUN adduser -D -u 10001 appuser && chown -R appuser:nogroup /app
 USER appuser
 
 EXPOSE 3000
 
-# *** Critical: clear Node's default ENTRYPOINT ***
 ENTRYPOINT []
-
-# Run your script directly
-CMD ["/app/entrypoint.sh"]
+# Standalone mode — server.js is the self-contained Next.js server.
+# Schema bootstrap happens in-code via ensurePlatformSchema() on first request.
+CMD ["node", "server.js"]
