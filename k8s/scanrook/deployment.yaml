@@ -36,7 +36,6 @@ spec:
         - name: web
           image: devintripp/deltaguard-ui:sha-a840325
           imagePullPolicy: Always
-          command: ["npm", "run", "start"]
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:

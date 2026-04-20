@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.6
 
 ########################
-# Build UI (this repo)
+# Build UI
 ########################
 FROM --platform=linux/amd64 node:22-alpine AS ui-build
 WORKDIR /app
@@ -21,7 +21,7 @@ COPY . .
 # Prisma
 RUN npx prisma generate --schema=prisma/schema.prisma
 
-# Build the UI — inject version info at build time
+# Build — standalone output mode
 ARG APP_VERSION=dev
 ARG APP_COMMIT=unknown
 ENV NODE_ENV=production
@@ -30,15 +30,22 @@ ENV APP_COMMIT=${APP_COMMIT}
 RUN npm run build
 
 ########################
-# Runtime (Alpine-based — minimal attack surface)
+# Runtime — standalone (only required files, no bloated node_modules)
 ########################
 FROM --platform=linux/amd64 node:22-alpine
 WORKDIR /app
 
-# Copy built UI app and any runtime files
-COPY --from=ui-build /app ./
+# Standalone server + minimal node_modules (only runtime deps)
+COPY --from=ui-build /app/.next/standalone ./
+# Static assets (CSS, JS, images)
+COPY --from=ui-build /app/.next/static ./.next/static
+# Public assets (favicon, brand, etc.)
+COPY --from=ui-build /app/public ./public
+# Prisma schema (needed for runtime query engine)
+COPY --from=ui-build /app/prisma ./prisma
+COPY --from=ui-build /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=ui-build /app/node_modules/@prisma ./node_modules/@prisma
 
-# Reasonable defaults
 ENV NODE_ENV=production \
     PORT=3000 \
     HOSTNAME="0.0.0.0" \
@@ -53,5 +60,5 @@ USER appuser
 
 EXPOSE 3000
 
-ENTRYPOINT []
-CMD ["npm", "run", "start"]
+# Standalone mode — server.js is the self-contained Next.js server
+CMD ["node", "server.js"]
