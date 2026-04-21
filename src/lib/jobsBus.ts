@@ -16,6 +16,24 @@ async function maybeNotifyOnCompletion(jobId: string) {
         const job = rows[0];
         if (!job || job.status !== "done" || !job.org_id) return;
 
+        // Cross-pod dedup: check if any pod already sent a notification for this job.
+        // Uses scan_events table as a shared lock since in-memory Set is per-process.
+        const alreadySent = await prisma.$queryRaw<any[]>`
+            SELECT 1 FROM scan_events
+            WHERE job_id = ${jobId}::uuid AND stage = 'notification.sent'
+            LIMIT 1
+        `;
+        if (alreadySent.length > 0) {
+            notifiedJobs.add(jobId);
+            return;
+        }
+
+        // Mark as sent BEFORE sending — so other pods checking concurrently see the marker
+        await prisma.$executeRaw`
+            INSERT INTO scan_events (job_id, ts, stage, detail)
+            VALUES (${jobId}::uuid, NOW(), 'notification.sent', 'pending')
+        `;
+
         notifiedJobs.add(jobId);
         // Cap memory: prune old entries if set grows too large
         if (notifiedJobs.size > 10000) {
