@@ -130,6 +130,7 @@ export default function LicensesPage() {
   const [loadingJobs, setLoadingJobs] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<LicenseRisk | "all">("all");
+  const [showGuide, setShowGuide] = useState(false);
 
   // Load recent completed jobs
   useEffect(() => {
@@ -273,6 +274,47 @@ export default function LicensesPage() {
               </div>
             </div>
           )}
+
+
+          {/* What does this mean? guide */}
+          <div className="surface-card rounded-xl border border-black/10 dark:border-white/10 overflow-hidden">
+            <button
+              onClick={() => setShowGuide(!showGuide)}
+              className="w-full p-4 flex items-center justify-between text-left hover:bg-black/[.02] dark:hover:bg-white/[.02] transition"
+            >
+              <div className="flex items-center gap-2">
+                <svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" strokeWidth="1.5"/><path d="M8 7v4M8 5v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                <span className="text-sm font-semibold">What does this mean? How do I read these results?</span>
+              </div>
+              <svg width="12" height="12" viewBox="0 0 12 12" className={`transform transition ${showGuide ? 'rotate-180' : ''}`}><path d="M3 4.5l3 3 3-3" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+            </button>
+            {showGuide && (
+              <div className="px-4 pb-4 grid gap-4 text-sm muted border-t border-black/5 dark:border-white/5 pt-4">
+                <div className="grid gap-2">
+                  <h4 className="font-semibold text-xs uppercase tracking-wide">Risk Levels Explained</h4>
+                  <div className="grid gap-1.5">
+                    <p><span className="font-semibold text-red-600 dark:text-red-400">Critical/High (GPL, AGPL)</span> — These licenses require that if you distribute your software, you must also release YOUR source code under the same license. <strong>However</strong>, if these packages are part of the base OS image (Alpine, Debian) and you are just running your app on top of them, you are fine. The GPL only triggers when you modify and redistribute the GPL code itself.</p>
+                    <p><span className="font-semibold text-yellow-600 dark:text-yellow-400">Medium (LGPL, MPL)</span> — &quot;Weak copyleft&quot; — you can use these libraries in commercial software as long as you do not modify the library itself. If you modify it, you must share your modifications. Using it as-is = no problem.</p>
+                    <p><span className="font-semibold text-blue-600 dark:text-blue-400">Low (Apache-2.0)</span> — Permissive license with a patent grant. You can use it commercially, just include the copyright notice and license text in your distribution.</p>
+                    <p><span className="font-semibold text-green-600 dark:text-green-400">None (MIT, BSD, ISC)</span> — Most permissive. Use commercially with no restrictions. Just keep the copyright notice.</p>
+                    <p><span className="opacity-60">Unknown</span> — License could not be detected from the package metadata. Most npm packages with &quot;unknown&quot; are actually MIT — the detection just could not read it. You can check manually on npmjs.com.</p>
+                  </div>
+                </div>
+                <div className="grid gap-2">
+                  <h4 className="font-semibold text-xs uppercase tracking-wide">Common Questions</h4>
+                  <div className="grid gap-1.5">
+                    <p><strong>Q: I see GPL packages flagged — can I still sell my software?</strong><br/>A: Almost certainly yes. If the GPL packages are OS-level (busybox, apk-tools, glibc) or system libraries, they do not affect your application code. Your app runs ON TOP of the OS — it does not incorporate the OS into itself. This is the same as running your app on a Linux server.</p>
+                    <p><strong>Q: What about npm packages with GPL?</strong><br/>A: If you import a GPL npm package directly into your code (require/import it), and you distribute your software, then GPL obligations may apply. Check if you actually USE the package in your code or if it is just a transitive dependency.</p>
+                    <p><strong>Q: Many packages show &quot;unknown&quot; — is that bad?</strong><br/>A: Not necessarily. &quot;Unknown&quot; means we could not automatically detect the license. Most npm packages are MIT. You can manually verify on npmjs.com or GitHub. Focus on the flagged high/critical ones first.</p>
+                    <p><strong>Q: What action should I take?</strong><br/>A: Review only the &quot;Flagged Licenses&quot; section (high/critical). For each one, ask: &quot;Is this an OS package or something I directly import?&quot; If it is OS-level, ignore it. If it is in your direct dependencies, verify the license is compatible with your use case.</p>
+                  </div>
+                </div>
+                <div className="rounded-lg bg-blue-500/5 dark:bg-blue-500/10 border border-blue-500/20 p-3">
+                  <p className="text-xs"><strong>TL;DR:</strong> If all your flagged packages are Alpine/Debian base packages (busybox, apk-tools, musl, etc.), you have no license compliance issues. These are part of the container runtime, not your application.</p>
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Full package table */}
           <div className="space-y-3">
