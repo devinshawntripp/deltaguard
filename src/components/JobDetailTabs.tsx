@@ -89,29 +89,31 @@ function FindingsSummaryCard({
         let cancelled = false;
         async function fetchSummary() {
             try {
-                const res = await fetch(`/api/jobs/${scanId}/findings?page_size=1`);
+                // Use the lightweight job endpoint (reads summary_json from the job row)
+                // instead of the heavy findings endpoint (parses full report from S3).
+                const res = await fetch(`/api/jobs/${scanId}`);
                 if (!res.ok || cancelled) return;
-                const data = await res.json();
-                const s = data?.summary;
-                if (s && !cancelled) {
-                    setSev({
-                        critical: s.critical ?? 0,
-                        high: s.high ?? 0,
-                        medium: s.medium ?? 0,
-                        low: s.low ?? 0,
-                    });
+                const job = await res.json();
+                const sj = job?.summary_json;
+                if (!sj || cancelled) return;
+                const sc = sj?.severity_counts || sj?.severityCounts || sj;
+                const c = sc?.Critical ?? sc?.critical ?? 0;
+                const h = sc?.High ?? sc?.high ?? 0;
+                const m = sc?.Medium ?? sc?.medium ?? 0;
+                const l = sc?.Low ?? sc?.low ?? 0;
+                if (c + h + m + l > 0 || sj?.total_findings > 0) {
+                    setSev({ critical: c, high: h, medium: m, low: l });
                     setLoading(false);
                 }
             } catch { /* non-fatal */ }
         }
 
         if (terminal) {
-            // Fetch immediately, then retry with backoff to let DB writes settle.
-            // The worker may still be bulk-inserting findings when PG NOTIFY fires.
+            // Fetch immediately, then retry with backoff to let summary_json populate.
             fetchSummary();
-            const t1 = setTimeout(fetchSummary, 1500);
-            const t2 = setTimeout(fetchSummary, 4000);
-            const t3 = setTimeout(fetchSummary, 8000);
+            const t1 = setTimeout(fetchSummary, 1000);
+            const t2 = setTimeout(fetchSummary, 3000);
+            const t3 = setTimeout(fetchSummary, 6000);
             return () => { cancelled = true; clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
         }
 
