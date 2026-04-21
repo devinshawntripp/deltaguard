@@ -47,11 +47,11 @@ function SeverityBox({
     loading?: boolean;
 }) {
     return (
-        <div className={`flex flex-col items-center justify-center rounded-lg px-3 py-2 ${bg}`}>
+        <div className={`flex flex-col items-center justify-center rounded-lg px-3 py-2 transition-all duration-300 ${bg}`}>
             {loading ? (
                 <span className="w-8 h-6 rounded bg-black/10 dark:bg-white/10 animate-pulse" />
             ) : (
-                <span className={`text-xl font-bold tabular-nums ${text}`}>{count}</span>
+                <span className={`text-xl font-bold tabular-nums transition-opacity duration-500 ${text}`}>{count}</span>
             )}
             <span className={`text-xs font-medium ${text} opacity-80`}>{label}</span>
         </div>
