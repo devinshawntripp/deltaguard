@@ -38,7 +38,7 @@ export async function getActiveContributors(
     FROM scan_jobs j
     JOIN users u ON u.id = j.created_by_user_id
     WHERE j.org_id = ${orgId}::uuid
-      AND j.created_at >= NOW() - make_interval(days => ${days})
+      AND j.created_at >= NOW() - make_interval(days => ${days}::int)
       AND j.created_by_user_id IS NOT NULL
       AND j.created_by_api_key_id IS NULL
     GROUP BY u.id, u.email, u.name
@@ -57,7 +57,7 @@ export async function getActiveContributors(
     JOIN api_keys ak ON ak.id = j.created_by_api_key_id
     JOIN users u ON u.id = ak.created_by
     WHERE j.org_id = ${orgId}::uuid
-      AND j.created_at >= NOW() - make_interval(days => ${days})
+      AND j.created_at >= NOW() - make_interval(days => ${days}::int)
       AND j.created_by_api_key_id IS NOT NULL
       AND ak.created_by IS NOT NULL
     GROUP BY u.id, u.email, u.name
