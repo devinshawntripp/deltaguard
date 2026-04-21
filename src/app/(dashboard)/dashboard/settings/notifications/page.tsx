@@ -217,25 +217,65 @@ export default function NotificationsPage() {
                         />
                     </div>
 
-                    {(channelType === "slack" || channelType === "discord") && (
-                        <div>
-                            <label className="block text-sm font-medium text-zinc-300 mb-1">Webhook URL</label>
-                            <input
-                                type="url"
-                                value={webhookUrl}
-                                onChange={(e) => setWebhookUrl(e.target.value)}
-                                placeholder={channelType === "slack"
-                                    ? "https://hooks.slack.com/services/..."
-                                    : "https://discord.com/api/webhooks/..."
-                                }
-                                className="w-full rounded border border-zinc-600 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500"
-                                required
-                            />
+                    {channelType === "slack" && (
+                        <div className="grid gap-3">
+                            <div className="rounded-lg bg-blue-500/5 border border-blue-500/15 p-3 grid gap-2 text-xs muted">
+                                <p className="font-semibold text-blue-400">How to get a Slack Webhook URL:</p>
+                                <ol className="list-decimal pl-4 grid gap-1">
+                                    <li>Go to <a href="https://api.slack.com/apps" target="_blank" rel="noopener noreferrer" className="underline text-blue-400">api.slack.com/apps</a> and click <strong>Create New App</strong> → <strong>From scratch</strong></li>
+                                    <li>Name it &quot;ScanRook&quot; and select your workspace</li>
+                                    <li>Click <strong>Incoming Webhooks</strong> in the left sidebar → toggle it <strong>On</strong></li>
+                                    <li>Click <strong>Add New Webhook to Workspace</strong> → select the channel to post to</li>
+                                    <li>Copy the webhook URL (starts with <code className="bg-black/10 dark:bg-white/10 px-1 rounded">https://hooks.slack.com/services/...</code>)</li>
+                                </ol>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-zinc-300 mb-1">Webhook URL</label>
+                                <input
+                                    type="url"
+                                    value={webhookUrl}
+                                    onChange={(e) => setWebhookUrl(e.target.value)}
+                                    placeholder="Paste your Slack webhook URL here"
+                                    className="w-full rounded border border-zinc-600 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500"
+                                    required
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {channelType === "discord" && (
+                        <div className="grid gap-3">
+                            <div className="rounded-lg bg-indigo-500/5 border border-indigo-500/15 p-3 grid gap-2 text-xs muted">
+                                <p className="font-semibold text-indigo-400">How to get a Discord Webhook URL:</p>
+                                <ol className="list-decimal pl-4 grid gap-1">
+                                    <li>Open Discord and go to the channel you want notifications in</li>
+                                    <li>Click the <strong>gear icon</strong> (Edit Channel) next to the channel name</li>
+                                    <li>Go to <strong>Integrations</strong> → <strong>Webhooks</strong> → <strong>New Webhook</strong></li>
+                                    <li>Name it &quot;ScanRook&quot; and click <strong>Copy Webhook URL</strong></li>
+                                    <li>The URL looks like <code className="bg-black/10 dark:bg-white/10 px-1 rounded">https://discord.com/api/webhooks/...</code></li>
+                                </ol>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-zinc-300 mb-1">Webhook URL</label>
+                                <input
+                                    type="url"
+                                    value={webhookUrl}
+                                    onChange={(e) => setWebhookUrl(e.target.value)}
+                                    placeholder="https://discord.com/api/webhooks/000000000000000000/XXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+                                    className="w-full rounded border border-zinc-600 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500"
+                                    required
+                                />
+                            </div>
                         </div>
                     )}
 
                     {channelType === "webhook" && (
                         <>
+                            <div className="rounded-lg bg-zinc-500/5 border border-zinc-500/15 p-3 grid gap-2 text-xs muted">
+                                <p className="font-semibold text-zinc-300">Generic Webhook</p>
+                                <p>ScanRook will POST a JSON payload to your URL when a scan completes. The payload includes the image name, finding counts by severity, and a link to the dashboard.</p>
+                                <p>If you provide an HMAC secret, the request includes an <code className="bg-black/10 dark:bg-white/10 px-1 rounded">X-Scanrook-Signature</code> header (SHA-256 HMAC of the body) for verification.</p>
+                            </div>
                             <div>
                                 <label className="block text-sm font-medium text-zinc-300 mb-1">Endpoint URL</label>
                                 <input
@@ -263,17 +303,24 @@ export default function NotificationsPage() {
                     )}
 
                     {channelType === "email" && (
-                        <div>
-                            <label className="block text-sm font-medium text-zinc-300 mb-1">Email Addresses</label>
-                            <input
-                                type="text"
-                                value={emailAddresses}
-                                onChange={(e) => setEmailAddresses(e.target.value)}
-                                placeholder="user@example.com, another@example.com"
-                                className="w-full rounded border border-zinc-600 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500"
-                                required
-                            />
-                            <p className="text-xs text-zinc-500 mt-1">Comma-separated. Note: email delivery requires SMTP configuration.</p>
+                        <div className="grid gap-3">
+                            <div className="rounded-lg bg-emerald-500/5 border border-emerald-500/15 p-3 grid gap-2 text-xs muted">
+                                <p className="font-semibold text-emerald-400">Email Notifications</p>
+                                <p>ScanRook sends a formatted email with severity counts, image name, and a link to the full results when a scan completes. Emails are sent from <strong>info@scanrook.io</strong>.</p>
+                                <p>Add any email addresses — team members, distribution lists, or ticketing system inboxes (e.g., Jira, PagerDuty email integration).</p>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-zinc-300 mb-1">Email Addresses</label>
+                                <input
+                                    type="text"
+                                    value={emailAddresses}
+                                    onChange={(e) => setEmailAddresses(e.target.value)}
+                                    placeholder="security-team@company.com, dev@company.com"
+                                    className="w-full rounded border border-zinc-600 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500"
+                                    required
+                                />
+                                <p className="text-xs text-zinc-500 mt-1">Comma-separated. Each address receives the scan notification.</p>
+                            </div>
                         </div>
                     )}
 
