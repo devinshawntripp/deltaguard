@@ -8,6 +8,28 @@ export type BlogPost = {
 
 export const posts: BlogPost[] = [
   {
+    href: "/blog/cve-database-comparison",
+    category: "Data sources",
+    title: "CVE Database Comparison: NVD vs OSV vs GHSA vs Snyk Intel (2026)",
+    description:
+      "Comprehensive comparison of vulnerability databases — NVD, OSV, GHSA, Snyk Intel, and Red Hat OVAL — covering coverage, update speed, API access, and when to use each.",
+    featured: true,
+  },
+  {
+    href: "/blog/container-security-checklist",
+    category: "Best practices",
+    title: "Container Image Security Checklist: 15 Steps for Production-Ready Images",
+    description:
+      "A comprehensive 15-step security checklist for hardening container images before production deployment, covering base images, scanning, secrets, runtime security, and monitoring.",
+  },
+  {
+    href: "/blog/how-to-read-sbom",
+    category: "Technical deep-dive",
+    title: "How to Read an SBOM: CycloneDX vs SPDX Explained with Real Examples",
+    description:
+      "Learn how to read and interpret Software Bill of Materials in CycloneDX and SPDX formats with annotated real-world examples, comparison tables, and regulatory context.",
+  },
+  {
     href: "/blog/scanrook-benchmark-results",
     category: "Benchmarks",
     title: "ScanRook Benchmark Results: Real Scan Data Against Trivy and Grype",
