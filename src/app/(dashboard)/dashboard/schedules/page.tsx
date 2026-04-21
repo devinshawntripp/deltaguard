@@ -36,6 +36,17 @@ export default function SchedulesPage() {
     const [creating, setCreating] = useState(false);
     const [showForm, setShowForm] = useState(false);
 
+    // Image picker state
+    const [registries, setRegistries] = useState<{id: string; name: string; registry_url: string}[]>([]);
+    const [selectedRegistry, setSelectedRegistry] = useState("");
+    const [repos, setRepos] = useState<string[]>([]);
+    const [selectedRepo, setSelectedRepo] = useState("");
+    const [tags, setTags] = useState<string[]>([]);
+    const [selectedTag, setSelectedTag] = useState("");
+    const [imageMode, setImageMode] = useState<"registry" | "manual">("registry");
+    const [loadingRepos, setLoadingRepos] = useState(false);
+    const [loadingTags, setLoadingTags] = useState(false);
+
     // Delete confirm
     const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
     const [deleting, setDeleting] = useState<Record<string, boolean>>({});
@@ -66,6 +77,50 @@ export default function SchedulesPage() {
 
     useEffect(() => { load(); }, []);
 
+    // Fetch registries on mount
+    useEffect(() => {
+        fetch("/api/org/registries")
+            .then(r => r.json())
+            .then(data => {
+                const items = data.items || data.registries || data || [];
+                setRegistries(Array.isArray(items) ? items : []);
+                if (!Array.isArray(items) || items.length === 0) setImageMode("manual");
+            })
+            .catch(() => setImageMode("manual"));
+    }, []);
+
+    // Fetch repos when registry selected
+    useEffect(() => {
+        if (!selectedRegistry) { setRepos([]); return; }
+        setLoadingRepos(true);
+        setSelectedRepo("");
+        setSelectedTag("");
+        fetch(`/api/registries/${selectedRegistry}/repos`)
+            .then(r => r.json())
+            .then(data => setRepos(data.repositories || []))
+            .catch(() => setRepos([]))
+            .finally(() => setLoadingRepos(false));
+    }, [selectedRegistry]);
+
+    // Fetch tags when repo selected
+    useEffect(() => {
+        if (!selectedRegistry || !selectedRepo) { setTags([]); return; }
+        setLoadingTags(true);
+        setSelectedTag("");
+        fetch(`/api/registries/${selectedRegistry}/tags?repo=${encodeURIComponent(selectedRepo)}`)
+            .then(r => r.json())
+            .then(data => setTags(data.tags || []))
+            .catch(() => setTags([]))
+            .finally(() => setLoadingTags(false));
+    }, [selectedRegistry, selectedRepo]);
+
+    // Update imageRef when registry selections change
+    useEffect(() => {
+        if (imageMode === "registry" && selectedRepo && selectedTag) {
+            setImageRef(`${selectedRepo}:${selectedTag}`);
+        }
+    }, [imageMode, selectedRepo, selectedTag]);
+
     async function handleCreate(e: React.FormEvent) {
         e.preventDefault();
         if (!imageRef.trim()) return;
@@ -78,6 +133,7 @@ export default function SchedulesPage() {
                     image_ref: imageRef.trim(),
                     cron_expr: cronExpression.trim(),
                     scan_mode: scanMode,
+                    ...(imageMode === "registry" && selectedRegistry ? { registry_config_id: selectedRegistry } : {}),
                 }),
             });
             if (!res.ok) {
@@ -87,6 +143,9 @@ export default function SchedulesPage() {
             setImageRef("");
             setCronExpression("0 0 * * *");
             setScanMode("light");
+            setSelectedRegistry("");
+            setSelectedRepo("");
+            setSelectedTag("");
             setShowForm(false);
             await load();
         } catch (e: unknown) {
@@ -192,15 +251,110 @@ export default function SchedulesPage() {
                 <form onSubmit={handleCreate} className="rounded-lg border border-zinc-700 bg-zinc-800/50 p-4 space-y-4">
                     <h2 className="text-lg font-semibold text-zinc-200">Create Schedule</h2>
                     <div>
-                        <label className="block text-sm font-medium text-zinc-300 mb-1">Image Reference</label>
-                        <input
-                            type="text"
-                            value={imageRef}
-                            onChange={(e) => setImageRef(e.target.value)}
-                            placeholder="e.g. nginx:1.27 or ghcr.io/org/repo:latest"
-                            className="w-full rounded border border-zinc-600 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500"
-                            required
-                        />
+                        <label className="block text-sm font-medium text-zinc-300 mb-1">Image</label>
+
+                        {/* Mode toggle — hidden if no registries */}
+                        {registries.length > 0 && (
+                            <div className="flex gap-2 mb-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setImageMode("registry")}
+                                    className={`px-3 py-1 text-xs rounded-full border transition ${
+                                        imageMode === "registry"
+                                            ? "bg-indigo-600 text-white border-transparent"
+                                            : "border-zinc-600 text-zinc-400 hover:bg-zinc-700"
+                                    }`}
+                                >
+                                    From Registry
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setImageMode("manual")}
+                                    className={`px-3 py-1 text-xs rounded-full border transition ${
+                                        imageMode === "manual"
+                                            ? "bg-indigo-600 text-white border-transparent"
+                                            : "border-zinc-600 text-zinc-400 hover:bg-zinc-700"
+                                    }`}
+                                >
+                                    Manual Entry
+                                </button>
+                            </div>
+                        )}
+
+                        {imageMode === "registry" ? (
+                            <div className="grid gap-3">
+                                {/* Registry selector */}
+                                <select
+                                    value={selectedRegistry}
+                                    onChange={e => setSelectedRegistry(e.target.value)}
+                                    className="w-full rounded border border-zinc-600 bg-zinc-900 px-3 py-2 text-sm text-zinc-100"
+                                >
+                                    <option value="">Select a registry...</option>
+                                    {registries.map(r => (
+                                        <option key={r.id} value={r.id}>{r.name} ({r.registry_url})</option>
+                                    ))}
+                                </select>
+
+                                {/* Repo selector */}
+                                {selectedRegistry && (
+                                    <div>
+                                        {loadingRepos ? (
+                                            <div className="text-xs text-zinc-500 py-2">Loading repositories...</div>
+                                        ) : repos.length > 0 ? (
+                                            <select
+                                                value={selectedRepo}
+                                                onChange={e => setSelectedRepo(e.target.value)}
+                                                className="w-full rounded border border-zinc-600 bg-zinc-900 px-3 py-2 text-sm text-zinc-100"
+                                            >
+                                                <option value="">Select a repository...</option>
+                                                {repos.map(r => (
+                                                    <option key={r} value={r}>{r}</option>
+                                                ))}
+                                            </select>
+                                        ) : (
+                                            <div className="text-xs text-zinc-500 py-2">No repositories found in this registry.</div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* Tag selector */}
+                                {selectedRepo && (
+                                    <div>
+                                        {loadingTags ? (
+                                            <div className="text-xs text-zinc-500 py-2">Loading tags...</div>
+                                        ) : tags.length > 0 ? (
+                                            <select
+                                                value={selectedTag}
+                                                onChange={e => setSelectedTag(e.target.value)}
+                                                className="w-full rounded border border-zinc-600 bg-zinc-900 px-3 py-2 text-sm text-zinc-100"
+                                            >
+                                                <option value="">Select a tag...</option>
+                                                {tags.map(t => (
+                                                    <option key={t} value={t}>{t}</option>
+                                                ))}
+                                            </select>
+                                        ) : (
+                                            <div className="text-xs text-zinc-500 py-2">No tags found for this repository.</div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* Computed image ref preview */}
+                                {selectedRepo && selectedTag && (
+                                    <div className="text-xs text-zinc-400">
+                                        Image: <code className="bg-zinc-800 px-1.5 py-0.5 rounded text-zinc-200">{selectedRepo}:{selectedTag}</code>
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <input
+                                type="text"
+                                value={imageRef}
+                                onChange={(e) => setImageRef(e.target.value)}
+                                placeholder="e.g. nginx:1.27 or ghcr.io/org/repo:latest"
+                                className="w-full rounded border border-zinc-600 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500"
+                            />
+                        )}
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-zinc-300 mb-1">Schedule</label>
@@ -238,7 +392,7 @@ export default function SchedulesPage() {
                     </div>
                     <button
                         type="submit"
-                        disabled={creating || !imageRef.trim()}
+                        disabled={creating || (imageMode === "registry" ? !selectedTag : !imageRef.trim())}
                         className="rounded bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-50 transition-colors"
                     >
                         {creating ? "Creating..." : "Create Schedule"}
