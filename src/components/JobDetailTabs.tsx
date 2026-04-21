@@ -89,11 +89,13 @@ function FindingsSummaryCard({
         let cancelled = false;
         async function fetchSummary() {
             try {
-                // Use the lightweight job endpoint (reads summary_json from the job row)
-                // instead of the heavy findings endpoint (parses full report from S3).
-                const res = await fetch(`/api/jobs/${scanId}`);
+                // Cache-bust to avoid stale responses during the done transition
+                const res = await fetch(`/api/jobs/${scanId}?_t=${Date.now()}`, { cache: "no-store" });
                 if (!res.ok || cancelled) return;
                 const job = await res.json();
+                // The job might still be "running" from the API's perspective if
+                // the NOTIFY arrived before the DB transaction committed
+                if (job?.status !== "done" && job?.status !== "failed") return;
                 const sj = job?.summary_json;
                 if (!sj || cancelled) return;
                 const sc = sj?.severity_counts || sj?.severityCounts || sj;
@@ -101,10 +103,18 @@ function FindingsSummaryCard({
                 const h = sc?.High ?? sc?.high ?? 0;
                 const m = sc?.Medium ?? sc?.medium ?? 0;
                 const l = sc?.Low ?? sc?.low ?? 0;
-                if (c + h + m + l > 0 || sj?.total_findings > 0) {
+                // Only update if we have real data — don't flash 0/0/0/0
+                const total = c + h + m + l;
+                const reportedTotal = sj?.total_findings ?? sj?.totalFindings ?? 0;
+                if (total > 0 || reportedTotal > 0) {
                     setSev({ critical: c, high: h, medium: m, low: l });
                     setLoading(false);
+                } else if (job?.status === "done" && sj && Object.keys(sj).length > 0) {
+                    // Job is done and summary exists but truly has 0 findings
+                    setSev({ critical: 0, high: 0, medium: 0, low: 0 });
+                    setLoading(false);
                 }
+                // If sj exists but has no useful keys, keep skeleton (shouldn't happen)
             } catch { /* non-fatal */ }
         }
 
