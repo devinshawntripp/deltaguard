@@ -3,6 +3,7 @@ import { resolveRequestActor } from "@/lib/authz";
 import { getOrgPlanUsage } from "@/lib/usage";
 import { prisma } from "@/lib/prisma";
 import { getStripe } from "@/lib/stripe";
+import { getActiveContributors } from "@/lib/contributors";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -37,9 +38,20 @@ LIMIT 1
             // org_billing table may not exist yet — that's OK
         }
 
+        const contributors = await getActiveContributors(actor.orgId, 90);
+
+        // Fetch seat limit from orgs table
+        const seatRows = await prisma.$queryRaw<Array<{ plan_seats: number }>>`
+          SELECT plan_seats FROM orgs WHERE id = ${actor.orgId}::uuid LIMIT 1
+        `;
+        const planSeats = seatRows[0]?.plan_seats ?? 1;
+
         return NextResponse.json({
             usage,
             billing,
+            activeContributors: contributors.count,
+            contributors: contributors.contributors,
+            planSeats,
             features: {
                 stripeEnabled: Boolean(getStripe()),
             },

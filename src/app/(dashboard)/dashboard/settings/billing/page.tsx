@@ -3,6 +3,15 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
+type ContributorActivity = {
+  user_id: string;
+  email: string;
+  name: string | null;
+  scan_count: number;
+  last_scan_at: string;
+  source: string;
+};
+
 type BillingStatus = {
   usage?: {
     planCode: string;
@@ -18,6 +27,9 @@ type BillingStatus = {
     current_period_start: string | null;
     current_period_end: string | null;
   } | null;
+  activeContributors?: number;
+  contributors?: ContributorActivity[];
+  planSeats?: number;
   features?: {
     stripeEnabled: boolean;
   };
@@ -83,6 +95,29 @@ const PLAN_DISPLAY: Record<
     ],
   },
 };
+
+function timeAgo(dateStr: string): string {
+  const now = Date.now();
+  const then = new Date(dateStr).getTime();
+  const diffMs = now - then;
+  if (diffMs < 0) return "just now";
+  const minutes = Math.floor(diffMs / 60000);
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days === 1) return "1 day ago";
+  if (days < 30) return `${days} days ago`;
+  const months = Math.floor(days / 30);
+  return months === 1 ? "1 month ago" : `${months} months ago`;
+}
+
+function sourceLabel(source: string): string {
+  if (source === "ui+api") return "UI + API";
+  if (source === "api") return "API";
+  return "UI";
+}
 
 function nextTier(current: string): string | null {
   const idx = PLAN_ORDER.indexOf(current as (typeof PLAN_ORDER)[number]);
@@ -379,6 +414,81 @@ export default function BillingPage() {
                 {new Date(billing.current_period_start).toLocaleDateString()}{" "}
                 &ndash;{" "}
                 {new Date(billing.current_period_end).toLocaleDateString()}
+              </div>
+            )}
+          </div>
+
+          {/* Active Contributors Card */}
+          <div className="rounded-xl border border-black/10 dark:border-white/10 p-6 grid gap-4">
+            <div className="flex items-center justify-between">
+              <div className="text-xs uppercase tracking-wider opacity-60">
+                Active Contributors (last 90 days)
+              </div>
+              <div className="text-sm opacity-70">
+                {data?.activeContributors ?? 0} active contributor{(data?.activeContributors ?? 0) !== 1 ? "s" : ""}{" "}
+                | {data?.planSeats ?? 1} seat{(data?.planSeats ?? 1) !== 1 ? "s" : ""} included
+              </div>
+            </div>
+
+            <p className="text-xs opacity-50">
+              You pay for seats, but we show active contributors so you know who is actually using the tool.
+              A contributor is anyone who triggered at least one scan in the last 90 days.
+            </p>
+
+            {data?.contributors && data.contributors.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-black/10 dark:border-white/10 text-left">
+                      <th className="pb-2 font-medium opacity-70">Email</th>
+                      <th className="pb-2 font-medium opacity-70 text-right">Scans</th>
+                      <th className="pb-2 font-medium opacity-70 text-right">Last Active</th>
+                      <th className="pb-2 font-medium opacity-70 text-right">Source</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.contributors.map((c) => (
+                      <tr
+                        key={c.user_id}
+                        className="border-b border-black/5 dark:border-white/5 last:border-0"
+                      >
+                        <td className="py-2">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-xs">{c.email}</span>
+                            {c.name && (
+                              <span className="text-xs opacity-50">({c.name})</span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-2 text-right tabular-nums">{c.scan_count}</td>
+                        <td className="py-2 text-right opacity-70">{timeAgo(c.last_scan_at)}</td>
+                        <td className="py-2 text-right">
+                          <span className="inline-flex items-center rounded-full bg-black/5 dark:bg-white/10 px-2 py-0.5 text-xs">
+                            {sourceLabel(c.source)}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-sm opacity-50 py-2">
+                No active contributors in the last 90 days.
+              </div>
+            )}
+
+            {/* Seat usage summary */}
+            {data?.planSeats != null && (
+              <div className={`rounded-md px-4 py-3 text-sm ${
+                (data?.activeContributors ?? 0) > (data.planSeats ?? 1)
+                  ? "border border-amber-400 bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-300"
+                  : "border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] opacity-80"
+              }`}>
+                {(data?.activeContributors ?? 0) > (data.planSeats ?? 1)
+                  ? `You have ${data.activeContributors} active contributors but only ${data.planSeats} seat${data.planSeats === 1 ? "" : "s"} on your plan. Consider upgrading to avoid hitting the seat limit when adding new members.`
+                  : `You're using ${data?.activeContributors ?? 0} of ${data.planSeats} seat${data.planSeats === 1 ? "" : "s"} (${data?.activeContributors ?? 0} active contributor${(data?.activeContributors ?? 0) !== 1 ? "s" : ""} in the last 90 days).`
+                }
               </div>
             )}
           </div>

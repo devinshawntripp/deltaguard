@@ -317,6 +317,27 @@ LIMIT 1
         return { ok: false, reason: "invite email does not match signed-in user" };
     }
 
+    // Seat enforcement: check if org has room before accepting
+    const seatCheck = await prisma.$queryRaw<any[]>`
+      SELECT
+        o.plan_seats as max_seats,
+        (SELECT COUNT(*) FROM org_memberships WHERE org_id = ${invite.org_id}::uuid AND status = 'active') as current_members
+      FROM orgs o
+      WHERE o.id = ${invite.org_id}::uuid
+    `;
+    if (seatCheck[0]) {
+        const { max_seats, current_members } = seatCheck[0];
+        // Check if user already has a membership (ON CONFLICT UPDATE won't add a new seat)
+        const existingMembership = await prisma.$queryRaw<Array<{ id: string }>>`
+          SELECT user_id::text AS id FROM org_memberships
+          WHERE org_id = ${invite.org_id}::uuid AND user_id = ${params.userId}::uuid
+          LIMIT 1
+        `;
+        if (!existingMembership[0] && Number(current_members) >= Number(max_seats)) {
+            return { ok: false, reason: `This organization has reached its seat limit (${max_seats}). Ask an org owner to upgrade the plan.` };
+        }
+    }
+
     const inviteMask = parseRoleMask(invite.roles_mask, ROLE_VIEWER);
     const effectiveInviteMask = inviteMask === ADMIN_OVERRIDE ? ROLE_VIEWER : inviteMask;
 

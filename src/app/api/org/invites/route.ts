@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireRequestActor } from "@/lib/authz";
 import { createOrgInvite, listOrgInvites } from "@/lib/orgs";
 import { ADMIN_OVERRIDE, ROLE_ORG_OWNER, ROLE_VIEWER } from "@/lib/roles";
+import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -42,6 +43,26 @@ export async function POST(req: NextRequest) {
         const email = String(body?.email || "").trim();
         if (!email) {
             return NextResponse.json({ error: "email is required" }, { status: 400 });
+        }
+
+        // Seat enforcement: check if the org has room for another member
+        const seatCheck = await prisma.$queryRaw<any[]>`
+          SELECT
+            o.plan_seats as max_seats,
+            (SELECT COUNT(*) FROM org_memberships WHERE org_id = ${actor.orgId}::uuid AND status = 'active') as current_members,
+            (SELECT COUNT(*) FROM org_invites WHERE org_id = ${actor.orgId}::uuid AND status = 'pending') as pending_invites
+          FROM orgs o
+          WHERE o.id = ${actor.orgId}::uuid
+        `;
+        if (seatCheck[0]) {
+            const { max_seats, current_members, pending_invites } = seatCheck[0];
+            const totalCommitted = Number(current_members) + Number(pending_invites);
+            if (totalCommitted >= Number(max_seats)) {
+                return NextResponse.json(
+                    { error: `Your plan includes ${max_seats} seat${Number(max_seats) === 1 ? "" : "s"}. You currently have ${current_members} member${Number(current_members) === 1 ? "" : "s"} and ${pending_invites} pending invite${Number(pending_invites) === 1 ? "" : "s"}. Upgrade your plan to add more.` },
+                    { status: 402 },
+                );
+            }
         }
 
         // Org owners can invite/manage members in-org, but only admin_override can assign role masks.
