@@ -33,15 +33,15 @@ const STAGE_LABELS: Record<string, string> = {
     "scanner_start": "Starting scanner...",
     "extract": "Extracting archive contents...",
     "inventory": "Detecting packages...",
-    "osv": "Enriching vulnerabilities (OSV)...",
-    "debian_tracker": "Checking Debian security tracker...",
-    "nvd": "Enriching vulnerabilities (NVD)...",
-    "redhat": "Checking Red Hat advisories (OVAL)...",
-    "epss": "Scoring exploit probability (EPSS)...",
-    "kev": "Checking CISA Known Exploited Vulns...",
-    "ingest": "Ingesting results into database...",
-    "report_upload": "Uploading report to S3...",
-    "complete": "Scan complete",
+    "osv": "Checking OSV vulnerability database...",
+    "debian_tracker": "Checking distro security trackers...",
+    "nvd": "Enriching findings with NVD severity data...",
+    "redhat": "Checking Red Hat OVAL advisories...",
+    "epss": "Adding exploit probability scores (EPSS)...",
+    "kev": "Flagging actively exploited CVEs (CISA KEV)...",
+    "ingest": "Saving findings to database...",
+    "report_upload": "Generating report...",
+    "complete": "Scan complete — processing results...",
     "failed": "Scan failed",
 };
 
@@ -59,12 +59,16 @@ function humanizeProgress(msg: string | null | undefined, scanStatus: string | n
     if (lower.includes("rpmdb") || lower.startsWith("container.packages") || lower.startsWith("container.rpm") || lower.startsWith("iso.packages")) return "Detecting packages...";
     if (lower.startsWith("container.go.") || lower.startsWith("container.filename.")) return "Detecting packages...";
     if (lower.startsWith("inventory") || lower.startsWith("binary.")) return "Detecting packages...";
-    if (lower.startsWith("osv.") || lower.startsWith("container.osv") || lower.startsWith("container.enrich.osv")) return "Enriching vulnerabilities (OSV)...";
-    if (lower.startsWith("nvd.") || lower.startsWith("container.enrich.nvd") || lower.startsWith("binary.nvd")) return "Enriching vulnerabilities (NVD)...";
-    if (lower.startsWith("redhat.") || lower.startsWith("rh.") || lower.startsWith("oval.") || lower.startsWith("container.enrich.redhat")) return "Checking Red Hat advisories (OVAL)...";
-    if (lower.startsWith("debian") || lower.startsWith("distro.")) return "Checking Debian security tracker...";
-    if (lower.startsWith("epss.")) return "Scoring exploit probability (EPSS)...";
-    if (lower.startsWith("kev.") || lower.startsWith("cisa.kev")) return "Checking CISA Known Exploited Vulns...";
+    if (lower.startsWith("osv.query.")) return "Querying OSV vulnerability database...";
+    if (lower.startsWith("osv.apply.") || lower.startsWith("osv.enrich.")) return "Matching advisories to packages...";
+    if (lower.startsWith("osv.") || lower.startsWith("container.osv") || lower.startsWith("container.enrich.osv")) return "Checking OSV vulnerability database...";
+    if (lower.startsWith("nvd.enrich.cache")) return "Looking up CVE details from cache...";
+    if (lower.startsWith("nvd.fetch.")) return "Fetching CVE details from NVD...";
+    if (lower.startsWith("nvd.") || lower.startsWith("container.enrich.nvd") || lower.startsWith("binary.nvd")) return "Enriching findings with NVD severity data...";
+    if (lower.startsWith("redhat.") || lower.startsWith("rh.") || lower.startsWith("oval.") || lower.startsWith("container.enrich.redhat")) return "Checking Red Hat OVAL advisories...";
+    if (lower.startsWith("debian") || lower.startsWith("distro.")) return "Checking distro security trackers...";
+    if (lower.startsWith("epss.")) return "Adding exploit probability scores (EPSS)...";
+    if (lower.startsWith("kev.") || lower.startsWith("cisa.kev")) return "Flagging actively exploited CVEs (CISA KEV)...";
     if (lower.startsWith("worker.claim") || lower === "worker.start") return "Worker claimed job";
     if (lower.startsWith("s3.download")) return "Downloading artifact from S3...";
     if (lower.startsWith("worker.ingest") || lower.startsWith("ingest.")) return "Ingesting results into database...";

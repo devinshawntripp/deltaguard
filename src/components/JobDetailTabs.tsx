@@ -106,10 +106,13 @@ function FindingsSummaryCard({
         }
 
         if (terminal) {
-            // Fetch immediately, then retry after delay to let DB writes settle
+            // Fetch immediately, then retry with backoff to let DB writes settle.
+            // The worker may still be bulk-inserting findings when PG NOTIFY fires.
             fetchSummary();
-            const t1 = setTimeout(fetchSummary, 2000);
-            return () => { cancelled = true; clearTimeout(t1); };
+            const t1 = setTimeout(fetchSummary, 1500);
+            const t2 = setTimeout(fetchSummary, 4000);
+            const t3 = setTimeout(fetchSummary, 8000);
+            return () => { cancelled = true; clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
         }
 
         // Initial fetch for non-terminal jobs
@@ -121,21 +124,34 @@ function FindingsSummaryCard({
     }, [scanId, jobStatus, terminal]);
 
     const total = sev.critical + sev.high + sev.medium + sev.low;
+    // Show "Finalizing..." when job is done but findings haven't loaded yet
+    const finalizing = terminal && total === 0 && loading;
 
     return (
         <div className="surface-card p-4">
             <div className="flex items-center justify-between mb-3">
                 <span className="text-sm font-semibold">Findings Summary</span>
-                {total > 0 && (
+                {finalizing ? (
+                    <span className="text-xs muted animate-pulse">Finalizing results...</span>
+                ) : total > 0 ? (
                     <span className="text-xs muted tabular-nums">{total} total</span>
-                )}
+                ) : null}
             </div>
-            <div className="grid grid-cols-4 gap-2">
-                <SeverityBox label="Critical" count={sev.critical} bg="bg-red-50 dark:bg-red-950/40" text="text-red-700 dark:text-red-300" loading={loading} />
-                <SeverityBox label="High" count={sev.high} bg="bg-orange-50 dark:bg-orange-950/40" text="text-orange-700 dark:text-orange-300" loading={loading} />
-                <SeverityBox label="Medium" count={sev.medium} bg="bg-yellow-50 dark:bg-yellow-950/40" text="text-yellow-700 dark:text-yellow-300" loading={loading} />
-                <SeverityBox label="Low" count={sev.low} bg="bg-blue-50 dark:bg-blue-950/40" text="text-blue-700 dark:text-blue-300" loading={loading} />
-            </div>
+            {finalizing ? (
+                <div className="grid grid-cols-4 gap-2">
+                    <div className="rounded-lg bg-black/5 dark:bg-white/5 p-3 animate-pulse"><div className="h-6 rounded bg-black/10 dark:bg-white/10 mb-1" /><div className="h-3 rounded bg-black/5 dark:bg-white/5 w-12" /></div>
+                    <div className="rounded-lg bg-black/5 dark:bg-white/5 p-3 animate-pulse"><div className="h-6 rounded bg-black/10 dark:bg-white/10 mb-1" /><div className="h-3 rounded bg-black/5 dark:bg-white/5 w-12" /></div>
+                    <div className="rounded-lg bg-black/5 dark:bg-white/5 p-3 animate-pulse"><div className="h-6 rounded bg-black/10 dark:bg-white/10 mb-1" /><div className="h-3 rounded bg-black/5 dark:bg-white/5 w-12" /></div>
+                    <div className="rounded-lg bg-black/5 dark:bg-white/5 p-3 animate-pulse"><div className="h-6 rounded bg-black/10 dark:bg-white/10 mb-1" /><div className="h-3 rounded bg-black/5 dark:bg-white/5 w-12" /></div>
+                </div>
+            ) : (
+                <div className="grid grid-cols-4 gap-2">
+                    <SeverityBox label="Critical" count={sev.critical} bg="bg-red-50 dark:bg-red-950/40" text="text-red-700 dark:text-red-300" loading={loading} />
+                    <SeverityBox label="High" count={sev.high} bg="bg-orange-50 dark:bg-orange-950/40" text="text-orange-700 dark:text-orange-300" loading={loading} />
+                    <SeverityBox label="Medium" count={sev.medium} bg="bg-yellow-50 dark:bg-yellow-950/40" text="text-yellow-700 dark:text-yellow-300" loading={loading} />
+                    <SeverityBox label="Low" count={sev.low} bg="bg-blue-50 dark:bg-blue-950/40" text="text-blue-700 dark:text-blue-300" loading={loading} />
+                </div>
+            )}
         </div>
     );
 }
