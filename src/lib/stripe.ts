@@ -8,16 +8,10 @@ export function getStripe(): Stripe | null {
     if (!key) return null;
     const proxy = process.env.HTTPS_PROXY || process.env.HTTP_PROXY;
     if (proxy) {
-        // Stripe SDK uses fetch internally — configure it to use the proxy
-        const { ProxyAgent } = require("undici");
-        const dispatcher = new ProxyAgent(proxy);
-        stripe = new Stripe(key, {
-            httpClient: Stripe.createFetchHttpClient(),
-            fetchApi: (url: any, init: any) => {
-                const undici = require("undici");
-                return undici.fetch(url, { ...init, dispatcher });
-            },
-        } as any);
+        // Stripe SDK accepts httpAgent for proxy tunneling
+        const { HttpsProxyAgent } = require("https-proxy-agent");
+        const agent = new HttpsProxyAgent(proxy);
+        stripe = new Stripe(key, { httpAgent: agent });
     } else {
         stripe = new Stripe(key);
     }

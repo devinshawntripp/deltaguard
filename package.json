@@ -19,6 +19,7 @@
     "@tanstack/react-virtual": "^3.13.19",
     "bcryptjs": "^3.0.3",
     "cron-parser": "^5.5.0",
+    "https-proxy-agent": "^9.0.0",
     "ioredis": "^5.9.3",
     "mermaid": "^11.12.3",
     "next": "^16.1.6",
