@@ -8,6 +8,35 @@ export type BlogPost = {
 
 export const posts: BlogPost[] = [
   {
+    href: "/blog/vulnerability-scanner-benchmark-2026",
+    category: "Benchmarks",
+    title: "Vulnerability Scanner Benchmark 2026: ScanRook vs Trivy vs Grype vs Snyk",
+    description:
+      "Comprehensive 2026 vulnerability scanner benchmark comparing ScanRook, Trivy, Grype, and Snyk on real container images. Methodology, timing data, finding counts, and accuracy analysis.",
+    featured: true,
+  },
+  {
+    href: "/blog/alpine-vs-debian-vs-distroless",
+    category: "Best practices",
+    title: "Alpine vs Debian vs Distroless: Which Container Base Image Is Most Secure?",
+    description:
+      "Comprehensive comparison of Alpine, Debian Slim, Ubuntu, and Distroless container base images for security. Real vulnerability scan data, size comparison, compatibility tradeoffs, and migration guide.",
+  },
+  {
+    href: "/blog/epss-vulnerability-prioritization",
+    category: "Prioritization",
+    title: "EPSS Scores: How to Prioritize Vulnerabilities by Exploit Probability",
+    description:
+      "A practical guide to using EPSS for vulnerability prioritization. Decision matrix, real CVE examples, CVSS comparison, and integration with ScanRook.",
+  },
+  {
+    href: "/blog/regresshion-cve-2024-6387",
+    category: "CVE Deep Dive",
+    title: "regreSSHion (CVE-2024-6387): The OpenSSH Vulnerability That Exposed Millions of Servers",
+    description:
+      "Deep dive into regreSSHion (CVE-2024-6387), the OpenSSH signal handler race condition that affected 14 million internet-facing servers. Technical analysis, detection, and remediation.",
+  },
+  {
     href: "/blog/cve-database-comparison",
     category: "Data sources",
     title: "CVE Database Comparison: NVD vs OSV vs GHSA vs Snyk Intel (2026)",
@@ -155,4 +184,6 @@ export const categoryColors: Record<string, string> = {
   Architecture: "bg-slate-100 text-slate-800 dark:bg-slate-800/40 dark:text-slate-300",
   "Security Concepts":
     "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300",
+  "CVE Deep Dive":
+    "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300",
 };
