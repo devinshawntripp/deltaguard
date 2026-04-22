@@ -41,7 +41,7 @@ async function maybeNotifyOnCompletion(jobId: string) {
         const creatorActor = job.created_by_user_id ? {
             kind: "user" as const,
             orgId: job.org_id,
-            rolesMask: 0n,
+            rolesMask: BigInt(0),
             userId: job.created_by_user_id,
         } : null;
 
