@@ -3,6 +3,7 @@ import { requireRequestActor } from "@/lib/authz";
 import { createOrgInvite, listOrgInvites } from "@/lib/orgs";
 import { ADMIN_OVERRIDE, ROLE_ORG_OWNER, ROLE_VIEWER } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
+import { audit, getClientIp } from "@/lib/audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -75,6 +76,7 @@ export async function POST(req: NextRequest) {
             expiresHours: body?.expires_hours,
         });
 
+        audit({ actor, action: "org.member_invited", targetType: "org_invite", targetId: created.invite?.id, detail: `Invited ${email}`, ip: getClientIp(req) });
         const appBase = (process.env.APP_BASE_URL || req.nextUrl.origin).replace(/\/$/, "");
         return NextResponse.json({
             ok: true,

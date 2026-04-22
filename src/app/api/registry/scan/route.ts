@@ -5,6 +5,7 @@ import { getRegistryConfig } from "@/lib/registries";
 import { createRegistryJob } from "@/lib/jobs";
 import { canQueueScan, incrementUsage } from "@/lib/usage";
 import { getScannerSettings } from "@/lib/scannerSettings";
+import { audit, getClientIp } from "@/lib/audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -71,6 +72,7 @@ export async function POST(req: NextRequest) {
         });
 
         await incrementUsage(guard.actor.orgId, guard.actor.kind === "api_key" ? "api" : "ui");
+        audit({ actor: guard.actor, action: "scan.created", targetType: "scan_job", targetId: job.id, detail: `Registry scan for ${registryImage}`, ip: getClientIp(req) });
         return NextResponse.json(job);
     } catch (e: unknown) {
         return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });

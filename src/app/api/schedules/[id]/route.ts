@@ -3,6 +3,7 @@ import { requireRequestActor } from "@/lib/authz";
 import { ROLE_OPERATOR, ROLE_SCAN_ADMIN, ROLE_ORG_OWNER, ADMIN_OVERRIDE } from "@/lib/roles";
 import { prisma, ensurePlatformSchema } from "@/lib/prisma";
 import { computeNextRun, isValidCron } from "@/lib/scheduler";
+import { audit, getClientIp } from "@/lib/audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -108,6 +109,7 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
         id,
     );
 
+    audit({ actor: guard.actor, action: "schedule.updated", targetType: "scan_schedule", targetId: id, ip: getClientIp(req) });
     return NextResponse.json(updated[0]);
 }
 
@@ -130,5 +132,6 @@ export async function DELETE(req: NextRequest, ctx: RouteContext) {
     }
 
     await prisma.$executeRaw`DELETE FROM scan_schedules WHERE id = ${id}::uuid`;
+    audit({ actor: guard.actor, action: "schedule.deleted", targetType: "scan_schedule", targetId: id, ip: getClientIp(req) });
     return NextResponse.json({ ok: true });
 }

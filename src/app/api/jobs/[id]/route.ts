@@ -3,6 +3,7 @@ import { getJob } from "@/lib/jobs";
 import { prisma } from "@/lib/prisma";
 import { deleteObject } from "@/lib/s3";
 import { actorHasAnyRole, forbiddenByRole, JOB_READ_ROLES, JOB_WRITE_ROLES, resolveRequestActor } from "@/lib/authz";
+import { audit, getClientIp } from "@/lib/audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -67,6 +68,7 @@ export async function DELETE(_req: NextRequest, context: { params: Promise<{ id:
 
         // Notify removal
         try { await prisma.$executeRaw`SELECT pg_notify('job_events', ${JSON.stringify({ id, deleted: true })})`; } catch { }
+        audit({ actor, action: "scan.deleted", targetType: "scan_job", targetId: id, ip: getClientIp(_req) });
         return NextResponse.json({ ok: true });
     } catch (e: any) {
         return NextResponse.json({ error: String(e?.message || e) }, { status: 500 });

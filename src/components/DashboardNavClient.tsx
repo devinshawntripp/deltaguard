@@ -91,6 +91,12 @@ const IconCreditCard = () => (
   </svg>
 );
 
+const IconClipboard = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="2.5" width="10" height="12" rx="1.5" /><path d="M5.5 2.5V1.5a1 1 0 011-1h3a1 1 0 011 1v1" /><path d="M5.5 6.5h5M5.5 9h3.5" />
+  </svg>
+);
+
 const IconWrench = () => (
   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
     <path d="M10 2.5a4 4 0 00-3.8 5.2L2.5 11.5l2 2 3.8-3.7A4 4 0 0010 2.5z" />
@@ -207,6 +213,7 @@ export default function DashboardNavClient({
           { label: "API Keys", href: "/dashboard/settings/api-keys", icon: IconKey },
           { label: "API Docs", href: "/dashboard/settings/api-docs", icon: IconBook },
           { label: "Billing", href: "/dashboard/settings/billing", icon: IconCreditCard },
+          { label: "Audit Log", href: "/dashboard/settings/audit-log", icon: IconClipboard },
         ],
       },
     ];

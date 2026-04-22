@@ -3,6 +3,7 @@ import { createRegistryJob } from "@/lib/jobs";
 import { getScannerSettings } from "@/lib/scannerSettings";
 import { incrementUsage } from "@/lib/usage";
 import { CronExpressionParser } from "cron-parser";
+import { audit } from "@/lib/audit";
 
 export type ScanSchedule = {
     id: string;
@@ -65,6 +66,8 @@ export async function checkAndRunSchedules(): Promise<{
 
             // Count scheduled scans toward the org's monthly usage
             await incrementUsage(schedule.org_id, "api");
+
+            audit({ actor: null, action: "scan.created", targetType: "scan_job", detail: `Automated scan for ${schedule.image_ref} (schedule ${schedule.id})`, metadata: { schedule_id: schedule.id, org_id: schedule.org_id } });
 
             const nextRun = computeNextRun(schedule.cron_expr);
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { resolveRequestActor, actorHasAnyRole, forbiddenByRole, JOB_READ_ROLES } from "@/lib/authz";
 import { generateComplianceReport, type ComplianceReportType, type ComplianceFormat } from "@/lib/compliance";
+import { audit, getClientIp } from "@/lib/audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -47,6 +48,7 @@ export async function POST(req: NextRequest) {
   try {
     const result = await generateComplianceReport(actor.orgId, type, format, dateRange);
 
+    audit({ actor, action: "report.generated", targetType: "compliance_report", detail: `Generated ${type} report (${format})`, ip: getClientIp(req) });
     return new Response(result.content, {
       status: 200,
       headers: {

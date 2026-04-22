@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireRequestActor } from "@/lib/authz";
 import { ADMIN_OVERRIDE, ROLE_SCAN_ADMIN, ROLE_ORG_OWNER } from "@/lib/roles";
 import { listOrgRegistries, createRegistryConfig, getRegistryQuota } from "@/lib/registries";
+import { audit, getClientIp } from "@/lib/audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -58,6 +59,7 @@ export async function POST(req: NextRequest) {
             token: body?.token || undefined,
         });
 
+        audit({ actor: guard.actor, action: "registry.created", targetType: "registry", targetId: item.id, detail: `Registry "${name}" added`, ip: getClientIp(req) });
         return NextResponse.json({ item }, { status: 201 });
     } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : String(e);

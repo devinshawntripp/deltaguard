@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireRequestActor } from "@/lib/authz";
 import { revokeOrgApiKey } from "@/lib/apiKeys";
 import { ADMIN_OVERRIDE, ROLE_API_KEY_ADMIN, ROLE_ORG_OWNER } from "@/lib/roles";
+import { audit, getClientIp } from "@/lib/audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,5 +20,6 @@ export async function DELETE(req: NextRequest, context: { params: Promise<{ id: 
 
     const { id } = await context.params;
     const ok = await revokeOrgApiKey(actor.orgId, id);
+    audit({ actor, action: "apikey.revoked", targetType: "api_key", targetId: id, ip: getClientIp(req) });
     return NextResponse.json({ ok });
 }

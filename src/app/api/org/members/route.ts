@@ -9,6 +9,7 @@ import {
   parseRoleMask,
   ROLE_ORG_OWNER,
 } from "@/lib/roles";
+import { audit, getClientIp } from "@/lib/audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -219,6 +220,8 @@ WHERE m.org_id=${targetOrgId}::uuid AND m.user_id=${userId}::uuid
 LIMIT 1
     `;
 
+    const action = nextStatus === "disabled" ? "org.member_removed" as const : "org.member_role_changed" as const;
+    audit({ actor, action, targetType: "org_membership", targetId: userId, detail: `Member ${userId} updated: roles=${nextMask.toString()}, status=${nextStatus}`, ip: getClientIp(req) });
     return NextResponse.json({ ok: true, member: updatedRows[0] || null });
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e);

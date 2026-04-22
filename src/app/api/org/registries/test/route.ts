@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireRequestActor } from "@/lib/authz";
 import { ADMIN_OVERRIDE, ROLE_SCAN_ADMIN, ROLE_ORG_OWNER } from "@/lib/roles";
 import { pingRegistry } from "@/lib/registryProxy";
+import { audit, getClientIp } from "@/lib/audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -30,5 +31,6 @@ export async function POST(req: NextRequest) {
     });
     const latencyMs = Date.now() - start;
 
+    audit({ actor: guard.actor, action: "registry.tested", targetType: "registry", detail: `Test connection to ${registryUrl}`, ip: getClientIp(req) });
     return NextResponse.json({ ...result, latencyMs });
 }

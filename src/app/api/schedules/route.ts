@@ -3,6 +3,7 @@ import { requireRequestActor } from "@/lib/authz";
 import { ROLE_OPERATOR, ROLE_SCAN_ADMIN, ROLE_ORG_OWNER, ADMIN_OVERRIDE } from "@/lib/roles";
 import { prisma, ensurePlatformSchema } from "@/lib/prisma";
 import { computeNextRun, isValidCron } from "@/lib/scheduler";
+import { audit, getClientIp } from "@/lib/audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -79,5 +80,6 @@ export async function POST(req: NextRequest) {
         RETURNING *
     `;
 
+    audit({ actor: guard.actor, action: "schedule.created", targetType: "scan_schedule", targetId: rows[0]?.id, detail: `Schedule created for ${imageRef}`, ip: getClientIp(req) });
     return NextResponse.json(rows[0], { status: 201 });
 }

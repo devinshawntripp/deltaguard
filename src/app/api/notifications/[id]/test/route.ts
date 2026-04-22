@@ -3,6 +3,7 @@ import { requireRequestActor } from "@/lib/authz";
 import { ROLE_OPERATOR, ROLE_SCAN_ADMIN, ROLE_ORG_OWNER, ADMIN_OVERRIDE } from "@/lib/roles";
 import { prisma, ensurePlatformSchema } from "@/lib/prisma";
 import { sendTestNotification, type NotificationChannel } from "@/lib/notifications";
+import { audit, getClientIp } from "@/lib/audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -33,6 +34,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
 
     try {
         await sendTestNotification(rows[0]);
+        audit({ actor: guard.actor, action: "notification.test_sent", targetType: "notification_channel", targetId: id, ip: getClientIp(req) });
         return NextResponse.json({ ok: true, message: "Test notification sent" });
     } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : String(e);

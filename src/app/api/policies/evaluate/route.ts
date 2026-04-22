@@ -3,6 +3,7 @@ import { requireRequestActor } from "@/lib/authz";
 import { ROLE_VIEWER, ROLE_ANALYST, ROLE_OPERATOR, ROLE_POLICY_ADMIN, ROLE_SCAN_ADMIN, ROLE_ORG_OWNER, ADMIN_OVERRIDE } from "@/lib/roles";
 import { prisma, ensurePlatformSchema } from "@/lib/prisma";
 import { evaluatePolicy, PolicyRule, PolicyResult } from "@/lib/policyEngine";
+import { audit, getClientIp } from "@/lib/audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -68,6 +69,7 @@ export async function POST(req: NextRequest) {
 
     const allPassed = results.every((r) => r.passed);
 
+    audit({ actor: guard.actor, action: "policy.evaluated", targetType: "scan_job", targetId: jobId, detail: `${results.length} policies evaluated, ${allPassed ? "all passed" : "failures detected"}`, ip: getClientIp(req) });
     return NextResponse.json({
         job_id: jobId,
         all_passed: allPassed,

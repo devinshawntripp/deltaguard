@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireRequestActor } from "@/lib/authz";
 import { ROLE_OPERATOR, ROLE_SCAN_ADMIN, ROLE_ORG_OWNER, ADMIN_OVERRIDE } from "@/lib/roles";
 import { prisma, ensurePlatformSchema } from "@/lib/prisma";
+import { audit, getClientIp } from "@/lib/audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -51,6 +52,7 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
     const updated = await prisma.$queryRaw<any[]>`
         SELECT * FROM notification_channels WHERE id = ${id}::uuid
     `;
+    audit({ actor: guard.actor, action: "notification.channel_updated", targetType: "notification_channel", targetId: id, ip: getClientIp(req) });
     return NextResponse.json(updated[0]);
 }
 
@@ -73,5 +75,6 @@ export async function DELETE(req: NextRequest, ctx: RouteContext) {
     }
 
     await prisma.$executeRaw`DELETE FROM notification_channels WHERE id = ${id}::uuid`;
+    audit({ actor: guard.actor, action: "notification.channel_deleted", targetType: "notification_channel", targetId: id, ip: getClientIp(req) });
     return NextResponse.json({ ok: true });
 }

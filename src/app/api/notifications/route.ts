@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireRequestActor } from "@/lib/authz";
 import { ROLE_OPERATOR, ROLE_SCAN_ADMIN, ROLE_ORG_OWNER, ADMIN_OVERRIDE } from "@/lib/roles";
 import { prisma, ensurePlatformSchema } from "@/lib/prisma";
+import { audit, getClientIp } from "@/lib/audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -86,5 +87,6 @@ export async function POST(req: NextRequest) {
         RETURNING *
     `;
 
+    audit({ actor: guard.actor, action: "notification.channel_created", targetType: "notification_channel", targetId: rows[0]?.id, detail: `Channel "${name}" (${channelType}) created`, ip: getClientIp(req) });
     return NextResponse.json(rows[0], { status: 201 });
 }

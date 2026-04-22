@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { getStripe } from "@/lib/stripe";
 import { prisma, ensurePlatformSchema } from "@/lib/prisma";
+import { audit } from "@/lib/audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -136,6 +137,7 @@ SET plan_id = ${freePlanId || null}::uuid,
     updated_at = now()
 WHERE org_id = ${orgId}::uuid
                     `;
+                    audit({ actor: null, action: "billing.plan_cancelled", targetType: "org_billing", detail: `Subscription cancelled for org ${orgId}`, metadata: { org_id: orgId, customer_id: customerId } });
                 }
                 break;
             }

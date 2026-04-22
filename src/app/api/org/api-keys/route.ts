@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { forbiddenByRole, requireRequestActor } from "@/lib/authz";
 import { createOrgApiKey, listOrgApiKeys } from "@/lib/apiKeys";
 import { ADMIN_OVERRIDE, parseRoleMask, ROLE_API_KEY_ADMIN, ROLE_ORG_OWNER } from "@/lib/roles";
+import { audit, getClientIp } from "@/lib/audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -63,6 +64,7 @@ export async function POST(req: NextRequest) {
             expiresAt,
         });
 
+        audit({ actor, action: "apikey.created", targetType: "api_key", targetId: created.id, detail: `API key "${name}" created`, ip: getClientIp(req) });
         return NextResponse.json({
             id: created.id,
             prefix: created.prefix,

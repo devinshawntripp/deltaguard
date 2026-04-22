@@ -1,0 +1,55 @@
+import { NextRequest, NextResponse } from "next/server";
+import { resolveRequestActor, actorHasAnyRole } from "@/lib/authz";
+import { ROLE_ORG_OWNER, ADMIN_OVERRIDE } from "@/lib/roles";
+import { prisma } from "@/lib/prisma";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+export async function GET(req: NextRequest) {
+    const actor = await resolveRequestActor(req);
+    if (!actor) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    if (!actorHasAnyRole(actor, [ROLE_ORG_OWNER, ADMIN_OVERRIDE])) {
+        return NextResponse.json({ error: "forbidden — org owner only" }, { status: 403 });
+    }
+
+    const page = parseInt(req.nextUrl.searchParams.get("page") || "1", 10);
+    const pageSize = Math.min(parseInt(req.nextUrl.searchParams.get("page_size") || "50", 10), 200);
+    const category = req.nextUrl.searchParams.get("category") || "";
+    const action = req.nextUrl.searchParams.get("action") || "";
+    const offset = (page - 1) * pageSize;
+
+    let whereClause = `WHERE org_id = $1::uuid`;
+    const params: unknown[] = [actor.orgId];
+
+    if (category) {
+        params.push(category);
+        whereClause += ` AND category = $${params.length}`;
+    }
+    if (action) {
+        params.push(action);
+        whereClause += ` AND action = $${params.length}`;
+    }
+
+    const rows = await prisma.$queryRawUnsafe(
+        `SELECT al.*, u.email as user_email, u.name as user_name
+         FROM audit_log al
+         LEFT JOIN users u ON u.id = al.user_id
+         ${whereClause}
+         ORDER BY al.created_at DESC
+         LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+        ...params, pageSize, offset
+    );
+
+    const countResult = await prisma.$queryRawUnsafe(
+        `SELECT COUNT(*)::int as total FROM audit_log ${whereClause}`,
+        ...params
+    ) as Array<{ total: number }>;
+
+    return NextResponse.json({
+        items: rows,
+        total: countResult[0]?.total || 0,
+        page,
+        page_size: pageSize,
+    });
+}

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { actorHasAnyRole, forbiddenByRole, JOB_WRITE_ROLES, resolveRequestActor } from "@/lib/authz";
+import { audit, getClientIp } from "@/lib/audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,6 +23,9 @@ export async function POST(_req: NextRequest, context: { params: Promise<{ id: s
             signal: AbortSignal.timeout(15000),
         });
         const body = await res.json();
+        if (res.ok) {
+            audit({ actor, action: "scan.cancelled", targetType: "scan_job", targetId: id, ip: getClientIp(_req) });
+        }
         return NextResponse.json(body, { status: res.status });
     } catch (e: any) {
         return NextResponse.json(

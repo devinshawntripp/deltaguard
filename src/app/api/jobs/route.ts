@@ -5,6 +5,7 @@ import { canQueueScan, incrementUsage } from "@/lib/usage";
 import { getScannerSettings } from "@/lib/scannerSettings";
 import { withRateLimit } from "@/lib/rateLimit";
 import { ADMIN_OVERRIDE } from "@/lib/roles";
+import { audit, getClientIp } from "@/lib/audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -69,6 +70,7 @@ export const POST = withRateLimit(async function POST(req: NextRequest) {
             settings_snapshot: settingsWithSummary,
         });
         await incrementUsage(actor.orgId, actor.kind === "api_key" ? "api" : "ui");
+        audit({ actor, action: "scan.created", targetType: "scan_job", targetId: job.id, detail: `Scan created for ${object_key}`, ip: getClientIp(req) });
         return NextResponse.json(job);
     } catch (e: any) {
         return NextResponse.json({ error: String(e?.message || e) }, { status: 500 });

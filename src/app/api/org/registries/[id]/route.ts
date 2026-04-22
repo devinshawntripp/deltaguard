@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireRequestActor } from "@/lib/authz";
 import { ADMIN_OVERRIDE, ROLE_SCAN_ADMIN, ROLE_ORG_OWNER } from "@/lib/roles";
 import { getRegistryConfig, updateRegistryConfig, deleteRegistryConfig } from "@/lib/registries";
+import { audit, getClientIp } from "@/lib/audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -45,6 +46,7 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
         });
         if (!item) return NextResponse.json({ error: "not found" }, { status: 404 });
 
+        audit({ actor: guard.actor, action: "registry.updated", targetType: "registry", targetId: id, ip: getClientIp(req) });
         return NextResponse.json({ item });
     } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : String(e);
@@ -67,5 +69,6 @@ export async function DELETE(req: NextRequest, context: { params: Promise<{ id: 
     const deleted = await deleteRegistryConfig(id, guard.actor.orgId);
     if (!deleted) return NextResponse.json({ error: "not found" }, { status: 404 });
 
+    audit({ actor: guard.actor, action: "registry.deleted", targetType: "registry", targetId: id, ip: getClientIp(req) });
     return NextResponse.json({ ok: true });
 }

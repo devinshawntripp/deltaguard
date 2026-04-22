@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireRequestActor } from "@/lib/authz";
 import { getScannerSettings, setScannerSettings } from "@/lib/scannerSettings";
 import { ADMIN_OVERRIDE, ROLE_ORG_OWNER, ROLE_SCAN_ADMIN, ROLE_POLICY_ADMIN } from "@/lib/roles";
+import { audit, getClientIp } from "@/lib/audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -32,6 +33,7 @@ export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
         const settings = await setScannerSettings(actor.orgId, body);
+        audit({ actor, action: "scanner.settings_updated", targetType: "scanner_settings", detail: "Scanner settings updated", ip: getClientIp(req) });
         return NextResponse.json(settings);
     } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : String(e);

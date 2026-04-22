@@ -4,6 +4,7 @@ import { actorHasAnyRole, forbiddenByRole, JOB_WRITE_ROLES, resolveRequestActor 
 import { canQueueScan, incrementUsage } from "@/lib/usage";
 import { getScannerSettings } from "@/lib/scannerSettings";
 import { withRateLimit } from "@/lib/rateLimit";
+import { audit, getClientIp } from "@/lib/audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -42,6 +43,7 @@ export const POST = withRateLimit(async function POST(req: NextRequest) {
             settings_snapshot: settings,
         });
         await incrementUsage(actor.orgId, actor.kind === "api_key" ? "api" : "ui");
+        audit({ actor, action: "scan.created", targetType: "scan_job", targetId: job.id, detail: `Scan created from S3 key ${key}`, ip: getClientIp(req) });
         return NextResponse.json({ id: job.id, jobId: job.id, key, bucket, queued: true });
     } catch (e: any) {
         return NextResponse.json({ error: String(e?.message || e) }, { status: 500 });

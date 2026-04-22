@@ -483,6 +483,24 @@ CREATE TABLE IF NOT EXISTS scan_policies (
 )
         `,
         `CREATE INDEX IF NOT EXISTS idx_scan_policies_org ON scan_policies(org_id)`,
+        `
+CREATE TABLE IF NOT EXISTS audit_log (
+  id BIGSERIAL PRIMARY KEY,
+  org_id UUID,
+  user_id UUID,
+  action TEXT NOT NULL,
+  category TEXT NOT NULL,
+  severity TEXT NOT NULL DEFAULT 'info',
+  target_type TEXT,
+  target_id TEXT,
+  detail TEXT,
+  metadata JSONB,
+  ip TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+)
+        `,
+        `CREATE INDEX IF NOT EXISTS idx_audit_log_org_ts ON audit_log(org_id, created_at DESC)`,
+        `CREATE INDEX IF NOT EXISTS idx_audit_log_action ON audit_log(action)`,
     ];
 
     for (const stmt of requiredStatements) {
@@ -865,6 +883,23 @@ BEGIN
 EXCEPTION
   WHEN duplicate_object THEN NULL;
 END$$;
+
+CREATE TABLE IF NOT EXISTS audit_log (
+  id BIGSERIAL PRIMARY KEY,
+  org_id UUID,
+  user_id UUID,
+  action TEXT NOT NULL,
+  category TEXT NOT NULL,
+  severity TEXT NOT NULL DEFAULT 'info',
+  target_type TEXT,
+  target_id TEXT,
+  detail TEXT,
+  metadata JSONB,
+  ip TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_audit_log_org_ts ON audit_log(org_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_log_action ON audit_log(action);
 
 CREATE INDEX IF NOT EXISTS idx_org_memberships_org_user ON org_memberships(org_id, user_id);
 CREATE INDEX IF NOT EXISTS idx_users_active_org ON users(active_org_id);

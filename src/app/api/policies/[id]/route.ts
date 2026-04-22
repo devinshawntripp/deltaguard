@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireRequestActor } from "@/lib/authz";
 import { ROLE_POLICY_ADMIN, ROLE_SCAN_ADMIN, ROLE_ORG_OWNER, ADMIN_OVERRIDE, ROLE_VIEWER, ROLE_ANALYST, ROLE_OPERATOR } from "@/lib/roles";
 import { prisma, ensurePlatformSchema } from "@/lib/prisma";
+import { audit, getClientIp } from "@/lib/audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -106,6 +107,7 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
             WHERE id = ${id}::uuid AND org_id = ${guard.actor.orgId}::uuid
             RETURNING id, org_id, name, enabled, rules, created_at, updated_at
         `;
+        audit({ actor: guard.actor, action: "policy.updated", targetType: "scan_policy", targetId: id, ip: getClientIp(req) });
         return NextResponse.json(rows[0]);
     }
     if (sets.includes("name") && sets.includes("enabled")) {
@@ -117,6 +119,7 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
             WHERE id = ${id}::uuid AND org_id = ${guard.actor.orgId}::uuid
             RETURNING id, org_id, name, enabled, rules, created_at, updated_at
         `;
+        audit({ actor: guard.actor, action: "policy.updated", targetType: "scan_policy", targetId: id, ip: getClientIp(req) });
         return NextResponse.json(rows[0]);
     }
     if (sets.includes("name") && sets.includes("rules")) {
@@ -129,6 +132,7 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
             WHERE id = ${id}::uuid AND org_id = ${guard.actor.orgId}::uuid
             RETURNING id, org_id, name, enabled, rules, created_at, updated_at
         `;
+        audit({ actor: guard.actor, action: "policy.updated", targetType: "scan_policy", targetId: id, ip: getClientIp(req) });
         return NextResponse.json(rows[0]);
     }
     if (sets.includes("enabled") && sets.includes("rules")) {
@@ -141,6 +145,7 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
             WHERE id = ${id}::uuid AND org_id = ${guard.actor.orgId}::uuid
             RETURNING id, org_id, name, enabled, rules, created_at, updated_at
         `;
+        audit({ actor: guard.actor, action: "policy.updated", targetType: "scan_policy", targetId: id, ip: getClientIp(req) });
         return NextResponse.json(rows[0]);
     }
     if (sets.includes("name")) {
@@ -150,6 +155,7 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
             WHERE id = ${id}::uuid AND org_id = ${guard.actor.orgId}::uuid
             RETURNING id, org_id, name, enabled, rules, created_at, updated_at
         `;
+        audit({ actor: guard.actor, action: "policy.updated", targetType: "scan_policy", targetId: id, ip: getClientIp(req) });
         return NextResponse.json(rows[0]);
     }
     if (sets.includes("enabled")) {
@@ -159,6 +165,7 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
             WHERE id = ${id}::uuid AND org_id = ${guard.actor.orgId}::uuid
             RETURNING id, org_id, name, enabled, rules, created_at, updated_at
         `;
+        audit({ actor: guard.actor, action: "policy.updated", targetType: "scan_policy", targetId: id, ip: getClientIp(req) });
         return NextResponse.json(rows[0]);
     }
     if (sets.includes("rules")) {
@@ -169,6 +176,7 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
             WHERE id = ${id}::uuid AND org_id = ${guard.actor.orgId}::uuid
             RETURNING id, org_id, name, enabled, rules, created_at, updated_at
         `;
+        audit({ actor: guard.actor, action: "policy.updated", targetType: "scan_policy", targetId: id, ip: getClientIp(req) });
         return NextResponse.json(rows[0]);
     }
 
@@ -194,5 +202,6 @@ export async function DELETE(req: NextRequest, ctx: RouteContext) {
     if (rows.length === 0) {
         return NextResponse.json({ error: "Policy not found" }, { status: 404 });
     }
+    audit({ actor: guard.actor, action: "policy.deleted", targetType: "scan_policy", targetId: id, ip: getClientIp(req) });
     return NextResponse.json({ deleted: true, id: rows[0].id });
 }

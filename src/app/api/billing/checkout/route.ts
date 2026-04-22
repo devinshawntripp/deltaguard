@@ -3,6 +3,7 @@ import { requireRequestActor } from "@/lib/authz";
 import { ADMIN_OVERRIDE, ROLE_BILLING_ADMIN, ROLE_ORG_OWNER } from "@/lib/roles";
 import { getStripe, stripePriceIdForPlan, canonicalPlanTier, minSeatsForPlan } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
+import { audit, getClientIp } from "@/lib/audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -83,6 +84,7 @@ ON CONFLICT (org_id)
 DO UPDATE SET stripe_customer_id=EXCLUDED.stripe_customer_id, status='pending', updated_at=now()
         `;
 
+        audit({ actor, action: "billing.plan_upgraded", targetType: "org_billing", detail: `Checkout started for ${rawPlan}`, ip: getClientIp(req) });
         return NextResponse.json({ url: session.url });
     } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : String(e);
