@@ -223,6 +223,7 @@ export default function DashboardNavClient({
         title: "Admin",
         items: [
           { label: "Master Admin", href: "/dashboard/settings/admin", icon: IconWrench },
+          { label: "Audit (All)", href: "/dashboard/admin/audit", icon: IconClipboard },
           { label: "Features", href: "/dashboard/admin/features", icon: IconBarChart },
         ],
       });

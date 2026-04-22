@@ -501,6 +501,8 @@ CREATE TABLE IF NOT EXISTS audit_log (
         `,
         `CREATE INDEX IF NOT EXISTS idx_audit_log_org_ts ON audit_log(org_id, created_at DESC)`,
         `CREATE INDEX IF NOT EXISTS idx_audit_log_action ON audit_log(action)`,
+        `ALTER TABLE audit_log ADD COLUMN IF NOT EXISTS search_vector tsvector`,
+        `CREATE INDEX IF NOT EXISTS idx_audit_log_search ON audit_log USING GIN(search_vector)`,
     ];
 
     for (const stmt of requiredStatements) {
@@ -900,6 +902,9 @@ CREATE TABLE IF NOT EXISTS audit_log (
 );
 CREATE INDEX IF NOT EXISTS idx_audit_log_org_ts ON audit_log(org_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_audit_log_action ON audit_log(action);
+
+ALTER TABLE audit_log ADD COLUMN IF NOT EXISTS search_vector tsvector;
+CREATE INDEX IF NOT EXISTS idx_audit_log_search ON audit_log USING GIN(search_vector);
 
 CREATE INDEX IF NOT EXISTS idx_org_memberships_org_user ON org_memberships(org_id, user_id);
 CREATE INDEX IF NOT EXISTS idx_users_active_org ON users(active_org_id);

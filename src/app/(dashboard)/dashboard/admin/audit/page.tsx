@@ -78,7 +78,7 @@ function formatRelativeTime(iso: string): string {
   }
 }
 
-export default function AuditLogPage() {
+export default function AdminAuditPage() {
   const [items, setItems] = useState<AuditEntry[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -107,6 +107,7 @@ export default function AuditLogPage() {
       const params = new URLSearchParams({
         page: String(page),
         page_size: String(pageSize),
+        admin: "true",
       });
       if (category) params.set("category", category);
       if (severity) params.set("severity", severity);
@@ -147,12 +148,10 @@ export default function AuditLogPage() {
       try {
         const entry: AuditEntry = JSON.parse(ev.data);
         setItems((prev) => {
-          // Avoid duplicates
           if (prev.some((e) => e.id === entry.id)) return prev;
           return [entry, ...prev].slice(0, 200);
         });
         setTotal((t) => t + 1);
-        // Mark as new for highlight animation
         setNewIds((prev) => new Set(prev).add(entry.id));
         setTimeout(() => {
           setNewIds((prev) => {
@@ -162,12 +161,8 @@ export default function AuditLogPage() {
           });
         }, 2000);
       } catch {
-        /* ignore parse errors */
+        /* ignore */
       }
-    };
-
-    es.onerror = () => {
-      // Reconnect handled by browser EventSource
     };
 
     return () => {
@@ -187,9 +182,9 @@ export default function AuditLogPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold">Audit Log</h1>
+          <h1 className="text-xl font-semibold">Audit Log (All Orgs)</h1>
           <p className="text-sm text-zinc-500">
-            Track all actions across your organization.
+            Admin view -- all events across every organization.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -263,7 +258,6 @@ export default function AuditLogPage() {
 
       {/* Log entries */}
       <div className="overflow-hidden rounded-xl border border-zinc-800">
-        {/* Live indicator bar */}
         {live && (
           <div className="bg-green-500/10 p-2 text-center text-xs text-green-600">
             Live -- new events will appear here
@@ -278,6 +272,7 @@ export default function AuditLogPage() {
                 className="flex items-center gap-3 border-b border-zinc-800/50 p-3"
               >
                 <div className="h-3.5 w-28 animate-pulse rounded bg-zinc-800" />
+                <div className="h-3.5 w-24 animate-pulse rounded bg-zinc-800" />
                 <div className="h-3.5 w-36 animate-pulse rounded bg-zinc-800" />
                 <div className="h-4 w-20 animate-pulse rounded bg-zinc-800" />
                 <div className="h-3.5 flex-1 animate-pulse rounded bg-zinc-800" />
@@ -302,6 +297,9 @@ export default function AuditLogPage() {
               <div className="flex items-center gap-3">
                 <span className="w-28 shrink-0 font-mono text-[11px] text-zinc-500">
                   {formatRelativeTime(entry.created_at)}
+                </span>
+                <span className="w-24 shrink-0 truncate font-mono text-[10px] text-zinc-600">
+                  {entry.org_id ? entry.org_id.slice(0, 8) : "---"}
                 </span>
                 <span className="w-40 truncate text-xs text-zinc-400">
                   {entry.user_email || "System"}
@@ -330,7 +328,7 @@ export default function AuditLogPage() {
         )}
       </div>
 
-      {/* Pagination (only when not in live mode) */}
+      {/* Pagination */}
       {!live && totalPages > 1 && (
         <div className="flex items-center justify-center gap-3">
           <button
@@ -353,7 +351,6 @@ export default function AuditLogPage() {
         </div>
       )}
 
-      {/* Flash animation keyframes */}
       <style jsx global>{`
         @keyframes auditFlash {
           0% {

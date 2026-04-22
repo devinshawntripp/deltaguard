@@ -17,10 +17,20 @@ export async function GET(req: NextRequest) {
     const pageSize = Math.min(parseInt(req.nextUrl.searchParams.get("page_size") || "50", 10), 200);
     const category = req.nextUrl.searchParams.get("category") || "";
     const action = req.nextUrl.searchParams.get("action") || "";
+    const q = req.nextUrl.searchParams.get("q") || "";
+    const severity = req.nextUrl.searchParams.get("severity") || "";
+    const adminMode = req.nextUrl.searchParams.get("admin") === "true" && actorHasAnyRole(actor, [ADMIN_OVERRIDE]);
     const offset = (page - 1) * pageSize;
 
-    let whereClause = `WHERE org_id = $1::uuid`;
-    const params: unknown[] = [actor.orgId];
+    let whereClause: string;
+    const params: unknown[] = [];
+
+    if (adminMode) {
+        whereClause = "WHERE 1=1";
+    } else {
+        params.push(actor.orgId);
+        whereClause = `WHERE org_id = $1::uuid`;
+    }
 
     if (category) {
         params.push(category);
@@ -29,6 +39,14 @@ export async function GET(req: NextRequest) {
     if (action) {
         params.push(action);
         whereClause += ` AND action = $${params.length}`;
+    }
+    if (severity) {
+        params.push(severity);
+        whereClause += ` AND severity = $${params.length}`;
+    }
+    if (q) {
+        params.push(q);
+        whereClause += ` AND search_vector @@ plainto_tsquery('english', $${params.length})`;
     }
 
     const rows = await prisma.$queryRawUnsafe(
@@ -42,7 +60,7 @@ export async function GET(req: NextRequest) {
     );
 
     const countResult = await prisma.$queryRawUnsafe(
-        `SELECT COUNT(*)::int as total FROM audit_log ${whereClause}`,
+        `SELECT COUNT(*)::int as total FROM audit_log al ${whereClause}`,
         ...params
     ) as Array<{ total: number }>;
 
