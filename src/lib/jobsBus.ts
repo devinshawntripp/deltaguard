@@ -11,40 +11,15 @@ async function maybeNotifyOnCompletion(jobId: string) {
     if (notifiedJobs.has(jobId)) return;
     try {
         const rows = await prisma.$queryRaw<any[]>`
-            SELECT id, status, org_id, registry_image, summary_json
+            SELECT id, status, org_id, registry_image, summary_json, created_by_user_id, error_msg
             FROM scan_jobs WHERE id = ${jobId}::uuid
         `;
         const job = rows[0];
         if (!job || !job.org_id) return;
         if (job.status !== "done" && job.status !== "failed") return;
 
-        // Audit log: scan completed or failed
-        if (job.status === "failed") {
-            audit({
-                actor: null,
-                action: "scan.failed" as any,
-                targetType: "scan_job",
-                targetId: job.id,
-                detail: `Scan failed for ${job.registry_image || "uploaded file"}${job.error_msg ? ": " + job.error_msg : ""}`,
-                metadata: { org_id: job.org_id },
-            });
-            notifiedJobs.add(jobId);
-            return; // Don't send notifications for failed scans
-        }
-
-        // Audit log: scan completed
-        const sj = job.summary_json ? (typeof job.summary_json === "string" ? JSON.parse(job.summary_json) : job.summary_json) : {};
-        audit({
-            actor: null,
-            action: "scan.completed" as any,
-            targetType: "scan_job",
-            targetId: job.id,
-            detail: `Scan completed for ${job.registry_image || "uploaded file"}: ${sj?.total_findings || 0} findings (C:${sj?.critical || 0} H:${sj?.high || 0} M:${sj?.medium || 0} L:${sj?.low || 0})`,
-            metadata: { org_id: job.org_id, total: sj?.total_findings, critical: sj?.critical, high: sj?.high },
-        });
-
-        // Cross-pod dedup: check if any pod already sent a notification for this job.
-        // Uses scan_events table as a shared lock since in-memory Set is per-process.
+        // Cross-pod dedup FIRST — only one pod should handle completion events.
+        // This prevents duplicate audit logs AND duplicate notifications.
         const alreadySent = await prisma.$queryRaw<any[]>`
             SELECT 1 FROM scan_events
             WHERE job_id = ${jobId}::uuid AND stage = 'notification.sent'
@@ -55,27 +30,43 @@ async function maybeNotifyOnCompletion(jobId: string) {
             return;
         }
 
-        // Mark as sent BEFORE sending — so other pods checking concurrently see the marker
+        // Mark as sent BEFORE doing anything — wins the race against other pods
         await prisma.$executeRaw`
             INSERT INTO scan_events (job_id, ts, stage, detail)
             VALUES (${jobId}::uuid, NOW(), 'notification.sent', 'pending')
         `;
-
         notifiedJobs.add(jobId);
-        // Cap memory: prune old entries if set grows too large
-        if (notifiedJobs.size > 10000) {
-            const iter = notifiedJobs.values();
-            for (let i = 0; i < 5000; i++) iter.next();
-            // Clear oldest half (Set iteration is insertion order)
-            const keep = new Set<string>();
-            for (const v of notifiedJobs) {
-                if (keep.size >= 5000) break;
-                keep.add(v);
-            }
-            notifiedJobs.clear();
-            for (const v of keep) notifiedJobs.add(v);
+
+        // Build actor from the job's creator (so audit shows who, not just "System")
+        const creatorActor = job.created_by_user_id ? {
+            kind: "user" as const,
+            orgId: job.org_id,
+            rolesMask: 0n,
+            userId: job.created_by_user_id,
+        } : null;
+
+        if (job.status === "failed") {
+            audit({
+                actor: creatorActor,
+                action: "scan.failed" as any,
+                targetType: "scan_job",
+                targetId: job.id,
+                detail: `Scan failed for ${job.registry_image || "uploaded file"}${job.error_msg ? ": " + job.error_msg : ""}`,
+            });
+            return;
         }
 
+        // Audit log: scan completed
+        const sj = job.summary_json ? (typeof job.summary_json === "string" ? JSON.parse(job.summary_json) : job.summary_json) : {};
+        audit({
+            actor: creatorActor,
+            action: "scan.completed" as any,
+            targetType: "scan_job",
+            targetId: job.id,
+            detail: `Scan completed for ${job.registry_image || "uploaded file"}: ${sj?.total_findings || 0} findings (C:${sj?.critical || 0} H:${sj?.high || 0} M:${sj?.medium || 0} L:${sj?.low || 0})`,
+        });
+
+        // Send notifications (only for completed scans, not failed)
         const summary: ScanSummary = {
             jobId: job.id,
             imageRef: job.registry_image || undefined,
