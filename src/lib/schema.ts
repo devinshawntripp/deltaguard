@@ -19,6 +19,8 @@ export const AUDIT_ACTIONS = {
 
   // Scans
   "scan.created": { category: "scans", description: "Scan job created", severity: "info" },
+  "scan.completed": { category: "scans", description: "Scan completed with findings", severity: "info" },
+  "scan.failed": { category: "scans", description: "Scan job failed", severity: "warn" },
   "scan.cancelled": { category: "scans", description: "Scan job cancelled", severity: "info" },
   "scan.deleted": { category: "scans", description: "Scan job deleted", severity: "warn" },
 

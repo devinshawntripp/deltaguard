@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { sendScanNotification, type ScanSummary } from "@/lib/notifications";
+import { audit } from "@/lib/audit";
 
 type Handler = (payload: any) => void;
 
@@ -14,7 +15,33 @@ async function maybeNotifyOnCompletion(jobId: string) {
             FROM scan_jobs WHERE id = ${jobId}::uuid
         `;
         const job = rows[0];
-        if (!job || job.status !== "done" || !job.org_id) return;
+        if (!job || !job.org_id) return;
+        if (job.status !== "done" && job.status !== "failed") return;
+
+        // Audit log: scan completed or failed
+        if (job.status === "failed") {
+            audit({
+                actor: null,
+                action: "scan.failed" as any,
+                targetType: "scan_job",
+                targetId: job.id,
+                detail: `Scan failed for ${job.registry_image || "uploaded file"}${job.error_msg ? ": " + job.error_msg : ""}`,
+                metadata: { org_id: job.org_id },
+            });
+            notifiedJobs.add(jobId);
+            return; // Don't send notifications for failed scans
+        }
+
+        // Audit log: scan completed
+        const sj = job.summary_json ? (typeof job.summary_json === "string" ? JSON.parse(job.summary_json) : job.summary_json) : {};
+        audit({
+            actor: null,
+            action: "scan.completed" as any,
+            targetType: "scan_job",
+            targetId: job.id,
+            detail: `Scan completed for ${job.registry_image || "uploaded file"}: ${sj?.total_findings || 0} findings (C:${sj?.critical || 0} H:${sj?.high || 0} M:${sj?.medium || 0} L:${sj?.low || 0})`,
+            metadata: { org_id: job.org_id, total: sj?.total_findings, critical: sj?.critical, high: sj?.high },
+        });
 
         // Cross-pod dedup: check if any pod already sent a notification for this job.
         // Uses scan_events table as a shared lock since in-memory Set is per-process.
@@ -61,11 +88,12 @@ async function maybeNotifyOnCompletion(jobId: string) {
 
         if (job.summary_json) {
             const sj = typeof job.summary_json === "string" ? JSON.parse(job.summary_json) : job.summary_json;
-            const sevCounts = sj?.severity_counts || sj?.severityCounts || {};
-            summary.critical = sevCounts.critical || sevCounts.Critical || 0;
-            summary.high = sevCounts.high || sevCounts.High || 0;
-            summary.medium = sevCounts.medium || sevCounts.Medium || 0;
-            summary.low = sevCounts.low || sevCounts.Low || 0;
+            // summary_json can have severity counts at top level OR nested under severity_counts
+            const sc = sj?.severity_counts || sj?.severityCounts || sj || {};
+            summary.critical = sc.critical || sc.Critical || 0;
+            summary.high = sc.high || sc.High || 0;
+            summary.medium = sc.medium || sc.Medium || 0;
+            summary.low = sc.low || sc.Low || 0;
             summary.total = sj?.total_findings || sj?.totalFindings || (summary.critical + summary.high + summary.medium + summary.low);
         }
 
