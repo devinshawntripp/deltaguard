@@ -91,6 +91,7 @@ export default function AuditLogPage() {
   const [live, setLive] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [newIds, setNewIds] = useState<Set<string>>(new Set());
+  const [showInfo, setShowInfo] = useState(false);
   const eventSourceRef = useRef<EventSource | null>(null);
   const pageSize = 50;
 
@@ -212,6 +213,100 @@ export default function AuditLogPage() {
             {live ? "Live" : "Paused"}
           </button>
         </div>
+      </div>
+
+      {/* What gets logged? */}
+      <div className="rounded-xl border border-black/10 dark:border-white/10 overflow-hidden">
+        <button
+          onClick={() => setShowInfo(!showInfo)}
+          className="w-full p-3 flex items-center justify-between text-left hover:bg-black/[.02] dark:hover:bg-white/[.02] transition"
+        >
+          <div className="flex items-center gap-2">
+            <svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" strokeWidth="1.5"/><path d="M8 7v4M8 5v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+            <span className="text-sm font-medium">What gets logged?</span>
+          </div>
+          <svg width="12" height="12" viewBox="0 0 12 12" className={`transform transition ${showInfo ? 'rotate-180' : ''}`}><path d="M3 4.5l3 3 3-3" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+        </button>
+        {showInfo && (
+          <div className="px-4 pb-4 border-t border-black/5 dark:border-white/5 pt-3">
+            <p className="text-xs muted mb-3">ScanRook logs every significant action across your organization. All events include who, what, when, and the client IP.</p>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {/* Auth */}
+              <div className="rounded-lg border border-black/5 dark:border-white/5 p-3">
+                <div className="text-xs font-semibold text-purple-600 dark:text-purple-400 mb-1.5">Authentication</div>
+                <ul className="text-[11px] muted grid gap-0.5">
+                  <li>User login / logout</li>
+                  <li>Failed login attempts</li>
+                </ul>
+              </div>
+              {/* Scans */}
+              <div className="rounded-lg border border-black/5 dark:border-white/5 p-3">
+                <div className="text-xs font-semibold text-blue-600 dark:text-blue-400 mb-1.5">Scans</div>
+                <ul className="text-[11px] muted grid gap-0.5">
+                  <li>Scan created (UI, API, CLI, scheduled)</li>
+                  <li>Scan cancelled</li>
+                  <li>Scan deleted</li>
+                </ul>
+              </div>
+              {/* Registries */}
+              <div className="rounded-lg border border-black/5 dark:border-white/5 p-3">
+                <div className="text-xs font-semibold text-cyan-600 dark:text-cyan-400 mb-1.5">Registries</div>
+                <ul className="text-[11px] muted grid gap-0.5">
+                  <li>Registry added / updated / deleted</li>
+                  <li>Connection tested</li>
+                </ul>
+              </div>
+              {/* Schedules */}
+              <div className="rounded-lg border border-black/5 dark:border-white/5 p-3">
+                <div className="text-xs font-semibold text-teal-600 dark:text-teal-400 mb-1.5">Schedules</div>
+                <ul className="text-[11px] muted grid gap-0.5">
+                  <li>Schedule created / updated / deleted</li>
+                </ul>
+              </div>
+              {/* Notifications */}
+              <div className="rounded-lg border border-black/5 dark:border-white/5 p-3">
+                <div className="text-xs font-semibold text-pink-600 dark:text-pink-400 mb-1.5">Notifications</div>
+                <ul className="text-[11px] muted grid gap-0.5">
+                  <li>Channel added / updated / deleted</li>
+                  <li>Test notification sent</li>
+                </ul>
+              </div>
+              {/* Policies */}
+              <div className="rounded-lg border border-black/5 dark:border-white/5 p-3">
+                <div className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 mb-1.5">Policies</div>
+                <ul className="text-[11px] muted grid gap-0.5">
+                  <li>Policy created / updated / deleted</li>
+                  <li>Policy evaluated against scan</li>
+                </ul>
+              </div>
+              {/* Org */}
+              <div className="rounded-lg border border-black/5 dark:border-white/5 p-3">
+                <div className="text-xs font-semibold text-green-600 dark:text-green-400 mb-1.5">Organization</div>
+                <ul className="text-[11px] muted grid gap-0.5">
+                  <li>Member invited / removed</li>
+                  <li>Member role changed</li>
+                  <li>Org settings updated</li>
+                </ul>
+              </div>
+              {/* API Keys */}
+              <div className="rounded-lg border border-black/5 dark:border-white/5 p-3">
+                <div className="text-xs font-semibold text-orange-600 dark:text-orange-400 mb-1.5">API Keys</div>
+                <ul className="text-[11px] muted grid gap-0.5">
+                  <li>Key created / revoked</li>
+                </ul>
+              </div>
+              {/* Billing + Scanner + Reports */}
+              <div className="rounded-lg border border-black/5 dark:border-white/5 p-3">
+                <div className="text-xs font-semibold text-yellow-600 dark:text-yellow-400 mb-1.5">Billing & Settings</div>
+                <ul className="text-[11px] muted grid gap-0.5">
+                  <li>Plan upgraded / cancelled</li>
+                  <li>Scanner settings changed</li>
+                  <li>Compliance report generated</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Search + Filters */}
