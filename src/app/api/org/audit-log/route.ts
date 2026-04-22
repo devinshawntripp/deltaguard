@@ -50,7 +50,10 @@ export async function GET(req: NextRequest) {
     }
 
     const rows = await prisma.$queryRawUnsafe(
-        `SELECT al.*, u.email as user_email, u.name as user_name
+        `SELECT al.id::text as id, al.org_id, al.user_id, al.action, al.category,
+                al.severity, al.target_type, al.target_id, al.detail, al.metadata,
+                al.ip, al.created_at,
+                u.email as user_email, u.name as user_name
          FROM audit_log al
          LEFT JOIN users u ON u.id = al.user_id
          ${whereClause}
