@@ -24,21 +24,23 @@ export async function GET(req: NextRequest) {
       client
         .connect()
         .then(() => {
+          console.log("[audit-stream] PG LISTEN connected");
           client.query("LISTEN audit_events");
 
           client.on("notification", async (msg) => {
             if (!msg.payload) return;
-            // payload format: "org_id:action"
             const [eventOrgId] = msg.payload.split(":");
 
-            // Filter: admin sees all, org owner sees only their org
             if (!isAdmin && eventOrgId !== actor.orgId) return;
 
             try {
               const rows = await prisma.$queryRawUnsafe<
                 Array<Record<string, unknown>>
               >(
-                `SELECT al.*, u.email as user_email, u.name as user_name
+                `SELECT al.id::text as id, al.org_id, al.user_id, al.action, al.category,
+                        al.severity, al.target_type, al.target_id, al.detail, al.metadata,
+                        al.ip, al.created_at,
+                        u.email as user_email, u.name as user_name
                  FROM audit_log al
                  LEFT JOIN users u ON u.id = al.user_id
                  WHERE al.org_id = $1::uuid
@@ -51,8 +53,8 @@ export async function GET(req: NextRequest) {
                   encoder.encode(`data: ${JSON.stringify(rows[0])}\n\n`),
                 );
               }
-            } catch {
-              /* ignore query errors */
+            } catch (e) {
+              console.error("[audit-stream] query error:", e);
             }
           });
 
@@ -71,7 +73,8 @@ export async function GET(req: NextRequest) {
             client.end().catch(() => {});
           });
         })
-        .catch(() => {
+        .catch((e) => {
+          console.error("[audit-stream] PG connect failed:", e);
           controller.close();
         });
     },

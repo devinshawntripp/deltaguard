@@ -60,9 +60,8 @@ async function writeAuditLog(
   `;
 
   // Notify SSE listeners about new audit event
-  if (orgId) {
-    await prisma.$executeRaw`SELECT pg_notify('audit_events', ${orgId + ':' + ctx.action})`;
-  }
+  const notifyOrgId = orgId || ctx.metadata?.org_id || "system";
+  await prisma.$executeRaw`SELECT pg_notify('audit_events', ${String(notifyOrgId) + ':' + ctx.action})`.catch(() => {});
 }
 
 /** Extract client IP from request headers */
