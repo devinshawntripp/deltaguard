@@ -18,24 +18,24 @@ async function maybeNotifyOnCompletion(jobId: string) {
         if (!job || !job.org_id) return;
         if (job.status !== "done" && job.status !== "failed") return;
 
-        // Cross-pod dedup FIRST — only one pod should handle completion events.
-        // This prevents duplicate audit logs AND duplicate notifications.
-        const alreadySent = await prisma.$queryRaw<any[]>`
-            SELECT 1 FROM scan_events
-            WHERE job_id = ${jobId}::uuid AND stage = 'notification.sent'
-            LIMIT 1
+        // Cross-pod dedup: use pg_try_advisory_lock to ensure exactly ONE pod
+        // handles this job's completion. The lock key is derived from the job UUID.
+        // All 3 pods receive the PG NOTIFY simultaneously (~7ms window), so
+        // SELECT-then-INSERT is not atomic enough. Advisory locks ARE atomic.
+        const lockKey = Buffer.from(jobId.replace(/-/g, ""), "hex");
+        const lockId = lockKey.readInt32BE(0); // first 4 bytes of UUID as int32
+        const lockResult = await prisma.$queryRaw<any[]>`
+            SELECT pg_try_advisory_lock(${lockId}) as acquired
         `;
-        if (alreadySent.length > 0) {
+        if (!lockResult[0]?.acquired) {
             notifiedJobs.add(jobId);
-            return;
+            return; // Another pod got the lock
         }
 
-        // Mark as sent BEFORE doing anything — wins the race against other pods
-        await prisma.$executeRaw`
-            INSERT INTO scan_events (job_id, ts, stage, detail)
-            VALUES (${jobId}::uuid, NOW(), 'notification.sent', 'pending')
-        `;
-        notifiedJobs.add(jobId);
+        // We won the lock. Release it after we're done (it's session-scoped,
+        // but explicit release is cleaner).
+        try {
+            notifiedJobs.add(jobId);
 
         // Build actor from the job's creator (so audit shows who, not just "System")
         const creatorActor = job.created_by_user_id ? {
@@ -91,6 +91,10 @@ async function maybeNotifyOnCompletion(jobId: string) {
         sendScanNotification(job.org_id, summary).catch((e) => {
             console.error(`[jobsBus] notification send error for job ${jobId}:`, e);
         });
+        } finally {
+            // Release the advisory lock
+            await prisma.$queryRaw`SELECT pg_advisory_unlock(${lockId})`.catch(() => {});
+        }
     } catch (e) {
         console.error(`[jobsBus] maybeNotifyOnCompletion error for job ${jobId}:`, e);
     }
