@@ -42,11 +42,12 @@ export default function SignInForm() {
       redirect: false,
       callbackUrl: next,
     });
-    setLoading(false);
     if (!res || res.error) {
+      setLoading(false);
       setError("Invalid credentials");
       return;
     }
+    // Keep loading=true during redirect — don't flash back to the form
     // res.url from NextAuth is absolute; extract pathname for client-side navigation
     let target = next;
     try {
@@ -65,7 +66,22 @@ export default function SignInForm() {
   }
 
   return (
-    <div className="auth-card grid gap-6">
+    <div className="auth-card grid gap-6 relative">
+      {/* Loading bar at top */}
+      {loading && (
+        <div className="absolute top-0 left-0 right-0 h-1 overflow-hidden rounded-t-xl">
+          <div className="h-full bg-[var(--dg-accent,#2563eb)] animate-[loading-bar_1.5s_ease-in-out_infinite]"
+            style={{ width: "40%", animation: "loading-bar 1.5s ease-in-out infinite" }} />
+          <style>{`
+            @keyframes loading-bar {
+              0% { transform: translateX(-100%); }
+              50% { transform: translateX(150%); }
+              100% { transform: translateX(300%); }
+            }
+          `}</style>
+        </div>
+      )}
+
       <div>
         <BrandLogo markClassName="h-10 w-10 rounded-lg" nameClassName="text-lg" />
         <h1 className="text-2xl font-semibold tracking-tight">Sign in</h1>
@@ -79,9 +95,10 @@ export default function SignInForm() {
             type="email"
             name="email"
             required
+            disabled={loading}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="form-input"
+            className="form-input disabled:opacity-50"
           />
         </label>
         <label className="form-label">
@@ -90,12 +107,18 @@ export default function SignInForm() {
             type="password"
             name="password"
             required
+            disabled={loading}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="form-input"
+            className="form-input disabled:opacity-50"
           />
         </label>
-        <button disabled={loading} className="btn-primary">
+        <button disabled={loading} className="btn-primary disabled:opacity-60 flex items-center justify-center gap-2">
+          {loading && (
+            <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="32" strokeLinecap="round" />
+            </svg>
+          )}
           {loading ? "Signing in..." : "Sign in"}
         </button>
       </form>
@@ -104,12 +127,12 @@ export default function SignInForm() {
         disabled={loading || !googleEnabled}
         onClick={onGoogle}
         title={!googleEnabled ? "Feature coming soon" : undefined}
-        className="btn-secondary w-full"
+        className="btn-secondary w-full disabled:opacity-50"
       >
         Continue with Google
       </button>
 
-      {error && <div className="text-sm text-red-700 bg-red-100 rounded px-3 py-2">{error}</div>}
+      {error && <div className="text-sm text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900/30 rounded px-3 py-2">{error}</div>}
     </div>
   );
 }
