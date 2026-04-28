@@ -1,3 +1,4 @@
+import { proxyFetch } from "@/lib/proxyFetch";
 import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "nodejs";
@@ -11,14 +12,14 @@ export async function GET(req: NextRequest) {
 
   try {
     // Fetch the EPSS scores CSV from FIRST.org API
-    const res = await fetch(
+    const res = await proxyFetch(
       "https://epss.cyentia.com/epss_scores-current.csv.gz",
       { headers: { Accept: "text/csv" } },
     );
 
     if (!res.ok) {
       // Fallback: use the EPSS API endpoint
-      const apiRes = await fetch(
+      const apiRes = await proxyFetch(
         `https://api.first.org/data/v1/epss?order=!epss&limit=${limit}`,
       );
       if (!apiRes.ok) {

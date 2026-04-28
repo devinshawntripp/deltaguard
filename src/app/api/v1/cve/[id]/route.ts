@@ -1,3 +1,4 @@
+import { proxyFetch } from "@/lib/proxyFetch";
 import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "nodejs";
@@ -9,7 +10,7 @@ export async function GET(
 ) {
   const { id } = await ctx.params;
 
-  const res = await fetch(
+  const res = await proxyFetch(
     `https://api.osv.dev/v1/vulns/${encodeURIComponent(id)}`,
   );
   if (!res.ok) {

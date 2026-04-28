@@ -1,3 +1,4 @@
+import { proxyFetch } from "@/lib/proxyFetch";
 import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "nodejs";
@@ -15,7 +16,7 @@ export async function GET(req: NextRequest) {
     const ecosystems = ["Debian", "Alpine", "npm", "PyPI", "Go"];
     const ecosystem = ecosystems[Math.floor(Date.now() / 300_000) % ecosystems.length];
 
-    const res = await fetch("https://api.osv.dev/v1/query", {
+    const res = await proxyFetch("https://api.osv.dev/v1/query", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ package: { ecosystem, name: "openssl" } }),

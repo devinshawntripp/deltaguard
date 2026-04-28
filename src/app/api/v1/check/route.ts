@@ -1,3 +1,4 @@
+import { proxyFetch } from "@/lib/proxyFetch";
 import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "nodejs";
@@ -17,7 +18,7 @@ export async function POST(req: NextRequest) {
   const query: Record<string, unknown> = { package: { ecosystem, name } };
   if (version) query.version = version;
 
-  const res = await fetch("https://api.osv.dev/v1/query", {
+  const res = await proxyFetch("https://api.osv.dev/v1/query", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(query),
