@@ -1,5 +1,6 @@
 import PublicSiteShell from "@/components/PublicSiteShell";
 import DocsSidebarClient from "./DocsSidebarClient";
+import DocsSchema from "@/components/DocsSchema";
 
 type NavItem = {
     href: string;
@@ -81,6 +82,7 @@ const breadcrumbLabels: Record<string, string> = {
 export default function DocsLayout({ children }: { children: React.ReactNode }) {
     return (
         <PublicSiteShell>
+            <DocsSchema />
             <main className="mx-auto max-w-[1400px] px-4 py-8">
                 <DocsSidebarClient navItems={navItems} breadcrumbLabels={breadcrumbLabels}>
                     {children}

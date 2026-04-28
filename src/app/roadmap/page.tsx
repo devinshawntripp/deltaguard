@@ -360,8 +360,27 @@ const deferred: RoadmapItem[] = [
 /* ------------------------------------------------------------------ */
 
 export default function RoadmapPage() {
+  const roadmapSchema = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: "ScanRook Product Roadmap — Shipped Features",
+    description: "Features that have been shipped and are available in the current release of ScanRook.",
+    url: "https://scanrook.io/roadmap",
+    numberOfItems: shipped.length,
+    itemListElement: shipped.map((item, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: item.title,
+      description: item.description,
+    })),
+  };
+
   return (
     <PublicSiteShell>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(roadmapSchema) }}
+      />
       <main className="mx-auto max-w-5xl px-6 py-14 grid gap-10">
         {/* Header */}
         <section className="surface-card p-8 grid gap-4">

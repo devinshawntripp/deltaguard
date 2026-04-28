@@ -115,8 +115,27 @@ const entries: ChangelogEntry[] = [
 /* ------------------------------------------------------------------ */
 
 export default function ChangelogPage() {
+  const changelogSchema = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: "ScanRook Changelog",
+    description: "Release notes and changelog for ScanRook vulnerability scanner.",
+    url: "https://scanrook.io/changelog",
+    numberOfItems: entries.length,
+    itemListElement: entries.map((entry, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: `v${entry.version} — ${entry.title}`,
+      description: entry.highlights.join(" "),
+    })),
+  };
+
   return (
     <PublicSiteShell>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(changelogSchema) }}
+      />
       <main className="mx-auto max-w-5xl px-6 py-14 grid gap-10">
         {/* Header */}
         <section className="surface-card p-8 grid gap-4">

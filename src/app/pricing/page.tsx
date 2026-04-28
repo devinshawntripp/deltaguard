@@ -195,8 +195,40 @@ const faqs: FAQItem[] = [
 /* ------------------------------------------------------------------ */
 
 export default function PricingPage() {
+  const productSchema = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: "ScanRook",
+    description: "Vulnerability scanning platform with container, binary, and license scanning",
+    brand: { "@type": "Brand", name: "ScanRook" },
+    offers: [
+      { "@type": "Offer", name: "Free", price: "0", priceCurrency: "USD", description: "CLI scanning with OSV enrichment" },
+      { "@type": "Offer", name: "Developer", price: "15", priceCurrency: "USD", unitText: "per developer per month" },
+      { "@type": "Offer", name: "Team", price: "40", priceCurrency: "USD", unitText: "per developer per month, minimum 5 seats" },
+      { "@type": "Offer", name: "Enterprise", price: "0", priceCurrency: "USD", description: "Custom pricing" },
+    ],
+  };
+
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqs.map((faq) => ({
+      "@type": "Question",
+      name: faq.question,
+      acceptedAnswer: { "@type": "Answer", text: faq.answer },
+    })),
+  };
+
   return (
     <PublicSiteShell>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
       <main className="mx-auto max-w-6xl px-6 py-14 grid gap-10">
         {/* Header */}
         <section className="surface-card p-8 grid gap-4">

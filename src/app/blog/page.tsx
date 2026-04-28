@@ -18,7 +18,39 @@ export default function BlogIndexPage() {
   const featured = posts.filter((p) => p.featured);
   const rest = posts.filter((p) => !p.featured);
 
+  const blogSchema = {
+    "@context": "https://schema.org",
+    "@type": "Blog",
+    name: "ScanRook Blog",
+    description: "Educational articles on vulnerability scanning, CVE databases, exploit prediction, and container security from ScanRook.",
+    url: "https://scanrook.io/blog",
+    publisher: { "@type": "Organization", name: "ScanRook", url: "https://scanrook.io" },
+  };
+
+  const blogListSchema = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: "ScanRook Blog Posts",
+    url: "https://scanrook.io/blog",
+    numberOfItems: posts.length,
+    itemListElement: posts.map((post, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: post.title,
+      url: `https://scanrook.io${post.href}`,
+    })),
+  };
+
   return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(blogSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(blogListSchema) }}
+      />
     <main className="mx-auto max-w-6xl px-6 py-14 grid gap-10">
       {/* Header */}
       <section className="surface-card p-8 grid gap-3">
@@ -69,5 +101,6 @@ export default function BlogIndexPage() {
         ))}
       </section>
     </main>
+    </>
   );
 }

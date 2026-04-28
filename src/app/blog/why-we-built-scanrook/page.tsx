@@ -9,8 +9,23 @@ export const metadata: Metadata = {
 };
 
 export default function WhyWeBuiltScanRookPage() {
+  const articleSchema = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: "Why We Built ScanRook",
+    description: "Why ScanRook uses a local-first scan engine and optional cloud enrichment for team workflows.",
+    url: "https://scanrook.io/blog/why-we-built-scanrook",
+    author: { "@type": "Organization", name: "ScanRook", url: "https://scanrook.io" },
+    publisher: { "@type": "Organization", name: "ScanRook", url: "https://scanrook.io" },
+    mainEntityOfPage: "https://scanrook.io/blog/why-we-built-scanrook",
+  };
+
   return (
     <main className="mx-auto max-w-3xl px-6 py-14 grid gap-6">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
+      />
       <article className="surface-card p-8 grid gap-6">
         <header className="grid gap-3">
           <div className="text-xs uppercase tracking-wide muted">Launch post</div>

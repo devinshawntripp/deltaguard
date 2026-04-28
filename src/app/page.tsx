@@ -16,8 +16,44 @@ export default async function Home() {
   const authCmd = "scanrook auth login --base https://scanrook.io";
   const scanCmd = "scanrook scan ./artifact.tar --mode deep";
 
+  const softwareAppSchema = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: "ScanRook",
+    applicationCategory: "SecurityApplication",
+    operatingSystem: "Linux, macOS, Windows",
+    description: "Installed-state-first vulnerability scanning for containers, ISO images, and binaries",
+    url: "https://scanrook.io",
+    downloadUrl: "https://scanrook.sh",
+    offers: [
+      { "@type": "Offer", price: "0", priceCurrency: "USD", description: "Free tier" },
+      { "@type": "Offer", price: "15", priceCurrency: "USD", description: "Developer plan per developer per month" },
+    ],
+    author: { "@type": "Organization", name: "ScanRook", url: "https://scanrook.io" },
+  };
+
+  const webSiteSchema = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "ScanRook",
+    url: "https://scanrook.io",
+    potentialAction: {
+      "@type": "SearchAction",
+      target: "https://scanrook.io/blog?q={search_term_string}",
+      "query-input": "required name=search_term_string",
+    },
+  };
+
   return (
     <PublicSiteShell>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareAppSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(webSiteSchema) }}
+      />
       <main className="mx-auto max-w-5xl px-6 py-14 grid gap-10">
         <section className="surface-card p-8 grid gap-5">
           <div className="inline-flex w-fit items-center rounded-full border border-black/10 dark:border-white/10 px-3 py-1 text-xs muted">
