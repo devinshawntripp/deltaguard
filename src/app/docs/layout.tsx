@@ -48,6 +48,7 @@ const navItems: NavItem[] = [
         children: [
             { href: "/docs/integrations/github-actions", label: "GitHub Actions" },
             { href: "/docs/integrations/gitlab-ci", label: "GitLab CI" },
+            { href: "/docs/integrations/mcp", label: "MCP Server" },
         ],
     },
 ];
@@ -74,6 +75,7 @@ const breadcrumbLabels: Record<string, string> = {
     integrations: "Integrations",
     "github-actions": "GitHub Actions",
     "gitlab-ci": "GitLab CI",
+    mcp: "MCP Server",
     "scan-status": "Scan Status",
     "vulnerability-database": "Vulnerability Database",
     "license-scanning": "License Scanning",

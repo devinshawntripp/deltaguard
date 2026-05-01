@@ -8,6 +8,14 @@ export type BlogPost = {
 
 export const posts: BlogPost[] = [
   {
+    href: "/blog/scanrook-mcp-ai-vulnerability-scanning",
+    category: "Integrations",
+    title: "ScanRook MCP Server: Let AI Assistants Scan for Vulnerabilities",
+    description:
+      "Introducing the ScanRook MCP server — give Claude, GPT, and any MCP-compatible AI assistant the ability to scan container images, check CVEs, and analyze licenses through natural conversation.",
+    featured: true,
+  },
+  {
     href: "/blog/vulnerability-scanner-benchmark-2026",
     category: "Benchmarks",
     title: "Vulnerability Scanner Benchmark 2026: ScanRook vs Trivy vs Grype vs Snyk",
@@ -186,4 +194,6 @@ export const categoryColors: Record<string, string> = {
     "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300",
   "CVE Deep Dive":
     "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300",
+  Integrations:
+    "bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-300",
 };
