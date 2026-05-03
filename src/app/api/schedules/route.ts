@@ -67,18 +67,29 @@ export async function POST(req: NextRequest) {
 
     const nextRunAt = computeNextRun(cronExpression);
 
-    const rows = await prisma.$queryRaw<any[]>`
-        INSERT INTO scan_schedules (org_id, registry_config_id, image_ref, cron_expr, scan_mode, next_run_at)
-        VALUES (
-            ${guard.actor.orgId}::uuid,
-            ${registryConfigId}::uuid,
-            ${imageRef},
-            ${cronExpression},
-            ${scanMode},
-            ${nextRunAt}
-        )
-        RETURNING *
-    `;
+    let rows: any[];
+    try {
+        rows = await prisma.$queryRaw<any[]>`
+            INSERT INTO scan_schedules (org_id, registry_config_id, image_ref, cron_expr, scan_mode, next_run_at)
+            VALUES (
+                ${guard.actor.orgId}::uuid,
+                ${registryConfigId}::uuid,
+                ${imageRef},
+                ${cronExpression},
+                ${scanMode},
+                ${nextRunAt}
+            )
+            RETURNING *
+        `;
+    } catch (e: any) {
+        if (e?.code === "P2010" || String(e?.message).includes("23505")) {
+            return NextResponse.json(
+                { error: `A schedule for "${imageRef}" already exists. Delete or edit the existing schedule instead.` },
+                { status: 409 },
+            );
+        }
+        throw e;
+    }
 
     audit({ actor: guard.actor, action: "schedule.created", targetType: "scan_schedule", targetId: rows[0]?.id, detail: `Schedule created for ${imageRef}`, ip: getClientIp(req) });
     return NextResponse.json(rows[0], { status: 201 });
