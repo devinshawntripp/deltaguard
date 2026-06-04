@@ -8,6 +8,28 @@ export type BlogPost = {
 
 export const posts: BlogPost[] = [
   {
+    href: "/blog/how-to-scan-docker-image-for-vulnerabilities",
+    category: "Best practices",
+    title: "How to Scan a Docker Image for Vulnerabilities (4 Ways)",
+    description:
+      "A step-by-step guide to scanning Docker images for vulnerabilities with Docker Scout, Trivy, Grype, and ScanRook — how to export an image, read the results, fix findings, and automate scanning in CI/CD.",
+    featured: true,
+  },
+  {
+    href: "/blog/what-is-a-cve",
+    category: "Security Concepts",
+    title: "What Is a CVE? A Plain-English Guide to Vulnerability IDs",
+    description:
+      "What a CVE is, what the ID format means, who assigns them, and how the CVE lifecycle works — plus how CVE relates to CVSS, CWE, EPSS, and KEV.",
+  },
+  {
+    href: "/blog/log4shell-cve-2021-44228",
+    category: "CVE Deep Dive",
+    title: "Log4Shell (CVE-2021-44228) Explained: Detection and Remediation",
+    description:
+      "A clear technical explanation of Log4Shell (CVE-2021-44228), the critical Log4j RCE — how the JNDI exploit worked, affected versions, the follow-up CVEs, and how to detect and remediate vulnerable JARs.",
+  },
+  {
     href: "/blog/scanrook-mcp-ai-vulnerability-scanning",
     category: "Integrations",
     title: "ScanRook MCP Server: Let AI Assistants Scan for Vulnerabilities",
