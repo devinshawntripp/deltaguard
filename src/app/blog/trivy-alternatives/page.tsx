@@ -9,7 +9,7 @@ const PUBLISH_DATE = "2026-07-13";
 
 const title = `Trivy Alternatives in 2026: When to Use Something Else | ${APP_NAME}`;
 const description =
-  "An honest look at Trivy alternatives — ScanRook, Grype, Snyk, Docker Scout — with benchmark data on finding depth, speed, and when Trivy is still the right pick.";
+  "An honest look at Trivy alternatives — ScanRook, Grype, Snyk, Docker Scout — with benchmark data on finding depth, speed, and if Trivy is still right.";
 
 export const metadata: Metadata = {
   title,

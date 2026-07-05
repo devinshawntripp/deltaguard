@@ -222,7 +222,7 @@ export const posts: BlogPost[] = [
     category: "Integrations",
     title: "How to Scan Docker Images in GitHub Actions",
     description:
-      "A complete GitHub Actions workflow for scanning Docker images: install the scanner, scan on every pull request, upload reports, and fail builds on critical CVEs.",
+      "A complete GitHub Actions workflow for scanning Docker images: install the scanner, scan on pull request, upload reports, and fail builds on critical CVEs.",
     publishDate: "2026-07-09",
     image: "/blog/scan-docker-images-github-actions.jpg",
   },
@@ -231,7 +231,7 @@ export const posts: BlogPost[] = [
     category: "Benchmarks",
     title: "Trivy Alternatives in 2026: When to Use Something Else",
     description:
-      "An honest look at Trivy alternatives — ScanRook, Grype, Snyk, Docker Scout — with benchmark data on finding depth, speed, and when Trivy is still the right pick.",
+      "An honest look at Trivy alternatives — ScanRook, Grype, Snyk, Docker Scout — with benchmark data on finding depth, speed, and if Trivy is still right.",
     publishDate: "2026-07-13",
     image: "/blog/trivy-alternatives.jpg",
   },

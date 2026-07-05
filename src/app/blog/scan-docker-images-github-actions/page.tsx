@@ -9,7 +9,7 @@ const PUBLISH_DATE = "2026-07-09";
 
 const title = `How to Scan Docker Images in GitHub Actions | ${APP_NAME}`;
 const description =
-  "A complete GitHub Actions workflow for scanning Docker images: install the scanner, scan on every pull request, upload reports, and fail builds on critical CVEs.";
+  "A complete GitHub Actions workflow for scanning Docker images: install the scanner, scan on pull request, upload reports, and fail builds on critical CVEs.";
 
 export const metadata: Metadata = {
   title,
