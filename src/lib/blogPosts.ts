@@ -4,6 +4,8 @@ export type BlogPost = {
   title: string;
   description: string;
   featured?: boolean;
+  publishDate?: string; // ISO YYYY-MM-DD; absent = always visible
+  image?: string;       // e.g. "/blog/is-nginx-docker-image-safe.jpg"
 };
 
 export const posts: BlogPost[] = [
