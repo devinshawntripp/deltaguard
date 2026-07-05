@@ -1,7 +1,10 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { APP_NAME } from "@/lib/brand";
-import { posts, categoryColors } from "@/lib/blogPosts";
+import { categoryColors } from "@/lib/blogPosts";
+import { visiblePosts } from "@/lib/publishGate";
+
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: `Blog | ${APP_NAME}`,
@@ -15,8 +18,9 @@ export const metadata: Metadata = {
 };
 
 export default function BlogIndexPage() {
-  const featured = posts.filter((p) => p.featured);
-  const rest = posts.filter((p) => !p.featured);
+  const live = visiblePosts();
+  const featured = live.filter((p) => p.featured);
+  const rest = live.filter((p) => !p.featured);
 
   const blogSchema = {
     "@context": "https://schema.org",
@@ -32,8 +36,8 @@ export default function BlogIndexPage() {
     "@type": "ItemList",
     name: "ScanRook Blog Posts",
     url: "https://scanrook.io/blog",
-    numberOfItems: posts.length,
-    itemListElement: posts.map((post, i) => ({
+    numberOfItems: live.length,
+    itemListElement: live.map((post, i) => ({
       "@type": "ListItem",
       position: i + 1,
       name: post.title,

@@ -81,7 +81,7 @@ const faqItems = [
   },
   {
     q: "What is VEX and how does it relate to SBOMs?",
-    a: "VEX (Vulnerability Exploitability eXchange) is a companion document or embedded section that communicates the status of vulnerabilities in the context of a specific product. While an SBOM says 'this product contains lodash 4.17.20', VEX adds context like 'the known prototype pollution vulnerability in lodash 4.17.20 is not exploitable in this product because the affected function is never called.' CycloneDX natively supports VEX in its format. SPDX is adding VEX support in later versions. VEX helps reduce false positives in vulnerability reports by adding product-specific context.",
+    a: "VEX (Vulnerability Exploitability eXchange) is a companion document or embedded section that communicates the status of vulnerabilities in the context of a specific product. While an SBOM says 'this product contains lodash 4.17.20', VEX adds context like 'the known command injection vulnerability in lodash 4.17.20 is not exploitable in this product because the affected function is never called.' CycloneDX natively supports VEX in its format. SPDX is adding VEX support in later versions. VEX helps reduce false positives in vulnerability reports by adding product-specific context.",
   },
   {
     q: "How do I share an SBOM with customers?",

@@ -1,7 +1,9 @@
 import type { MetadataRoute } from "next";
-import { posts } from "@/lib/blogPosts";
+import { visiblePosts } from "@/lib/publishGate";
 
 const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || "https://scanrook.io").replace(/\/+$/, "");
+
+export const revalidate = 3600;
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
@@ -63,7 +65,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   // ── Blog pages (dynamic from blogPosts.ts) ──
   const blog: MetadataRoute.Sitemap = [
     { url: `${baseUrl}/blog`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
-    ...posts.map((post) => ({
+    ...visiblePosts().map((post) => ({
       url: `${baseUrl}${post.href}`,
       lastModified: now,
       changeFrequency: "monthly" as const,
