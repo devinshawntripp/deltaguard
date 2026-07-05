@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { posts } from "@/lib/blogPosts";
+import { visiblePosts } from "@/lib/publishGate";
 
 function BlogSidebar({ currentHref, mobile }: { currentHref: string; mobile?: boolean }) {
   return (
@@ -11,7 +11,7 @@ function BlogSidebar({ currentHref, mobile }: { currentHref: string; mobile?: bo
       <div className={`${mobile ? "" : "sticky top-24"} max-h-[calc(100vh-8rem)] overflow-y-auto rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-black/20 backdrop-blur p-4`}>
         <div className="text-xs uppercase tracking-wide muted mb-2">Blog Posts</div>
         <nav className="grid gap-1">
-          {posts.map((p) => {
+          {visiblePosts().map((p) => {
             const isActive = currentHref === p.href;
             return (
               <Link
@@ -35,7 +35,7 @@ function BlogSidebar({ currentHref, mobile }: { currentHref: string; mobile?: bo
 }
 
 function getRelatedPosts(currentHref: string, category: string) {
-  return posts
+  return visiblePosts()
     .filter((p) => p.category === category && p.href !== currentHref)
     .slice(0, 4);
 }
@@ -44,7 +44,7 @@ export default function BlogLayoutClient({ children }: { children: React.ReactNo
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const isIndexPage = pathname === "/blog";
-  const currentPost = posts.find((p) => p.href === pathname);
+  const currentPost = visiblePosts().find((p) => p.href === pathname);
 
   if (isIndexPage || !currentPost) {
     return <>{children}</>;
