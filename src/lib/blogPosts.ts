@@ -199,6 +199,51 @@ export const posts: BlogPost[] = [
     description:
       "Understand how Red Hat backports security fixes, why package versions don't tell the full story, and how OVAL/CSAF data enables accurate RHEL vulnerability scanning.",
   },
+  {
+    href: "/blog/is-nginx-docker-image-safe",
+    category: "Security Concepts",
+    title: "Is the Nginx Docker Image Safe? What Our Scanner Found",
+    description:
+      "We scanned nginx:1.27 with ScanRook: 2,952 findings (408 critical). What that means, which CVEs matter, and why the Alpine tag cuts findings by 79%.",
+    publishDate: "2026-07-06",
+    image: "/blog/series-image-safety-1.jpg",
+  },
+  {
+    href: "/blog/how-to-reduce-cves-in-docker-images",
+    category: "Best practices",
+    title: "How to Reduce CVEs in Docker Images: 6 Steps That Work",
+    description:
+      "Six concrete steps to reduce CVEs in Docker images: smaller base images, multi-stage builds, package updates, rebuild cadence, and scan verification.",
+    publishDate: "2026-07-07",
+    image: "/blog/how-to-reduce-cves-in-docker-images.jpg",
+  },
+  {
+    href: "/blog/scan-docker-images-github-actions",
+    category: "Integrations",
+    title: "How to Scan Docker Images in GitHub Actions",
+    description:
+      "A complete GitHub Actions workflow for scanning Docker images: install the scanner, scan on every pull request, upload reports, and fail builds on critical CVEs.",
+    publishDate: "2026-07-09",
+    image: "/blog/scan-docker-images-github-actions.jpg",
+  },
+  {
+    href: "/blog/trivy-alternatives",
+    category: "Benchmarks",
+    title: "Trivy Alternatives in 2026: When to Use Something Else",
+    description:
+      "An honest look at Trivy alternatives — ScanRook, Grype, Snyk, Docker Scout — with benchmark data on finding depth, speed, and when Trivy is still the right pick.",
+    publishDate: "2026-07-13",
+    image: "/blog/trivy-alternatives.jpg",
+  },
+  {
+    href: "/blog/nvd-backlog-explained",
+    category: "Compliance",
+    title: "The NVD Backlog, Explained: What Happened and What It Means",
+    description:
+      "Why the National Vulnerability Database fell behind on CVE enrichment in 2024, how CISA Vulnrichment stepped in, and what the gap means for your scanner.",
+    publishDate: "2026-08-18",
+    image: "/blog/nvd-backlog-explained.jpg",
+  },
 ];
 
 export const categoryColors: Record<string, string> = {
