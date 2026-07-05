@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { posts, categoryColors } from "@/lib/blogPosts";
+import { categoryColors, type BlogPost } from "@/lib/blogPosts";
+import { visiblePosts } from "@/lib/publishGate";
 
 interface BlogRelatedPostsProps {
   currentHref: string;
@@ -14,7 +15,7 @@ function RelatedPostList({
   related,
   category,
 }: {
-  related: ReturnType<typeof posts.filter>;
+  related: BlogPost[];
   category: string;
 }) {
   const categoryColor =
@@ -54,7 +55,7 @@ function RelatedPostList({
 export function BlogRelatedPostsMobile({ currentHref, category }: BlogRelatedPostsProps) {
   const [open, setOpen] = useState(false);
 
-  const related = posts
+  const related = visiblePosts()
     .filter((p) => p.category === category && p.href !== currentHref)
     .slice(0, 3);
 
@@ -100,7 +101,7 @@ export function BlogRelatedPostsMobile({ currentHref, category }: BlogRelatedPos
  * Render inside the right column of the two-column grid.
  */
 export function BlogRelatedPostsDesktop({ currentHref, category }: BlogRelatedPostsProps) {
-  const related = posts
+  const related = visiblePosts()
     .filter((p) => p.category === category && p.href !== currentHref)
     .slice(0, 3);
 
@@ -122,7 +123,7 @@ export function BlogRelatedPostsDesktop({ currentHref, category }: BlogRelatedPo
  * Use BlogRelatedPostsMobile + BlogRelatedPostsDesktop separately for layout control.
  */
 export default function BlogRelatedPosts({ currentHref, category }: BlogRelatedPostsProps) {
-  const related = posts
+  const related = visiblePosts()
     .filter((p) => p.category === category && p.href !== currentHref)
     .slice(0, 3);
 
