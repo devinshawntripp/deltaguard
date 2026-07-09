@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { posts } from "@/lib/blogPosts";
+import { isPublished } from "@/lib/publishGate";
 
 export type CalendarStatus = "published" | "queued" | "drafting";
 
@@ -147,18 +148,16 @@ function deriveStatus(
   hasRegistryEntry: boolean,
   publishDate: string | null,
   statusOverride: string | null,
-  todayUtc: string,
 ): CalendarStatus {
   if (statusOverride === "drafting") return "drafting";
   if (!hasRegistryEntry) return "drafting";
-  if (!publishDate) return "published"; // registry entries without a date are always visible
-  return publishDate <= todayUtc ? "published" : "queued";
+  // Single source of truth: the same gate that controls live blog visibility.
+  return isPublished({ publishDate: publishDate ?? undefined }) ? "published" : "queued";
 }
 
 function toEntry(
   row: MetaRow,
   registry: Map<string, { title: string; publishDate: string | null }>,
-  todayUtc: string,
 ): CalendarEntry {
   const reg = registry.get(row.slug);
   return {
@@ -170,7 +169,7 @@ function toEntry(
     updated_at: row.updated_at,
     title: reg?.title ?? null,
     publish_date: reg?.publishDate ?? null,
-    status: deriveStatus(!!reg, reg?.publishDate ?? null, row.status_override, todayUtc),
+    status: deriveStatus(!!reg, reg?.publishDate ?? null, row.status_override),
   };
 }
 
@@ -189,8 +188,7 @@ export async function getCalendarData(): Promise<CalendarEntry[]> {
   await ensureContentCalendarSchema();
   const rows = await prisma.$queryRawUnsafe<MetaRow[]>(`${META_SELECT} ORDER BY slug`);
   const registry = registryBySlug();
-  const todayUtc = new Date().toISOString().slice(0, 10);
-  return rows.map((row) => toEntry(row, registry, todayUtc));
+  return rows.map((row) => toEntry(row, registry));
 }
 
 export async function upsertMeta(
@@ -215,6 +213,5 @@ ON CONFLICT (slug) DO UPDATE SET
   );
   const rows = await prisma.$queryRawUnsafe<MetaRow[]>(`${META_SELECT} WHERE slug = $1 LIMIT 1`, slug);
   if (!rows[0]) return null;
-  const todayUtc = new Date().toISOString().slice(0, 10);
-  return toEntry(rows[0], registryBySlug(), todayUtc);
+  return toEntry(rows[0], registryBySlug());
 }
