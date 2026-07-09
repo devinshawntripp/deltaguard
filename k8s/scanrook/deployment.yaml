@@ -34,7 +34,7 @@ spec:
             value: "1"
       containers:
         - name: web
-          image: devintripp/deltaguard-ui:sha-c4c3da8
+          image: devintripp/deltaguard-ui:sha-87f03c6
           imagePullPolicy: Always
           securityContext:
             allowPrivilegeEscalation: false
