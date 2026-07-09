@@ -651,6 +651,15 @@ export const posts: BlogPost[] = [
   publishDate: "2026-08-24",
   image: "/blog/best-container-vulnerability-scanners-2026.jpg",
 },
+  {
+  href: "/blog/what-is-a-cbom",
+  category: "Compliance",
+  title: "What Is a CBOM? Cryptography Bill of Materials Explained",
+  description:
+    "A CBOM (Cryptography Bill of Materials) inventories the algorithms, certificates, keys, and libraries in your software, and why PQC migration needs one.",
+  publishDate: "2026-08-25",
+  image: "/blog/what-is-a-cbom.jpg",
+},
 ];
 
 export const categoryColors: Record<string, string> = {

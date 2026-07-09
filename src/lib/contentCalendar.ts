@@ -86,6 +86,7 @@ const SEED: Array<[slug: string, keyword: string, kd: number, vol: number]> = [
   ["vex-explained", "what is VEX", 31, 590],
   ["nvd-backlog-explained", "NVD backlog", 21, 90],
   ["trivy-alternatives", "trivy alternative", 33, 260],
+  ["what-is-a-cbom", "what is a CBOM", 19, 210],
 ];
 
 /* Lazily ensure the table exists + is seeded, once per process.
