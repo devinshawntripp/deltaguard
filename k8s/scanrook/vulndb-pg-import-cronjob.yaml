@@ -77,9 +77,9 @@ spec:
                 - name: HTTPS_PROXY
                   value: "http://10.10.10.2:3128"
                 - name: NO_PROXY
-                  value: "10.0.0.0/8,192.168.0.0/16,172.16.0.0/12,.svc,.svc.cluster.local,.cluster.local,localhost,127.0.0.1,minio.storage.svc,minio.storage.svc.cluster.local,pg-shared-rw.db.svc,pg-shared-rw.db.svc.cluster.local"
+                  value: "10.0.0.0/8,192.168.0.0/16,172.16.0.0/12,.svc,.svc.cluster.local,.cluster.local,localhost,127.0.0.1,minio.storage.svc,minio.storage.svc.cluster.local,pg-shared-rw.db.svc.cluster.local,pg-shared-rw.db.svc.cluster.local"
                 - name: no_proxy
-                  value: "10.0.0.0/8,192.168.0.0/16,172.16.0.0/12,.svc,.svc.cluster.local,.cluster.local,localhost,127.0.0.1,minio.storage.svc,minio.storage.svc.cluster.local,pg-shared-rw.db.svc,pg-shared-rw.db.svc.cluster.local"
+                  value: "10.0.0.0/8,192.168.0.0/16,172.16.0.0/12,.svc,.svc.cluster.local,.cluster.local,localhost,127.0.0.1,minio.storage.svc,minio.storage.svc.cluster.local,pg-shared-rw.db.svc.cluster.local,pg-shared-rw.db.svc.cluster.local"
               resources:
                 requests:
                   cpu: 500m

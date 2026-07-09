@@ -37,7 +37,7 @@ spec:
                     -X POST \
                     -H "x-cleanup-secret: ${CLEANUP_SECRET}" \
                     -H "Content-Type: application/json" \
-                    "http://scanrook-web.scanrook.svc:3000/api/cron/schedules")
+                    "http://scanrook-web.scanrook.svc.cluster.local:3000/api/cron/schedules")
                   echo "Response: ${HTTP_CODE}"
                   if [ "${HTTP_CODE}" -ge 400 ]; then
                     echo "ERROR: Schedule trigger failed with HTTP ${HTTP_CODE}"

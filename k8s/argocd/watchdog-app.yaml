@@ -1,0 +1,30 @@
+# Dedicated ArgoCD app for the cluster-watchdog manifests.
+#
+# Why a separate app: the "scanrook" app renders k8s/scanrook via
+# kustomization.yaml, which (a) lists resources explicitly (new files are not
+# auto-included) and (b) sets `namespace: scanrook`, which would forcibly
+# rewrite the watchdog resources out of deltaguard-system. This app points at
+# the same path but uses the plain directory tool with an include filter, so
+# only cluster-watchdog.yaml is applied, with its own namespaces intact.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cluster-watchdog
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/devinshawntripp/deltaguard.git
+    targetRevision: main
+    path: k8s/scanrook
+    directory:
+      include: cluster-watchdog.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: deltaguard-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

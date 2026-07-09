@@ -29,7 +29,7 @@ spec:
           initContainers:
             # Step 1: Run pg_dump
             - name: pg-dump
-              image: postgres:16-alpine
+              image: postgres:18-alpine
               command:
                 - /bin/sh
                 - -c
@@ -39,7 +39,7 @@ spec:
                   DUMP_FILE="/backup/pg-shared-${TIMESTAMP}.sql.gz"
                   echo "Starting pg_dump at $(date)"
                   pg_dump \
-                    --host=pg-shared-rw.db.svc \
+                    --host=pg-shared-rw.db.svc.cluster.local \
                     --port=5432 \
                     --username="${PGUSER}" \
                     --no-password \

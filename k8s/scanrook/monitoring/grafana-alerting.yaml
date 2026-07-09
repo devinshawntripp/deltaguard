@@ -1,0 +1,368 @@
+# Grafana-provisioned alerting: contact point, notification policy, alert rules.
+# Mounted at /etc/grafana/provisioning/alerting (see grafana-deployment.yaml).
+#
+# SECRET HANDLING: the Discord webhook URL is NEVER stored in git. Grafana file
+# provisioning interpolates $DISCORD_WEBHOOK_URL (plain $VAR syntax - supported
+# for contact point settings in Grafana 11.x; $__env{} is grafana.ini-only).
+# The env var is injected on the grafana container from the out-of-band Secret
+# "alert-webhook" (key: url) in the monitoring namespace:
+#   kubectl -n monitoring create secret generic alert-webhook \
+#     --from-literal=url='<discord webhook url>'
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-alerting
+  namespace: monitoring
+  labels:
+    app: grafana
+data:
+  contactpoints.yaml: |
+    apiVersion: 1
+    contactPoints:
+      - orgId: 1
+        name: discord-alerts
+        receivers:
+          - uid: discord-alerts
+            type: discord
+            settings:
+              url: $DISCORD_WEBHOOK_URL
+              use_discord_username: true
+            disableResolveMessage: false
+  policies.yaml: |
+    apiVersion: 1
+    policies:
+      - orgId: 1
+        receiver: discord-alerts
+        group_by:
+          - grafana_folder
+          - alertname
+        group_wait: 30s
+        group_interval: 5m
+        repeat_interval: 4h
+  rules.yaml: |
+    apiVersion: 1
+    groups:
+      - orgId: 1
+        name: scanrook-cluster
+        folder: ScanRook Alerts
+        interval: 1m
+        rules:
+          # kubelet on this cluster (v1.34 + Longhorn CSI) does NOT expose
+          # kubelet_volume_stats_* (verified empty on the raw kubelet /metrics),
+          # so PVC usage is derived from Longhorn manager metrics instead:
+          # longhorn_node_storage_usage_bytes / capacity (volume actual_size is a thin-provision HWM, unusable).
+          # Note: actual_size is the thin-provisioning high-water mark, so it can
+          # slightly over-report vs. real filesystem usage - acceptable, since it
+          # is exactly the number that matters for Longhorn disk pressure.
+          - uid: pvc-usage-warn
+            title: LonghornNodeStorageHigh
+            condition: B
+            for: 15m
+            noDataState: OK
+            execErrState: Error
+            isPaused: false
+            labels:
+              severity: warning
+            annotations:
+              summary: 'PVC {{ $labels.pvc_namespace }}/{{ $labels.pvc }} is above 80% of Longhorn volume capacity'
+              description: 'Longhorn actual size / capacity = {{ $values.A }} for PVC {{ $labels.pvc_namespace }}/{{ $labels.pvc }} (>0.80 for 15m). Consider expanding the PVC or cleaning up data.'
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: prometheus
+                model:
+                  editorMode: code
+                  expr: 'max by (node) (longhorn_node_storage_usage_bytes / longhorn_node_storage_capacity_bytes)'
+                  instant: true
+                  range: false
+                  intervalMs: 1000
+                  maxDataPoints: 43200
+                  refId: A
+              - refId: B
+                relativeTimeRange:
+                  from: 0
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  refId: B
+                  type: threshold
+                  datasource:
+                    type: __expr__
+                    uid: __expr__
+                  expression: A
+                  conditions:
+                    - evaluator:
+                        params: [0.8]
+                        type: gt
+                      operator:
+                        type: and
+                      query:
+                        params: [B]
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+          - uid: pvc-usage-crit
+            title: LonghornNodeStorageCritical
+            condition: B
+            for: 5m
+            noDataState: OK
+            execErrState: Error
+            isPaused: false
+            labels:
+              severity: critical
+            annotations:
+              summary: 'PVC {{ $labels.pvc_namespace }}/{{ $labels.pvc }} is above 90% of Longhorn volume capacity'
+              description: 'Longhorn actual size / capacity = {{ $values.A }} for PVC {{ $labels.pvc_namespace }}/{{ $labels.pvc }} (>0.90 for 5m). Expand the PVC now to avoid the volume going read-only.'
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: prometheus
+                model:
+                  editorMode: code
+                  expr: 'max by (node) (longhorn_node_storage_usage_bytes / longhorn_node_storage_capacity_bytes)'
+                  instant: true
+                  range: false
+                  intervalMs: 1000
+                  maxDataPoints: 43200
+                  refId: A
+              - refId: B
+                relativeTimeRange:
+                  from: 0
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  refId: B
+                  type: threshold
+                  datasource:
+                    type: __expr__
+                    uid: __expr__
+                  expression: A
+                  conditions:
+                    - evaluator:
+                        params: [0.9]
+                        type: gt
+                      operator:
+                        type: and
+                      query:
+                        params: [B]
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+          - uid: node-rootfs-high
+            title: NodeRootFSHigh
+            condition: B
+            for: 15m
+            noDataState: OK
+            execErrState: Error
+            isPaused: false
+            labels:
+              severity: warning
+            annotations:
+              summary: 'Root filesystem on node {{ $labels.node }} has less than 15% free space'
+              description: 'node_filesystem_avail_bytes / node_filesystem_size_bytes = {{ $values.A }} on {{ $labels.node }} ({{ $labels.instance }}) for 15m. Clean up images/logs before kubelet starts evicting pods.'
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: prometheus
+                model:
+                  editorMode: code
+                  expr: 'node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}'
+                  instant: true
+                  range: false
+                  intervalMs: 1000
+                  maxDataPoints: 43200
+                  refId: A
+              - refId: B
+                relativeTimeRange:
+                  from: 0
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  refId: B
+                  type: threshold
+                  datasource:
+                    type: __expr__
+                    uid: __expr__
+                  expression: A
+                  conditions:
+                    - evaluator:
+                        params: [0.15]
+                        type: lt
+                      operator:
+                        type: and
+                      query:
+                        params: [B]
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+          # Threshold lives in the PromQL here (> 5) so Grafana only tracks the
+          # offending pods instead of an alert instance per pod in the cluster.
+          - uid: pod-restart-storm
+            title: PodRestartStorm
+            condition: B
+            for: 5m
+            noDataState: OK
+            execErrState: Error
+            isPaused: false
+            labels:
+              severity: warning
+            annotations:
+              summary: 'Pod {{ $labels.namespace }}/{{ $labels.pod }} restarted more than 5 times in the last hour'
+              description: '{{ $values.A }} container restarts in the last hour for {{ $labels.namespace }}/{{ $labels.pod }}. Check pod events and logs for crash loops or OOM kills.'
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: prometheus
+                model:
+                  editorMode: code
+                  expr: 'sum by (namespace, pod) (increase(kube_pod_container_status_restarts_total[1h])) > 5'
+                  instant: true
+                  range: false
+                  intervalMs: 1000
+                  maxDataPoints: 43200
+                  refId: A
+              - refId: B
+                relativeTimeRange:
+                  from: 0
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  refId: B
+                  type: threshold
+                  datasource:
+                    type: __expr__
+                    uid: __expr__
+                  expression: A
+                  conditions:
+                    - evaluator:
+                        params: [0]
+                        type: gt
+                      operator:
+                        type: and
+                      query:
+                        params: [B]
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+          # KSM v2.13.0 on this cluster exposes BOTH kube_endpoint_address_available
+          # (deprecated upstream) and kube_endpoint_address{ready=...} - verified live.
+          # We use the non-deprecated kube_endpoint_address{ready="true"} with
+          # "or vector(0)" so the rule also fires if the Endpoints object vanishes
+          # entirely (series absent). The trailing "and on() sum(up{...}) > 0" gates
+          # the alert on kube-state-metrics actually being scraped, so a KSM outage
+          # (or the window before Prometheus picks up the new scrape config) yields
+          # NoData -> OK instead of a false "PG down" page.
+          - uid: pg-endpoints-gone
+            title: PgEndpointsGone
+            condition: B
+            for: 2m
+            noDataState: OK
+            execErrState: Error
+            isPaused: false
+            labels:
+              severity: critical
+            annotations:
+              summary: 'pg-shared-rw has no ready endpoint addresses - primary PostgreSQL is unreachable'
+              description: 'The pg-shared-rw Endpoints object in namespace db has zero ready addresses (or is gone). CNPG primary is down or failing over - scanrook web/dispatcher and all jobs are impacted.'
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: prometheus
+                model:
+                  editorMode: code
+                  expr: '(sum(kube_endpoint_address{namespace="db", endpoint="pg-shared-rw", ready="true"}) or vector(0)) and on() (sum(up{job="kube-state-metrics"}) > 0)'
+                  instant: true
+                  range: false
+                  intervalMs: 1000
+                  maxDataPoints: 43200
+                  refId: A
+              - refId: B
+                relativeTimeRange:
+                  from: 0
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  refId: B
+                  type: threshold
+                  datasource:
+                    type: __expr__
+                    uid: __expr__
+                  expression: A
+                  conditions:
+                    - evaluator:
+                        params: [1]
+                        type: lt
+                      operator:
+                        type: and
+                      query:
+                        params: [B]
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+          # Grafana-managed alert on the Loki datasource (supported via file
+          # provisioning in Grafana 11.x - Loki is a backend datasource).
+          # Requires promtail to ship longhorn-system logs (see promtail-daemonset.yaml,
+          # longhorn-system was added to the namespace keep-list for this alert).
+          - uid: longhorn-stale-pid
+            title: LonghornStalePID
+            condition: B
+            for: 0s
+            noDataState: OK
+            execErrState: Error
+            isPaused: false
+            labels:
+              severity: critical
+            annotations:
+              summary: 'Longhorn iscsid stale-PID bug detected in longhorn-system logs'
+              description: 'Log line matching "cannot open /host/proc/<pid>/ns/mnt" seen in longhorn-system within the last 10m - the exact signature of the iscsid stale-PID bug. Restart the affected longhorn-manager / instance-manager pod on that node.'
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: loki
+                model:
+                  editorMode: code
+                  expr: 'sum(count_over_time({namespace="longhorn-system"} |~ "cannot open /host/proc/.*/ns/mnt" [10m]))'
+                  queryType: instant
+                  refId: A
+              - refId: B
+                relativeTimeRange:
+                  from: 0
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  refId: B
+                  type: threshold
+                  datasource:
+                    type: __expr__
+                    uid: __expr__
+                  expression: A
+                  conditions:
+                    - evaluator:
+                        params: [0]
+                        type: gt
+                      operator:
+                        type: and
+                      query:
+                        params: [B]
+                      reducer:
+                        params: []
+                        type: last
+                      type: query

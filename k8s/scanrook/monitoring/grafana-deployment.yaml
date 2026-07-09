@@ -253,6 +253,16 @@ spec:
               value: https://grafana.scanrook.io
             - name: GF_USERS_ALLOW_SIGN_UP
               value: "false"
+            # Discord webhook for the provisioned alerting contact point.
+            # Interpolated into provisioning/alerting/contactpoints.yaml as $DISCORD_WEBHOOK_URL.
+            # Created out-of-band, never committed:
+            #   kubectl -n monitoring create secret generic alert-webhook --from-literal=url=<webhook>
+            - name: DISCORD_WEBHOOK_URL
+              valueFrom:
+                secretKeyRef:
+                  name: alert-webhook
+                  key: url
+                  optional: true
           readinessProbe:
             httpGet:
               path: /api/health
@@ -282,6 +292,9 @@ spec:
             - name: dashboards
               mountPath: /var/lib/grafana/dashboards
               readOnly: true
+            - name: alerting
+              mountPath: /etc/grafana/provisioning/alerting
+              readOnly: true
             - name: data
               mountPath: /var/lib/grafana
       volumes:
@@ -294,6 +307,9 @@ spec:
         - name: dashboards
           configMap:
             name: grafana-dashboards
+        - name: alerting
+          configMap:
+            name: grafana-alerting
         - name: data
           persistentVolumeClaim:
             claimName: grafana-data

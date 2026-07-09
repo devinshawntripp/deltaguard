@@ -45,3 +45,57 @@ data:
         relabel_configs:
           - action: labelmap
             regex: __meta_kubernetes_node_label_(.+)
+
+      # Host metrics (node-exporter DaemonSet, hostNetwork, port 9100).
+      # Required by the NodeRootFSHigh alert (node_filesystem_*).
+      - job_name: "node-exporter"
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - monitoring
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            action: keep
+            regex: node-exporter
+          - source_labels: [__meta_kubernetes_pod_container_port_number]
+            action: keep
+            regex: "9100"
+          - source_labels: [__meta_kubernetes_pod_node_name]
+            target_label: node
+
+      # Kubernetes object state (kube-state-metrics, port 8080; 8081 is telemetry).
+      # Required by the PodRestartStorm and PgEndpointsGone alerts.
+      - job_name: "kube-state-metrics"
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - monitoring
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            action: keep
+            regex: kube-state-metrics
+          - source_labels: [__meta_kubernetes_pod_container_port_number]
+            action: keep
+            regex: "8080"
+
+      # Longhorn volume metrics (longhorn-manager DaemonSet, port 9500).
+      # Required by the PVCUsageHigh/PVCUsageCritical alerts: kubelet on this
+      # cluster (v1.34 + Longhorn CSI) does not expose kubelet_volume_stats_*,
+      # so PVC usage comes from longhorn_volume_actual_size_bytes/_capacity_bytes.
+      - job_name: "longhorn-manager"
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - longhorn-system
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            action: keep
+            regex: longhorn-manager
+          - source_labels: [__meta_kubernetes_pod_container_port_number]
+            action: keep
+            regex: "9500"
+          - source_labels: [__meta_kubernetes_pod_node_name]
+            target_label: node
