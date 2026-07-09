@@ -98,6 +98,13 @@ const tools: Record<string, ToolData> = {
         competitorSupport: "no",
       },
       {
+        feature: "CBOM generation (CycloneDX 1.6)",
+        scanrook: "Crypto libraries, certificates, keys with cryptoProperties",
+        competitor: "Not supported",
+        scanrookSupport: "yes",
+        competitorSupport: "no",
+      },
+      {
         feature: "Confidence tiers",
         scanrook: "ConfirmedInstalled vs HeuristicUnverified",
         competitor: "No confidence classification",
@@ -232,6 +239,13 @@ const tools: Record<string, ToolData> = {
         competitorSupport: "no",
       },
       {
+        feature: "CBOM generation (CycloneDX 1.6)",
+        scanrook: "Crypto libraries, certificates, keys with cryptoProperties",
+        competitor: "Not supported",
+        scanrookSupport: "yes",
+        competitorSupport: "no",
+      },
+      {
         feature: "Confidence tiers",
         scanrook: "ConfirmedInstalled vs HeuristicUnverified",
         competitor: "No confidence classification",
@@ -362,6 +376,13 @@ const tools: Record<string, ToolData> = {
         feature: "SBOM diff",
         scanrook: "Component-level diff between SBOM snapshots",
         competitor: "Not built-in",
+        scanrookSupport: "yes",
+        competitorSupport: "no",
+      },
+      {
+        feature: "CBOM generation (CycloneDX 1.6)",
+        scanrook: "Crypto libraries, certificates, keys with cryptoProperties",
+        competitor: "Not supported",
         scanrookSupport: "yes",
         competitorSupport: "no",
       },

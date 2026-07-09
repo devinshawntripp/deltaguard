@@ -34,6 +34,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/docs/architecture",
     "/docs/benchmarks",
     "/docs/data-sources",
+    "/docs/cbom",
     "/docs/self-hosted",
     "/docs/faq",
     "/docs/changelog",
