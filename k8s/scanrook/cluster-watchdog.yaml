@@ -158,7 +158,7 @@ spec:
                       content="**ScanRook cluster-watchdog**\n$message"
                       body="$(printf '%b' "$content" | head -c 1900 | sed ':a;N;$!ba;s/\\/\\\\/g;s/"/\\"/g;s/\n/\\n/g')"
                       payload="$(printf '{"content":"%s"}' "$body")"
-                      wget -qO- --header='Content-Type: application/json' --post-data="$payload" "$ALERT_WEBHOOK_URL" >/dev/null || true
+                      curl -sS -o /dev/null -H "Content-Type: application/json" -d "$payload" "$ALERT_WEBHOOK_URL" || true
                     fi
                   else
                     echo "[$now] ClusterWatchdog ok"
@@ -202,5 +202,5 @@ spec:
               args:
                 - |
                   set -eu
-                  wget -qO- --header='Content-Type: application/json' --post-data='{"content":"✅ watchdog alive — daily heartbeat"}' "$ALERT_WEBHOOK_URL" >/dev/null
+                  curl -sS -o /dev/null -H "Content-Type: application/json" -d '{"content":"✅ watchdog alive — daily heartbeat"}' "$ALERT_WEBHOOK_URL"
                   echo "heartbeat sent"
