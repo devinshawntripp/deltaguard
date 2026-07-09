@@ -6,10 +6,11 @@ import ScanFindingsView from "@/components/ScanFindingsView";
 import JobFindings from "@/components/JobFindings";
 import ScanThreatView from "@/components/ScanThreatView";
 import SbomTabView from "@/components/SbomTabView";
+import CbomTabView from "@/components/CbomTabView";
 import { openSse } from "@/lib/ssePool";
 import { isTerminalStage, isErrorStage } from "@/lib/workflowStages";
 
-type TabId = "dashboard" | "findings" | "threat" | "sbom";
+type TabId = "dashboard" | "findings" | "threat" | "sbom" | "cbom";
 
 type Props = {
     scanId: string;
@@ -31,6 +32,7 @@ const TABS: { id: TabId; label: string }[] = [
     { id: "findings", label: "Findings" },
     { id: "threat", label: "Threat" },
     { id: "sbom", label: "SBOM" },
+    { id: "cbom", label: "CBOM" },
 ];
 
 function SeverityBox({
@@ -232,7 +234,7 @@ export default function JobDetailTabs({
             <div className="flex gap-1 p-1 rounded-lg bg-black/5 dark:bg-white/5 w-fit">
                 {TABS.map((t) => {
                     const isActive = tab === t.id;
-                    const isDisabled = (t.id === "threat" || t.id === "sbom") && !isDone;
+                    const isDisabled = (t.id === "threat" || t.id === "sbom" || t.id === "cbom") && !isDone;
                     return (
                         <button
                             key={t.id}
@@ -289,6 +291,9 @@ export default function JobDetailTabs({
                     jobId={scanId}
                     sbomStatus={liveSbomStatus}
                 />
+            )}
+            {tab === "cbom" && (
+                <CbomTabView jobId={scanId} />
             )}
         </div>
     );

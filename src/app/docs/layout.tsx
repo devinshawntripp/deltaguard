@@ -42,6 +42,7 @@ const navItems: NavItem[] = [
     { href: "/docs/self-hosted", label: "Self-Hosted" },
     { href: "/docs/architecture", label: "Architecture" },
     { href: "/docs/data-sources", label: "Data Sources" },
+    { href: "/docs/cbom", label: "CBOM" },
     {
         href: "/docs/integrations",
         label: "Integrations",
@@ -72,6 +73,7 @@ const breadcrumbLabels: Record<string, string> = {
     benchmarks: "Benchmarks",
     "self-hosted": "Self-Hosted",
     "data-sources": "Data Sources",
+    cbom: "CBOM",
     integrations: "Integrations",
     "github-actions": "GitHub Actions",
     "gitlab-ci": "GitLab CI",
