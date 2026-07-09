@@ -109,6 +109,12 @@ const IconBarChart = () => (
   </svg>
 );
 
+const IconCalendar = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="2" y="3" width="12" height="11" rx="1.5" /><path d="M2 6.5h12M5 1.5v3M11 1.5v3" />
+  </svg>
+);
+
 const IconExternalLink = () => (
   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
     <path d="M12 9v4.5a1 1 0 01-1 1H2.5a1 1 0 01-1-1V5a1 1 0 011-1H7" /><path d="M10 1.5h4.5V6" /><path d="M6.5 9.5L14.5 1.5" />
@@ -225,6 +231,7 @@ export default function DashboardNavClient({
           { label: "Master Admin", href: "/dashboard/settings/admin", icon: IconWrench },
           { label: "Audit (All)", href: "/dashboard/admin/audit", icon: IconClipboard },
           { label: "Features", href: "/dashboard/admin/features", icon: IconBarChart },
+          { label: "Content Calendar", href: "/dashboard/admin/content-calendar", icon: IconCalendar },
         ],
       });
     }
