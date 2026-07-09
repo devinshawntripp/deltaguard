@@ -37,8 +37,10 @@ data:
               namespace:
               pod:
               container:
+          # longhorn-system is kept for the LonghornStalePID Grafana alert
+          # (matches "cannot open /host/proc/<pid>/ns/mnt" in Loki).
           - match:
-              selector: '{namespace!~"scanrook|monitoring|db|storage|ingress-nginx"}'
+              selector: '{namespace!~"scanrook|monitoring|db|storage|ingress-nginx|longhorn-system"}'
               action: drop
 ---
 apiVersion: v1

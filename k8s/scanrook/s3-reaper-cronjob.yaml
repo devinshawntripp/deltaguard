@@ -39,7 +39,7 @@ spec:
                   RESP=$(curl -sf -X POST \
                     -H "x-cleanup-secret: ${CLEANUP_SECRET}" \
                     -H "Content-Type: application/json" \
-                    "http://scanrook-web.scanrook.svc:3000/api/admin/s3-cleanup")
+                    "http://scanrook-web.scanrook.svc.cluster.local:3000/api/admin/s3-cleanup")
                   echo "Response: ${RESP}"
                   DELETED=$(echo "${RESP}" | grep -o '"deleted_count":[0-9]*' | cut -d: -f2)
                   FREED=$(echo "${RESP}" | grep -o '"freed_human":"[^"]*"' | cut -d'"' -f4)

@@ -1,0 +1,206 @@
+# Cluster watchdog v2 — namespace deltaguard-system (NOT managed by the scanrook
+# kustomization: that kustomization forces namespace scanrook, so this file is
+# deployed by the dedicated ArgoCD app k8s/argocd/watchdog-app.yaml).
+#
+# Alert delivery: Discord webhook. The URL lives ONLY in the k8s Secret
+# alert-webhook (key: url) in this namespace — never in git.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cluster-watchdog
+  namespace: deltaguard-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cluster-watchdog-read
+rules:
+  - apiGroups: [""]
+    resources: ["nodes", "pods", "events", "endpoints", "persistentvolumeclaims"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["postgresql.cnpg.io"]
+    resources: ["clusters", "backups"]
+    verbs: ["get", "list"]
+  - apiGroups: ["longhorn.io"]
+    resources: ["volumes"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cluster-watchdog-read
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-watchdog-read
+subjects:
+  - kind: ServiceAccount
+    name: cluster-watchdog
+    namespace: deltaguard-system
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cluster-watchdog
+  namespace: deltaguard-system
+spec:
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 240
+      template:
+        spec:
+          serviceAccountName: cluster-watchdog
+          restartPolicy: OnFailure
+          containers:
+            - name: watchdog
+              image: bitnami/kubectl:latest
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: ALERT_WEBHOOK_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: alert-webhook
+                      key: url
+                      optional: false
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+                limits:
+                  cpu: 200m
+                  memory: 192Mi
+              command: ["/bin/sh", "-c"]
+              args:
+                - |
+                  set -eu
+                  now="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+                  now_epoch="$(date -u +%s)"
+                  message=""
+
+                  # 1. Nodes not Ready
+                  not_ready="$(kubectl get nodes --no-headers 2>/dev/null | awk '$2!="Ready" {print $1":"$2}')"
+                  if [ -n "$not_ready" ]; then
+                    message="$message\n[NodeNotReady]\n$not_ready\n"
+                  fi
+
+                  # 2. Pods CrashLoopBackOff / OOMKilled
+                  bad_pods="$(kubectl get pods -A -o jsonpath='{range .items[*]}{.metadata.namespace}{"/"}{.metadata.name}{" "}{range .status.containerStatuses[*]}{.name}{":"}{.lastState.terminated.reason}{" "}{.state.waiting.reason}{";"}{end}{"\n"}{end}' 2>/dev/null | grep -E 'OOMKilled|CrashLoopBackOff' || true)"
+                  if [ -n "$bad_pods" ]; then
+                    message="$message\n[CrashLoop/OOMKilled]\n$bad_pods\n"
+                  fi
+
+                  # 3. CNPG cluster health + backup freshness (26h)
+                  cnpg="$(kubectl -n db get clusters.postgresql.cnpg.io pg-shared -o jsonpath='{.spec.instances}|{.status.readyInstances}|{.status.lastSuccessfulBackup}' 2>/dev/null || true)"
+                  if [ -z "$cnpg" ]; then
+                    message="$message\n[CNPG]\nunable to read cluster db/pg-shared\n"
+                  else
+                    spec_inst="${cnpg%%|*}"
+                    rest="${cnpg#*|}"
+                    ready_inst="${rest%%|*}"
+                    last_backup="${rest#*|}"
+                    if [ "$ready_inst" != "$spec_inst" ]; then
+                      message="$message\n[CNPG]\npg-shared readyInstances=${ready_inst:-none} expected=$spec_inst\n"
+                    fi
+                    if [ -z "$last_backup" ]; then
+                      message="$message\n[CNPG backup]\npg-shared has no lastSuccessfulBackup recorded\n"
+                    else
+                      backup_epoch="$(date -u -d "$last_backup" +%s 2>/dev/null || echo 0)"
+                      if [ "$backup_epoch" -eq 0 ] || [ $((now_epoch - backup_epoch)) -gt 93600 ]; then
+                        message="$message\n[CNPG backup]\npg-shared lastSuccessfulBackup older than 26h: $last_backup\n"
+                      fi
+                    fi
+                  fi
+
+                  # 4. Hung CNPG backups (phase=running for >6h)
+                  hung_backups="$(kubectl -n db get backups.postgresql.cnpg.io -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.status.phase}{" "}{.metadata.creationTimestamp}{"\n"}{end}' 2>/dev/null | while read -r bname bphase bcreated; do
+                    [ "$bphase" = "running" ] || continue
+                    cepoch="$(date -u -d "$bcreated" +%s 2>/dev/null || echo "$now_epoch")"
+                    if [ $((now_epoch - cepoch)) -gt 21600 ]; then
+                      printf '%s running since %s\n' "$bname" "$bcreated"
+                    fi
+                  done || true)"
+                  if [ -n "$hung_backups" ]; then
+                    message="$message\n[CNPG hung backups >6h]\n$hung_backups\n"
+                  fi
+
+                  # 5. db/pg-shared-rw Endpoints empty
+                  ep_ips="$(kubectl -n db get endpoints pg-shared-rw -o jsonpath='{.subsets[*].addresses[*].ip}' 2>/dev/null || true)"
+                  if [ -z "$ep_ips" ]; then
+                    message="$message\n[PGEndpoints]\ndb/pg-shared-rw has no ready addresses\n"
+                  fi
+
+                  # 6a. Longhorn volumes needing expansion
+                  lh_expand="$(kubectl -n longhorn-system get volumes.longhorn.io -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.status.expansionRequired}{"\n"}{end}' 2>/dev/null | awk '$2=="true" {print $1" expansionRequired=true"}' || true)"
+                  if [ -n "$lh_expand" ]; then
+                    message="$message\n[Longhorn expansionRequired]\n$lh_expand\n"
+                  fi
+
+                  # 6b. Longhorn NODE storage pressure (actualSize vs spec is a thin-provisioning
+                  # high-water mark incl. snapshots and reads >100% permanently - not a usage signal)
+                  lh_full="$(kubectl -n longhorn-system get nodes.longhorn.io -o jsonpath='{range .items[*]}{.metadata.name}{" "}{range .status.diskStatus.*}{.storageAvailable}{" "}{.storageMaximum}{"\n"}{end}{end}' 2>/dev/null | awk 'NF==3 && $3+0 > 0 && $2/$3 < 0.15 {printf "%s only %.0f%% free (%.1fG avail)\n", $1, ($2/$3)*100, $2/1073741824}' || true)"
+                  if [ -n "$lh_full" ]; then
+                    message="$message\n[Longhorn node storage <15% free]\n$lh_full\n"
+                  fi
+
+                  # 7. FailedAttachVolume events tail
+                  failed_attach="$(kubectl get events -A --field-selector reason=FailedAttachVolume --sort-by=.metadata.creationTimestamp 2>/dev/null | tail -n 20 || true)"
+                  if [ -n "$failed_attach" ]; then
+                    message="$message\n[FailedAttachVolume tail]\n$failed_attach\n"
+                  fi
+
+                  if [ -n "$message" ]; then
+                    printf "[%s] ClusterWatchdog alerts:%b\n" "$now" "$message"
+                    if [ -n "${ALERT_WEBHOOK_URL:-}" ]; then
+                      content="**ScanRook cluster-watchdog**\n$message"
+                      body="$(printf '%b' "$content" | head -c 1900 | sed ':a;N;$!ba;s/\\/\\\\/g;s/"/\\"/g;s/\n/\\n/g')"
+                      payload="$(printf '{"content":"%s"}' "$body")"
+                      wget -qO- --header='Content-Type: application/json' --post-data="$payload" "$ALERT_WEBHOOK_URL" >/dev/null || true
+                    fi
+                  else
+                    echo "[$now] ClusterWatchdog ok"
+                  fi
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cluster-watchdog-heartbeat
+  namespace: deltaguard-system
+spec:
+  schedule: "0 14 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 120
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: heartbeat
+              image: bitnami/kubectl:latest
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: ALERT_WEBHOOK_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: alert-webhook
+                      key: url
+                      optional: false
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  cpu: 100m
+                  memory: 64Mi
+              command: ["/bin/sh", "-c"]
+              args:
+                - |
+                  set -eu
+                  wget -qO- --header='Content-Type: application/json' --post-data='{"content":"✅ watchdog alive — daily heartbeat"}' "$ALERT_WEBHOOK_URL" >/dev/null
+                  echo "heartbeat sent"
