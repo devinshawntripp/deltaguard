@@ -96,7 +96,7 @@ const faqJsonLd = {
       name: "Does ScanRook generate a CBOM?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Not as a complete CycloneDX cryptographic-asset document today. ScanRook's image scans already identify crypto libraries such as OpenSSL and their versions and match them against known CVEs as part of standard package and vulnerability scanning, which is a useful starting point for crypto visibility. Full structured CBOM output — certificates, key locations, protocol configuration — is a natural extension of that data and a direction we are evaluating.",
+        text: "Yes. As of scanner v1.18.0, ScanRook generates a CycloneDX 1.6 CBOM on any image scan with the --cbom flag: crypto libraries (with CVE cross-references), certificates (subject, expiry, signature algorithm, key size, plus expired/weak/SHA-1 flags), private-key material baked into the image, and heuristic TLS/SSH protocol hints. Scanning nginx:1.27, for example, surfaces 4 crypto libraries and 280 certificates (8 expired, 60 using weak keys) in its CA bundle. The CBOM appears as its own tab in the scan report.",
       },
     },
   ],
@@ -269,19 +269,23 @@ export default function Page() {
         <section className="grid gap-3">
           <h2 className="text-xl font-semibold tracking-tight">Where scanning fits today</h2>
           <p className="text-sm muted">
-            To be direct about where ScanRook stands: we do not generate a complete CycloneDX CBOM
-            document today. What ScanRook&apos;s scans already do is identify the crypto libraries
-            present in an image &mdash; OpenSSL is the most common example &mdash; along with the
-            installed version, and match that version against known CVEs the same way we do for any
-            other package. That output already answers part of the CBOM question: which crypto
-            implementations are present, and are any of them carrying known vulnerabilities.
+            ScanRook generates a CBOM directly from an image scan. As of scanner v1.18.0, passing
+            <code className="mx-1 rounded bg-black/10 px-1 dark:bg-white/10">--cbom</code> emits a
+            CycloneDX 1.6 cryptographic-asset inventory alongside the normal findings: the crypto
+            libraries present (OpenSSL, GnuTLS, libgcrypt, and similar) matched against known CVEs,
+            every certificate discovered in the image with its subject, expiry, signature algorithm
+            and key size, any private-key material baked into the image (raised as a high-severity
+            finding), and heuristic TLS and SSH protocol settings pulled from common config files.
           </p>
           <p className="text-sm muted">
-            It is not the whole picture. Certificate metadata, key and secret locations, and
-            negotiated protocol or cipher-suite configuration are not currently extracted into a
-            structured inventory. Generating a full CBOM is a natural extension of the package and
-            version data ScanRook already collects during a scan, and it is a roadmap direction we
-            are actively evaluating as PQC migration pressure grows across the industry. If your
+            To make that concrete: scanning the stock <code className="mx-1 rounded bg-black/10 px-1 dark:bg-white/10">nginx:1.27</code>
+            image surfaces four crypto libraries &mdash; including OpenSSL 3.0.16 and GnuTLS 3.7.9,
+            each carrying dozens of known CVEs &mdash; and 280 certificates in its CA bundle, of which
+            eight are already expired and sixty use weak keys. Certificates flagged as expired,
+            SHA-1-signed, or below modern key-size thresholds are exactly the inventory a PQC
+            migration starts from. The results render in a dedicated CBOM tab in the scan report, and
+            <code className="mx-1 rounded bg-black/10 px-1 dark:bg-white/10">--cbom-out</code> writes a
+            standalone CycloneDX 1.6 document you can feed to other tooling. If your
             organization is under a mandate to inventory cryptography &mdash; see our overview of{" "}
             <Link href="/blog/sbom-requirements-2026" className="underline">
               SBOM requirements in 2026
