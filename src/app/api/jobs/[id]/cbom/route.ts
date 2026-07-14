@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getJob } from "@/lib/jobs";
-import { presignGet } from "@/lib/s3";
+import { getObjectText } from "@/lib/s3";
 import { actorHasAnyRole, forbiddenByRole, JOB_READ_ROLES, resolveRequestActor } from "@/lib/authz";
 
 export const runtime = "nodejs";
@@ -54,13 +54,13 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
         return NextResponse.json({ error: "report not available" }, { status: 400 });
     }
 
-    const url = await presignGet({ bucket: String(job.report_bucket), key: String(job.report_key) });
-    const res = await fetch(url.url, { cache: "no-store" });
-    if (!res.ok) {
+    let text: string;
+    try {
+        text = await getObjectText({ bucket: String(job.report_bucket), key: String(job.report_key) });
+    } catch {
         return NextResponse.json({ error: "report not available" }, { status: 400 });
     }
 
-    const text = await res.text();
     const cbom = extractCbom(text);
     if (!cbom) {
         return NextResponse.json({ error: NO_CBOM_ERROR }, { status: 404 });
