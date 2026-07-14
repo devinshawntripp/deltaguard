@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { presignGet } from "@/lib/s3";
+import { getObjectText } from "@/lib/s3";
 import { getJob } from "@/lib/jobs";
 import { actorHasAnyRole, forbiddenByRole, JOB_READ_ROLES, resolveRequestActor } from "@/lib/authz";
 
@@ -103,11 +103,12 @@ async function parseS3FindingsFallback(job: {
         return emptyResponse(page, pageSize);
     }
 
-    const url = await presignGet({ bucket: String(job.report_bucket), key: String(job.report_key) });
-    const res = await fetch(url.url, { cache: "no-store" });
-    if (!res.ok) return emptyResponse(page, pageSize);
-
-    const text = await res.text();
+    let text: string;
+    try {
+        text = await getObjectText({ bucket: String(job.report_bucket), key: String(job.report_key) });
+    } catch {
+        return emptyResponse(page, pageSize);
+    }
     if (!text.trim()) return emptyResponse(page, pageSize);
 
     // Detect format: if first non-empty line starts with {"type": it's NDJSON

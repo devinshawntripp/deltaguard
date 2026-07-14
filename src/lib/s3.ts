@@ -73,6 +73,24 @@ export async function presignGet(args: { bucket: string; key: string; expiresSec
     return { url, method: "GET" as const };
 }
 
+/**
+ * Read an object's full body as a UTF-8 string using the INTERNAL cluster
+ * endpoint. Server-side report reads MUST use this — a presigned URL from
+ * presignGet() points at the external/public endpoint (for the browser), and
+ * fetching that from inside the cluster hairpins out through the ingress and
+ * hangs. Reports are small (summary + findings), so buffering is fine.
+ */
+export async function getObjectText(args: { bucket: string; key: string }): Promise<string> {
+    const res = await s3Internal.send(new GetObjectCommand({ Bucket: args.bucket, Key: args.key }));
+    const body = res.Body as { transformToString?: (encoding?: string) => Promise<string> } | undefined;
+    if (body?.transformToString) return body.transformToString("utf-8");
+    // Fallback: manually drain the Node stream.
+    const stream = res.Body as unknown as NodeJS.ReadableStream;
+    const chunks: Buffer[] = [];
+    for await (const chunk of stream) chunks.push(Buffer.from(chunk));
+    return Buffer.concat(chunks).toString("utf-8");
+}
+
 export async function streamFromS3(args: { bucket: string; key: string }): Promise<{ stream: ReadableStream; contentLength?: number }> {
     const res = await s3Internal.send(new GetObjectCommand({ Bucket: args.bucket, Key: args.key }));
     const body = res.Body as unknown as NodeJS.ReadableStream;
