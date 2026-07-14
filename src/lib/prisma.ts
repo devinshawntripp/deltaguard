@@ -384,6 +384,7 @@ BEGIN
       name TEXT NOT NULL,
       ecosystem TEXT NOT NULL,
       version TEXT NOT NULL,
+      license TEXT,
       source_kind TEXT NOT NULL,
       source_path TEXT,
       confidence_tier TEXT NOT NULL DEFAULT 'confirmed_installed',
@@ -403,6 +404,7 @@ BEGIN
     FROM information_schema.tables
     WHERE table_schema = 'public' AND table_name = 'scan_packages'
   ) THEN
+    ALTER TABLE scan_packages ADD COLUMN IF NOT EXISTS license TEXT;
     CREATE INDEX IF NOT EXISTS idx_scan_packages_job_name_version ON scan_packages(job_id, name, version);
     CREATE INDEX IF NOT EXISTS idx_scan_packages_job_source_path ON scan_packages(job_id, source_path);
   END IF;
@@ -778,6 +780,7 @@ CREATE TABLE IF NOT EXISTS scan_packages (
   name TEXT NOT NULL,
   ecosystem TEXT NOT NULL,
   version TEXT NOT NULL,
+  license TEXT,
   source_kind TEXT NOT NULL,
   source_path TEXT,
   confidence_tier TEXT NOT NULL DEFAULT 'confirmed_installed',
@@ -930,6 +933,7 @@ CREATE INDEX IF NOT EXISTS idx_scan_finding_refs_finding ON scan_finding_refs(fi
 
 CREATE INDEX IF NOT EXISTS idx_scan_files_job_parent_path ON scan_files(job_id, parent_path, path);
 CREATE INDEX IF NOT EXISTS idx_scan_files_job_path ON scan_files(job_id, path);
+ALTER TABLE scan_packages ADD COLUMN IF NOT EXISTS license TEXT;
 CREATE INDEX IF NOT EXISTS idx_scan_packages_job_name_version ON scan_packages(job_id, name, version);
 CREATE INDEX IF NOT EXISTS idx_scan_packages_job_source_path ON scan_packages(job_id, source_path);
 CREATE INDEX IF NOT EXISTS idx_admin_content_versions_key_created_at ON admin_content_versions(key, created_at DESC);

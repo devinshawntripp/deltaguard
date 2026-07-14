@@ -10,6 +10,7 @@ type PackageRow = {
   name: string;
   ecosystem: string;
   version: string;
+  license: string | null;
   source_kind: string;
   source_path: string | null;
   confidence_tier: string;
@@ -31,6 +32,7 @@ const SORT_COLUMNS: Record<string, string> = {
   name: "name",
   ecosystem: "ecosystem",
   version: "version",
+  license: "license",
   source_kind: "source_kind",
   source_path: "source_path",
   tier: "confidence_tier",
@@ -103,6 +105,7 @@ SELECT
   package_name AS name,
   COALESCE(package_ecosystem, 'unknown') AS ecosystem,
   package_version AS version,
+  NULL::text AS license,
   'derived_from_findings'::text AS source_kind,
   NULL::text AS source_path,
   'confirmed_installed'::text AS confidence_tier,
@@ -164,6 +167,7 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
     where.push(`(
   name ILIKE $${n}
   OR version ILIKE $${n}
+  OR COALESCE(license,'') ILIKE $${n}
   OR source_kind ILIKE $${n}
   OR COALESCE(source_path,'') ILIKE $${n}
   OR ecosystem ILIKE $${n}
@@ -181,6 +185,7 @@ WITH dedup AS (
     name,
     ecosystem,
     version,
+    license,
     source_kind,
     COALESCE(source_path, '') AS source_path,
     confidence_tier,
@@ -191,6 +196,7 @@ WITH dedup AS (
     name,
     ecosystem,
     version,
+    license,
     source_kind,
     COALESCE(source_path, ''),
     confidence_tier,
@@ -228,6 +234,7 @@ WITH dedup AS (
     name,
     ecosystem,
     version,
+    license,
     source_kind,
     COALESCE(source_path, '') AS source_path,
     confidence_tier,
@@ -238,6 +245,7 @@ WITH dedup AS (
     name,
     ecosystem,
     version,
+    license,
     source_kind,
     COALESCE(source_path, ''),
     confidence_tier,
@@ -247,6 +255,7 @@ SELECT
   name,
   ecosystem,
   version,
+  license,
   source_kind,
   NULLIF(source_path, '') AS source_path,
   confidence_tier,

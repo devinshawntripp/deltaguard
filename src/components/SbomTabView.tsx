@@ -28,6 +28,7 @@ type PackageRow = {
     name: string;
     ecosystem: string;
     version: string;
+    license: string | null;
     source_kind: string;
     source_path: string | null;
     confidence_tier: string;
@@ -326,6 +327,7 @@ export default function SbomTabView({ jobId, sbomStatus: initialStatus }: SbomTa
                                 {[
                                     { key: "name", label: "Package" },
                                     { key: "version", label: "Version" },
+                                    { key: "license", label: "License" },
                                     { key: "ecosystem", label: "Ecosystem" },
                                     { key: "source_kind", label: "Source" },
                                     { key: "tier", label: "Confidence" },
@@ -352,11 +354,11 @@ export default function SbomTabView({ jobId, sbomStatus: initialStatus }: SbomTa
                         <tbody>
                             {pkgLoading && packages.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="py-8 text-center muted">Loading...</td>
+                                    <td colSpan={6} className="py-8 text-center muted">Loading...</td>
                                 </tr>
                             ) : packages.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="py-8 text-center muted">
+                                    <td colSpan={6} className="py-8 text-center muted">
                                         {pkgSearch ? "No packages match your search." : "No packages found."}
                                     </td>
                                 </tr>
@@ -365,6 +367,7 @@ export default function SbomTabView({ jobId, sbomStatus: initialStatus }: SbomTa
                                     <tr key={`${pkg.name}-${pkg.version}-${pkg.ecosystem}-${i}`} className="border-b border-black/5 dark:border-white/5 hover:bg-black/[0.02] dark:hover:bg-white/[0.02]">
                                         <td className="py-1.5 px-2 font-mono text-xs">{pkg.name}</td>
                                         <td className="py-1.5 px-2 font-mono text-xs tabular-nums">{pkg.version}</td>
+                                        <td className="py-1.5 px-2 font-mono text-xs">{pkg.license || "unknown"}</td>
                                         <td className="py-1.5 px-2">
                                             <span className="inline-flex px-1.5 py-0.5 rounded text-xs bg-black/5 dark:bg-white/10">
                                                 {pkg.ecosystem}
