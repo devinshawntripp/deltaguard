@@ -3,6 +3,7 @@ import React from "react";
 
 import Link from "next/link";
 import JobDetailTabs from "./JobDetailTabs";
+import JobIdChip from "./JobIdChip";
 
 /** Compute a human-friendly name for a scan job. */
 function jobDisplayName(j: Job): string {
@@ -84,7 +85,6 @@ function SkeletonRows() {
       {Array.from({ length: 6 }).map((_, i) => (
         <tr key={`skel-${i}`} className="border-t border-black/5 dark:border-white/5">
           <td className="p-3"><div className="w-4 h-4 rounded bg-black/10 dark:bg-white/10 animate-pulse" /></td>
-          <td className="p-3"><div className="h-3 rounded bg-black/10 dark:bg-white/10 animate-pulse w-3/4" /></td>
           <td className="p-3"><div className="h-3 rounded bg-black/10 dark:bg-white/10 animate-pulse w-4/5" /></td>
           <td className="p-3"><div className="h-3 rounded bg-black/10 dark:bg-white/10 animate-pulse w-12" /></td>
           <td className="p-3">
@@ -219,7 +219,7 @@ export default function PackagesTable() {
               {/* Header row: filename + status badge */}
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs font-mono truncate opacity-60" title={j.id}>{j.id}</p>
+                  <JobIdChip id={j.id} />
                   <p className="text-sm font-medium truncate mt-0.5" title={jobDisplayName(j)}>{jobDisplayName(j)}</p>
                   <div className="flex gap-1 mt-0.5">
                     {jobSourceLabel(j) && (
@@ -320,8 +320,7 @@ export default function PackagesTable() {
         <thead className="bg-black/[.04] dark:bg-white/[.04] text-left">
           <tr>
             <th className="p-3 w-8"></th>
-            <th className="p-3 w-[18%]">Job</th>
-            <th className="p-3 w-[24%]">Target</th>
+            <th className="p-3 w-[30%]">Target</th>
             <th className="p-3 w-[8%]">Status</th>
             <th className="p-3 w-[24%]">Progress</th>
             <th className="p-3 w-[12%]">Started</th>
@@ -333,7 +332,7 @@ export default function PackagesTable() {
           {!loaded && <SkeletonRows />}
           {loaded && list.length === 0 && (
             <tr>
-              <td colSpan={8} className="p-8 text-center muted">No scans yet. Upload a file above to get started.</td>
+              <td colSpan={7} className="p-8 text-center muted">No scans yet. Upload a file above to get started.</td>
             </tr>
           )}
           {list.map((j, idx) => {
@@ -358,11 +357,11 @@ export default function PackagesTable() {
                       <svg viewBox="0 0 24 24" width="16" height="16" className="opacity-70"><path d="M8 5l8 7-8 7" fill="none" stroke="currentColor" strokeWidth="2" /></svg>
                     </button>
                   </td>
-                  <td className="p-3 font-mono text-xs min-w-0">
-                    <span className="block truncate" title={j.id}>{j.id}</span>
-                  </td>
                   <td className="p-3 opacity-80 text-xs min-w-0">
-                    <span className="block truncate font-medium" title={jobDisplayName(j)}>{jobDisplayName(j)}</span>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="block truncate font-medium" title={jobDisplayName(j)}>{jobDisplayName(j)}</span>
+                      <JobIdChip id={j.id} className="shrink-0" />
+                    </div>
                     <div className="flex gap-1 mt-0.5">
                       {jobSourceLabel(j) && (
                         <span className="inline-block px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] font-medium">
@@ -430,7 +429,7 @@ export default function PackagesTable() {
                 </tr>
                 {isOpen && (
                   <tr className="border-t border-black/5 dark:border-white/5">
-                    <td className="p-0" colSpan={8}>
+                    <td className="p-0" colSpan={7}>
                       <div className="px-4 py-3">
                         <JobDetailTabs
                           scanId={j.id}
