@@ -6,6 +6,7 @@ type PackageEntry = {
   name: string;
   ecosystem: string;
   version: string;
+  license: string | null;
   source_kind: string;
   source_path: string | null;
   confidence_tier: string;
@@ -106,6 +107,7 @@ export default function JobPackagesTable({ jobId }: { jobId: string }) {
             <option value="name">Sort: name</option>
             <option value="ecosystem">Sort: ecosystem</option>
             <option value="version">Sort: version</option>
+            <option value="license">Sort: license</option>
             <option value="source_kind">Sort: source kind</option>
             <option value="source_path">Sort: source path</option>
             <option value="tier">Sort: confidence tier</option>
@@ -143,6 +145,7 @@ export default function JobPackagesTable({ jobId }: { jobId: string }) {
               <th className="p-3">Name</th>
               <th className="p-3">Ecosystem</th>
               <th className="p-3">Version</th>
+              <th className="p-3">License</th>
               <th className="p-3">Source</th>
               <th className="p-3">Source Path</th>
               <th className="p-3">Confidence</th>
@@ -151,14 +154,15 @@ export default function JobPackagesTable({ jobId }: { jobId: string }) {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td className="p-3 opacity-70" colSpan={7}>Loading package inventory...</td></tr>
+              <tr><td className="p-3 opacity-70" colSpan={8}>Loading package inventory...</td></tr>
             ) : items.length === 0 ? (
-              <tr><td className="p-3 opacity-70" colSpan={7}>No package inventory rows for this job.</td></tr>
+              <tr><td className="p-3 opacity-70" colSpan={8}>No package inventory rows for this job.</td></tr>
             ) : items.map((entry) => (
               <tr key={`${entry.name}:${entry.version}:${entry.source_kind}:${entry.source_path || ""}`} className="border-t border-black/5 dark:border-white/5">
                 <td className="p-3 font-medium">{entry.name}</td>
                 <td className="p-3 font-mono text-xs">{entry.ecosystem}</td>
                 <td className="p-3 font-mono text-xs">{entry.version}</td>
+                <td className="p-3 font-mono text-xs">{entry.license || "unknown"}</td>
                 <td className="p-3">{entry.source_kind}</td>
                 <td className="p-3 font-mono text-xs max-w-[380px] truncate" title={entry.source_path || ""}>{entry.source_path || "-"}</td>
                 <td className="p-3">{entry.confidence_tier}</td>
