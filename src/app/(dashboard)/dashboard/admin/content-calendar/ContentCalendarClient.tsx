@@ -63,6 +63,11 @@ export default function ContentCalendarClient() {
 
   const items = useMemo(() => data?.items ?? [], [data]);
 
+  const totalVolume = useMemo(
+    () => items.reduce((sum, item) => sum + (item.monthly_volume ?? 0), 0),
+    [items],
+  );
+
   const byDate = useMemo(() => {
     const map = new Map<string, CalendarEntry[]>();
     for (const item of items) {
@@ -259,6 +264,32 @@ export default function ContentCalendarClient() {
           >
             →
           </button>
+        </div>
+      </div>
+
+      {/* Summary stats */}
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="surface-card p-4">
+          <div className="text-xs font-semibold uppercase tracking-wide opacity-60">
+            Total monthly search volume
+          </div>
+          <div className="mt-1 text-3xl font-semibold tabular-nums">
+            {totalVolume.toLocaleString("en-US")}
+          </div>
+          <div className="mt-0.5 text-xs opacity-70">
+            across all tracked articles
+          </div>
+        </div>
+        <div className="surface-card p-4">
+          <div className="text-xs font-semibold uppercase tracking-wide opacity-60">
+            Tracked articles
+          </div>
+          <div className="mt-1 text-3xl font-semibold tabular-nums">
+            {items.length.toLocaleString("en-US")}
+          </div>
+          <div className="mt-0.5 text-xs opacity-70">
+            in the content calendar
+          </div>
         </div>
       </div>
 
