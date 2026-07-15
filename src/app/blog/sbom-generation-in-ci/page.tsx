@@ -7,7 +7,7 @@ import { isPublished } from "@/lib/publishGate";
 export const revalidate = 3600;
 const PUBLISH_DATE = "2026-08-21";
 
-const title = `How to Generate an SBOM in CI (Working GitHub Actions Example) | ${APP_NAME}`;
+const title = `Syft SBOM Generation in CI: A GitHub Actions Guide | ${APP_NAME}`;
 const description =
   "How to generate an SBOM in CI: a working GitHub Actions workflow, format choice, enrichment, and gating builds on unexpected dependency changes.";
 
@@ -15,16 +15,16 @@ export const metadata: Metadata = {
   title,
   description,
   keywords: [
+    "syft sbom",
+    "syft sbom generation",
+    "anchore syft",
     "generate sbom in ci",
     "sbom github actions",
     "sbom ci pipeline",
-    "generate sbom ci/cd",
     "automate sbom generation",
-    "sbom every build",
     "cyclonedx github actions",
     "sbom pipeline example",
     "sbom diff ci gate",
-    "continuous sbom generation",
   ],
   alternates: { canonical: "/blog/sbom-generation-in-ci" },
   openGraph: {
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
 const articleJsonLd = {
   "@context": "https://schema.org",
   "@type": "BlogPosting",
-  headline: "How to Generate an SBOM in CI (Working GitHub Actions Example)",
+  headline: "Syft SBOM Generation in CI: A GitHub Actions Guide",
   description,
   author: { "@type": "Organization", name: "ScanRook" },
   publisher: { "@type": "Organization", name: "ScanRook" },
@@ -119,14 +119,15 @@ export default function Page() {
         <header className="grid gap-3">
           <div className="text-xs uppercase tracking-wide muted">Compliance</div>
           <h1 className="text-3xl font-semibold tracking-tight">
-            How to Generate an SBOM in CI (Working GitHub Actions Example)
+            Syft SBOM Generation in CI: A GitHub Actions Guide
           </h1>
           <p className="text-sm muted">Published August 21, 2026 &middot; 8 min read</p>
           <p className="text-sm muted">
             An SBOM that is not generated in CI is an SBOM that goes stale the day someone runs{" "}
             <code className="text-xs rounded bg-black/[.06] dark:bg-white/[.06] px-1.5 py-0.5">npm install</code>{" "}
-            without regenerating it. Here is a working pipeline that produces an SBOM with every
-            build, plus how to gate on what changed.
+            without regenerating it. Syft SBOM generation &mdash; running Anchore&apos;s Syft (or
+            ScanRook) as a build step &mdash; produces a fresh bill of materials with every build.
+            Here is a working pipeline, plus how to gate on what changed.
           </p>
         </header>
 
@@ -145,6 +146,29 @@ export default function Page() {
             artifact. Tying generation to the build step itself removes that failure mode entirely:
             the SBOM is produced from the exact same source tree or image that becomes the release
             artifact, every time, with no separate step to remember.
+          </p>
+        </section>
+
+        <section className="grid gap-3">
+          <h2 className="text-xl font-semibold tracking-tight">Syft: the common SBOM generator</h2>
+          <p className="text-sm muted">
+            The de facto standard tool for producing an SBOM in a pipeline is{" "}
+            <strong>Syft</strong>, Anchore&apos;s open-source generator. Syft catalogs the packages
+            in a container image or a filesystem and writes them out in CycloneDX, SPDX, or its own{" "}
+            <code className="text-xs rounded bg-black/[.06] dark:bg-white/[.06] px-1.5 py-0.5">syft-json</code>{" "}
+            format. A minimal Syft SBOM run is a single command:
+          </p>
+          <pre className="rounded-lg border border-black/10 dark:border-white/10 bg-black/[.04] dark:bg-white/[.04] p-3 text-xs overflow-x-auto">{`# SBOM from a container image, CycloneDX JSON
+syft myapp:latest -o cyclonedx-json=sbom.cdx.json
+
+# SBOM from the current source tree, SPDX JSON
+syft dir:. -o spdx-json=sbom.spdx.json`}</pre>
+          <p className="text-sm muted">
+            Syft pairs naturally with Anchore&apos;s Grype scanner, which consumes a Syft SBOM to
+            match vulnerabilities. ScanRook takes the same idea one step further: it emits CycloneDX
+            or SPDX SBOMs and enriches every component with OSV, NVD, and Red Hat OVAL data in the
+            same pass, so you get the inventory and the risk assessment from one call rather than
+            chaining a generator and a separate scanner. Either tool drops into the workflow below.
           </p>
         </section>
 

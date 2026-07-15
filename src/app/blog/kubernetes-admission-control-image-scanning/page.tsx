@@ -7,7 +7,7 @@ import { isPublished } from "@/lib/publishGate";
 export const revalidate = 3600;
 const PUBLISH_DATE = "2026-08-16";
 
-const title = `Kubernetes Admission Control for Image Scanning | ${APP_NAME}`;
+const title = `Kyverno Image Scanning: Kubernetes Admission Control | ${APP_NAME}`;
 const description =
   "How Kubernetes admission control blocks unscanned or vulnerable container images at deploy time, with a working Kyverno policy and where ScanRook fits the gate.";
 
@@ -15,16 +15,16 @@ export const metadata: Metadata = {
   title,
   description,
   keywords: [
+    "kyverno",
+    "kyverno image scanning policy",
+    "kyverno verifyimages",
+    "kyverno admission controller",
     "kubernetes admission controller image scanning",
     "kubernetes admission control vulnerability scan",
-    "kyverno image scanning policy",
     "block vulnerable images kubernetes",
     "validating admission webhook image scan",
-    "kubernetes verifyimages kyverno",
     "kubernetes deploy time scanning",
     "kubernetes image policy scanrook",
-    "admission controller container security",
-    "kubernetes cluster image gate",
   ],
   alternates: { canonical: "/blog/kubernetes-admission-control-image-scanning" },
   openGraph: {
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
 const articleJsonLd = {
   "@context": "https://schema.org",
   "@type": "BlogPosting",
-  headline: "Kubernetes Admission Control for Image Scanning",
+  headline: "Kyverno Image Scanning: Kubernetes Admission Control",
   description,
   author: { "@type": "Organization", name: "ScanRook" },
   publisher: { "@type": "Organization", name: "ScanRook" },
@@ -120,15 +120,17 @@ export default function Page() {
         <header className="grid gap-3">
           <div className="text-xs uppercase tracking-wide muted">Integrations</div>
           <h1 className="text-3xl font-semibold tracking-tight">
-            Kubernetes Admission Control for Image Scanning
+            Kyverno Image Scanning: Kubernetes Admission Control
           </h1>
           <p className="text-sm muted">Published August 16, 2026 &middot; 9 min read</p>
           <p className="text-sm muted">
             A Kubernetes admission controller is the last checkpoint before an image actually runs
             &mdash; the one CI cannot bypass and no one can skip with a quick{" "}
             <code className="text-xs rounded bg-black/[.06] dark:bg-white/[.06] px-1.5 py-0.5">kubectl run</code>.
-            This guide builds a working Kyverno policy that blocks any Pod whose image lacks a
-            passing, signed ScanRook scan attestation, and explains the tradeoffs of enforcing it.
+            This guide builds a working policy in Kyverno &mdash; the most widely deployed
+            Kubernetes admission controller and policy engine &mdash; that blocks any Pod whose
+            image lacks a passing, signed ScanRook scan attestation, and explains the tradeoffs of
+            enforcing it.
           </p>
         </header>
 
@@ -190,8 +192,15 @@ cosign attest \\
         <section className="grid gap-3">
           <h2 className="text-xl font-semibold tracking-tight">Step two: the Kyverno ClusterPolicy</h2>
           <p className="text-sm muted">
-            Apply this policy to the cluster. It verifies the attestation&apos;s signature and
-            enforces that the attested critical-finding count is zero before allowing the Pod:
+            Kyverno is a CNCF policy engine that runs as a Kubernetes admission controller, which is
+            what makes it a leading choice for enforcing image policy at deploy time. Its{" "}
+            <code className="text-xs rounded bg-black/[.06] dark:bg-white/[.06] px-1.5 py-0.5">verifyImages</code>{" "}
+            rule can both verify an image&apos;s cosign signature and evaluate signed attestations
+            against conditions (recent Kyverno versions also support CEL expressions for richer
+            checks), so a single policy can require that a passing scan attestation exists for the
+            exact image digest being admitted. Apply this policy to the cluster &mdash; it verifies
+            the attestation&apos;s signature and enforces that the attested critical-finding count is
+            zero before allowing the Pod:
           </p>
           <pre className="rounded-lg border border-black/10 dark:border-white/10 bg-black/[.04] dark:bg-white/[.04] p-3 text-xs overflow-x-auto">{`apiVersion: kyverno.io/v1
 kind: ClusterPolicy

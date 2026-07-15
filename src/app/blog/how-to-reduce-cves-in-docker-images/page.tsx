@@ -7,7 +7,7 @@ import { isPublished } from "@/lib/publishGate";
 export const revalidate = 3600;
 const PUBLISH_DATE = "2026-07-07";
 
-const title = `How to Reduce CVEs in Docker Images: 6 Steps That Work | ${APP_NAME}`;
+const title = `How to Reduce Docker CVEs: 6 Steps That Work | ${APP_NAME}`;
 const description =
   "Six concrete steps to reduce CVEs in Docker images: smaller base images, multi-stage builds, package updates, rebuild cadence, and scan verification.";
 
@@ -15,15 +15,15 @@ export const metadata: Metadata = {
   title,
   description,
   keywords: [
-    "reduce cves docker image",
+    "docker cve",
+    "docker cves",
+    "reduce docker cves",
+    "docker image cve",
     "how to reduce cves in docker images",
     "fix docker image vulnerabilities",
-    "docker image fewer vulnerabilities",
-    "reduce container vulnerabilities",
     "docker base image cves",
-    "multi-stage build security",
     "docker image hardening",
-    "shrink docker attack surface",
+    "reduce container vulnerabilities",
     "docker security best practices",
   ],
   alternates: { canonical: "/blog/how-to-reduce-cves-in-docker-images" },
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
 const articleJsonLd = {
   "@context": "https://schema.org",
   "@type": "BlogPosting",
-  headline: "How to Reduce CVEs in Docker Images: 6 Steps That Work",
+  headline: "How to Reduce Docker CVEs: 6 Steps That Work",
   description,
   author: { "@type": "Organization", name: "ScanRook" },
   publisher: { "@type": "Organization", name: "ScanRook" },
@@ -119,13 +119,13 @@ export default function Page() {
         <header className="grid gap-3">
           <div className="text-xs uppercase tracking-wide muted">Best practices</div>
           <h1 className="text-3xl font-semibold tracking-tight">
-            How to Reduce CVEs in Docker Images: 6 Steps That Work
+            How to Reduce Docker CVEs: 6 Steps That Work
           </h1>
           <p className="text-sm muted">Published July 7, 2026 &middot; 9 min read</p>
           <p className="text-sm muted">
             You scanned your image, the report says 900 findings, and your security team wants the
-            number down. This guide walks through the six changes that actually reduce CVEs in
-            Docker images, in the order of effort-to-impact, with runnable examples for each.
+            number down. This guide walks through the six changes that actually reduce Docker CVEs,
+            in the order of effort-to-impact, with runnable examples for each.
           </p>
         </header>
 
@@ -136,7 +136,7 @@ export default function Page() {
         />
 
         <section className="grid gap-3">
-          <h2 className="text-xl font-semibold tracking-tight">Where the CVEs actually come from</h2>
+          <h2 className="text-xl font-semibold tracking-tight">Where Docker CVEs actually come from</h2>
           <p className="text-sm muted">
             Before changing anything, understand the shape of the problem. In a typical application
             image, the overwhelming majority of findings are not in your code or even your
