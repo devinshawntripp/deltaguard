@@ -54,3 +54,7 @@ playwright/.auth/
 playwright-report/
 test-results/
 .superpowers/
+
+# Ignore macOS cloud-sync conflict copies (e.g. "file 2.tsx")
+*\ [2-9].*
+*\ [2-9]
