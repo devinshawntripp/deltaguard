@@ -660,6 +660,116 @@ export const posts: BlogPost[] = [
   publishDate: "2026-08-25",
   image: "/blog/what-is-a-cbom.jpg",
 },
+
+  // ── Keyword batch 2: registry & supply-chain articles (Aug–Sep 2026) ──
+  {
+    href: "/blog/npm-audit-explained",
+    category: "Scanning concepts",
+    title: "npm audit Explained: What It Catches and What It Misses",
+    description:
+      "What npm audit checks, how it reads your lockfile against the GitHub Advisory Database, why it over- and under-reports, and where container scanning helps.",
+    publishDate: "2026-08-26",
+    image: "/blog/npm-audit-explained.jpg",
+  },
+  {
+    href: "/blog/owasp-dependency-check-alternatives",
+    category: "Benchmarks",
+    title: "OWASP Dependency-Check Alternatives in 2026: A Fair Look",
+    description:
+      "OWASP Dependency-Check is a free CPE-based SCA scanner. Here are honest alternatives (ScanRook, Trivy, Grype, Snyk, OSV-Scanner) and the cases where each wins.",
+    publishDate: "2026-08-27",
+    image: "/blog/owasp-dependency-check-alternatives.jpg",
+  },
+  {
+    href: "/blog/software-supply-chain-security",
+    category: "Security Concepts",
+    title: "Software Supply Chain Security: A Practical Primer",
+    description:
+      "What software supply chain security means, the attack classes it defends against, and a layered defense from dependency scanning to SBOMs, SLSA, and signing.",
+    publishDate: "2026-08-28",
+    image: "/blog/software-supply-chain-security.jpg",
+  },
+  {
+    href: "/blog/sigstore-cosign-container-signing",
+    category: "Security Concepts",
+    title: "Image Signing with Sigstore and Cosign, Explained",
+    description:
+      "How container image signing works with Sigstore and Cosign: keyless signing, the transparency log, verifying signatures, and where it fits alongside scanning.",
+    publishDate: "2026-08-29",
+    image: "/blog/sigstore-cosign-container-signing.jpg",
+  },
+  {
+    href: "/blog/pip-audit-python-dependency-scanning",
+    category: "Scanning concepts",
+    title: "pip-audit: Scanning Python Dependencies for Vulnerabilities",
+    description:
+      "pip-audit scans your Python dependencies for known CVEs using PyPI and OSV advisory data. How the tool works, what it misses, and where ScanRook fits.",
+    publishDate: "2026-08-30",
+    image: "/blog/pip-audit-python-dependency-scanning.jpg",
+  },
+  {
+    href: "/blog/govulncheck-go-vulnerability-scanning",
+    category: "Scanning concepts",
+    title: "govulncheck: Go Vulnerability Scanning That Follows Your Code",
+    description:
+      "govulncheck finds vulnerabilities in Go code using call-graph analysis and the Go vulnerability database. How it works, its limits, and where ScanRook fits.",
+    publishDate: "2026-08-31",
+    image: "/blog/govulncheck-go-vulnerability-scanning.jpg",
+  },
+  {
+    href: "/blog/cvss-4-0-explained",
+    category: "Security Concepts",
+    title: "CVSS 4.0 Explained: What Changed From v3.1 and Why",
+    description:
+      "CVSS 4.0 explained: the CVSS-B/BT/BTE nomenclature, new metrics like Attack Requirements and Safety, and how the 2023 revision changes severity scoring.",
+    publishDate: "2026-09-01",
+    image: "/blog/cvss-4-0-explained.jpg",
+  },
+  {
+    href: "/blog/cargo-audit-rust-dependency-scanning",
+    category: "Scanning concepts",
+    title: "cargo audit: Scanning Rust Dependencies With RustSec",
+    description:
+      "cargo audit scans Rust dependencies for advisories from the RustSec database. How the tool works, what it covers, its limits, and where ScanRook fits in.",
+    publishDate: "2026-09-02",
+    image: "/blog/cargo-audit-rust-dependency-scanning.jpg",
+  },
+  {
+    href: "/blog/container-image-scanning-guide",
+    category: "Best practices",
+    title: "Container Image Scanning: A Practical Guide for 2026",
+    description:
+      "What container image scanning is, how it works, what it catches and misses, where to run it in your pipeline, and how to choose a scanner that fits.",
+    publishDate: "2026-09-03",
+    image: "/blog/container-image-scanning-guide.jpg",
+  },
+  {
+    href: "/blog/docker-vulnerability-scanner-guide",
+    category: "Best practices",
+    title: "Docker Vulnerability Scanner: A Complete Guide",
+    description:
+      "What a Docker vulnerability scanner does, how it finds CVEs in image layers, the main tools compared, and how to run one in your build pipeline.",
+    publishDate: "2026-09-04",
+    image: "/blog/docker-vulnerability-scanner-guide.jpg",
+  },
+  {
+    href: "/blog/slsa-framework-explained",
+    category: "Compliance",
+    title: "The SLSA Framework Explained: Levels and Provenance",
+    description:
+      "What the SLSA framework is, how its build levels and provenance work, what it does and does not protect against, and how it fits alongside SBOMs.",
+    publishDate: "2026-09-05",
+    image: "/blog/slsa-framework-explained.jpg",
+  },
+  {
+    href: "/blog/kubernetes-vulnerability-scanning-guide",
+    category: "Best practices",
+    title: "Kubernetes Vulnerability Scanning: A Practical Guide",
+    description:
+      "What Kubernetes vulnerability scanning covers, image versus cluster scanning, the main tools, and how to gate vulnerable images before they reach a cluster.",
+    publishDate: "2026-09-06",
+    image: "/blog/kubernetes-vulnerability-scanning-guide.jpg",
+  },
 ];
 
 export const categoryColors: Record<string, string> = {
