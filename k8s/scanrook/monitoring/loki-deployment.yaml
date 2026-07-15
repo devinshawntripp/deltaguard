@@ -73,6 +73,10 @@ metadata:
     app: loki
 spec:
   replicas: 1
+  # Single replica on an RWO volume: Recreate avoids the rolling-update deadlock
+  # where the new pod can never mount the volume the old pod still holds.
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: loki
