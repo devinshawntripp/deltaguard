@@ -250,8 +250,8 @@ cargo audit bin target/release/my-service`}</pre>
             in your Rust CI. What ScanRook adds is everything else in the image: the base OS packages,
             the system libraries, and any other language ecosystems, in the artifact you actually
             deploy. Wiring a dependency audit into your commit flow, as in{" "}
-            <Link href="/blog/pre-commit-vulnerability-scanning" className="underline">
-              pre-commit vulnerability scanning
+            <Link href="/blog/container-scanning-best-practices" className="underline">
+              container scanning best practices
             </Link>
             , plus an image scan before release, covers both ends.
           </p>
@@ -340,7 +340,7 @@ cargo audit bin target/release/my-service`}</pre>
               Installed-State Scanning vs. Advisory Matching
             </Link>{" "}
             &middot;{" "}
-            <Link href="/blog/pre-commit-vulnerability-scanning" className="underline">
+            <Link href="/blog/container-scanning-best-practices" className="underline">
               Pre-Commit Vulnerability Scanning
             </Link>
           </p>
