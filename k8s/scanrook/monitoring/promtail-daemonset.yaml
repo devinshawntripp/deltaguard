@@ -32,6 +32,7 @@ data:
         pipeline_stages:
           - cri: {}
           - regex:
+              source: filename
               expression: /var/log/pods/(?P<namespace>[^_]+)_(?P<pod>[^_]+)_[^/]+/(?P<container>[^/]+)/.*\.log
           - labels:
               namespace:
