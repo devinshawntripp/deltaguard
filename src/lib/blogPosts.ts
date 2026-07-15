@@ -301,15 +301,6 @@ export const posts: BlogPost[] = [
   image: "/blog/multi-stage-docker-builds-security.jpg",
 },
   {
-  href: "/blog/is-alpine-docker-image-safe",
-  category: "Security Concepts",
-  title: "Is the Alpine Docker Image Safe? What Our Scanner Found",
-  description:
-    "We scanned alpine:3.20 with ScanRook: 301 findings (20 critical). What that means for the smallest common base image, which CVEs matter, and how to harden it.",
-  publishDate: "2026-07-16",
-  image: "/blog/series-image-safety-1.jpg",
-},
-  {
   href: "/blog/scan-docker-images-gitlab-ci",
   category: "Integrations",
   title: "How to Scan Docker Images in GitLab CI",
@@ -317,15 +308,6 @@ export const posts: BlogPost[] = [
     "A complete GitLab CI pipeline for scanning Docker images: build in Docker-in-Docker, scan with ScanRook, store reports, and fail merge requests on critical CVEs",
   publishDate: "2026-07-17",
   image: "/blog/scan-docker-images-gitlab-ci.jpg",
-},
-  {
-  href: "/blog/is-ubuntu-docker-image-safe",
-  category: "Security Concepts",
-  title: "Is the Ubuntu Docker Image Safe? What Our Scanner Found",
-  description:
-    "We scanned ubuntu:24.04 with ScanRook: 1,365 findings (130 critical). What that means, which CVEs matter, and why the GHOST glibc bug still shows up.",
-  publishDate: "2026-07-18",
-  image: "/blog/series-image-safety-2.jpg",
 },
   {
   href: "/blog/migrating-to-distroless-images",
@@ -337,15 +319,6 @@ export const posts: BlogPost[] = [
   image: "/blog/migrating-to-distroless-images.jpg",
 },
   {
-  href: "/blog/is-mysql-docker-image-safe",
-  category: "Security Concepts",
-  title: "Is the MySQL Docker Image Safe? What Our Scanner Found",
-  description:
-    "We scanned mysql:9 with ScanRook: only 2 findings surfaced, but the scan was partial. Why that undercounts reality, the CVEs it found, and what to check next.",
-  publishDate: "2026-07-20",
-  image: "/blog/series-image-safety-3.jpg",
-},
-  {
   href: "/blog/grype-alternatives",
   category: "Benchmarks",
   title: "Grype Alternatives in 2026: When to Use Something Else",
@@ -353,33 +326,6 @@ export const posts: BlogPost[] = [
     "An honest look at Grype alternatives — ScanRook, Trivy, Snyk, Docker Scout — with benchmark data on finding depth, SBOM workflows, and when Grype is right.",
   publishDate: "2026-07-21",
   image: "/blog/grype-alternatives.jpg",
-},
-  {
-  href: "/blog/is-mongo-docker-image-safe",
-  category: "Security Concepts",
-  title: "Is the Mongo Docker Image Safe? What Our Scanner Found",
-  description:
-    "We scanned mongo:8 with ScanRook: 2,457 findings (196 critical), including the xz-utils backdoor CVE. What that means and how to harden a MongoDB container.",
-  publishDate: "2026-07-22",
-  image: "/blog/series-image-safety-4.jpg",
-},
-  {
-  href: "/blog/how-to-handle-unfixable-cves",
-  category: "Best practices",
-  title: "How to Handle Unfixable CVEs With No Fix Available",
-  description:
-    "A practical process for unfixable CVEs with no fix available: verify reachability, check EPSS and KEV, apply mitigations, and document the decision.",
-  publishDate: "2026-07-23",
-  image: "/blog/how-to-handle-unfixable-cves.jpg",
-},
-  {
-  href: "/blog/is-httpd-docker-image-safe",
-  category: "Security Concepts",
-  title: "Is the Httpd Docker Image Safe? What Our Scanner Found",
-  description:
-    "We scanned httpd:2.4 with ScanRook: 2,574 findings (218 critical). What that means, which CVEs matter, and why the Alpine tag cuts findings by 80%.",
-  publishDate: "2026-07-24",
-  image: "/blog/series-image-safety-5.jpg",
 },
   {
   href: "/blog/jenkins-container-scanning",
@@ -391,15 +337,6 @@ export const posts: BlogPost[] = [
   image: "/blog/jenkins-container-scanning.jpg",
 },
   {
-  href: "/blog/is-php-docker-image-safe",
-  category: "Security Concepts",
-  title: "Is the PHP Docker Image Safe? What Our Scanner Found",
-  description:
-    "We scanned php:8.4 with ScanRook: 19,125 findings (446 critical). What that means, which CVEs matter, and why the Alpine tag cuts findings by 97%.",
-  publishDate: "2026-07-26",
-  image: "/blog/series-image-safety-1.jpg",
-},
-  {
   href: "/blog/docker-image-hardening-checklist",
   category: "Best practices",
   title: "Docker Image Hardening Checklist: 8 Steps With Code",
@@ -407,33 +344,6 @@ export const posts: BlogPost[] = [
     "An eight-step Docker image hardening checklist with runnable code for each step: non-root users, minimal base images, capability drops, and scanning.",
   publishDate: "2026-07-27",
   image: "/blog/docker-image-hardening-checklist.jpg",
-},
-  {
-  href: "/blog/is-golang-docker-image-safe",
-  category: "Security Concepts",
-  title: "Is the Golang Docker Image Safe? What Our Scanner Found",
-  description:
-    "We scanned golang:1.23 with ScanRook: 18,152 findings (568 critical). What that means, which CVEs matter, and why the Alpine tag cuts findings by 98%.",
-  publishDate: "2026-07-28",
-  image: "/blog/series-image-safety-2.jpg",
-},
-  {
-  href: "/blog/docker-scout-alternatives",
-  category: "Benchmarks",
-  title: "Docker Scout Alternatives in 2026: A Fair Comparison",
-  description:
-    "An honest look at Docker Scout alternatives — ScanRook, Trivy, Grype, Snyk — with benchmark data on finding depth, CI portability, and when Scout is right.",
-  publishDate: "2026-07-29",
-  image: "/blog/docker-scout-alternatives.jpg",
-},
-  {
-  href: "/blog/is-openjdk-docker-image-safe",
-  category: "Security Concepts",
-  title: "Is the OpenJDK Docker Image Safe? What Our Scanner Found",
-  description:
-    "We scanned eclipse-temurin:21 with ScanRook: 5,049 findings (297 critical). What the OpenJDK deprecation means, which CVEs matter, and how to cut findings 90%.",
-  publishDate: "2026-07-30",
-  image: "/blog/series-image-safety-3.jpg",
 },
   {
   href: "/blog/automate-docker-base-image-updates",
@@ -445,33 +355,6 @@ export const posts: BlogPost[] = [
   image: "/blog/automate-docker-base-image-updates.jpg",
 },
   {
-  href: "/blog/is-rabbitmq-docker-image-safe",
-  category: "Security Concepts",
-  title: "Is the RabbitMQ Docker Image Safe? What Our Scanner Found",
-  description:
-    "We scanned rabbitmq:4 with ScanRook: 1,435 findings (118 critical). What that means, which CVEs matter, and why the Alpine tag cuts findings by 76%.",
-  publishDate: "2026-08-01",
-  image: "/blog/series-image-safety-4.jpg",
-},
-  {
-  href: "/blog/circleci-container-scanning",
-  category: "Integrations",
-  title: "CircleCI Vulnerability Scanning for Docker Images",
-  description:
-    "A complete CircleCI pipeline for scanning Docker images: build with setup_remote_docker, scan with ScanRook, store report artifacts, and fail on critical CVEs.",
-  publishDate: "2026-08-02",
-  image: "/blog/circleci-container-scanning.jpg",
-},
-  {
-  href: "/blog/is-memcached-docker-image-safe",
-  category: "Security Concepts",
-  title: "Is the Memcached Docker Image Safe? What Our Scanner Found",
-  description:
-    "We scanned memcached:1.6 with ScanRook: 1,627 findings (137 critical). What that means, which CVEs matter, and why the Alpine tag cuts findings by 81%.",
-  publishDate: "2026-08-03",
-  image: "/blog/series-image-safety-5.jpg",
-},
-  {
   href: "/blog/fix-npm-vulnerabilities-in-docker",
   category: "Best practices",
   title: "How to Fix npm Vulnerabilities in Docker Builds",
@@ -479,15 +362,6 @@ export const posts: BlogPost[] = [
     "How to fix npm vulnerabilities in Docker builds: audit and patch the lockfile, use npm ci, exclude devDependencies, and verify with a rescan.",
   publishDate: "2026-08-04",
   image: "/blog/fix-npm-vulnerabilities-in-docker.jpg",
-},
-  {
-  href: "/blog/is-busybox-docker-image-safe",
-  category: "Security Concepts",
-  title: "Is the BusyBox Docker Image Safe? What Our Scanner Found",
-  description:
-    "We scanned busybox:1.37 with ScanRook: 2 findings from a partial heuristic scan. What that means, which CVEs matter, and why busybox stays minimal.",
-  publishDate: "2026-08-05",
-  image: "/blog/series-image-safety-1.jpg",
 },
   {
   href: "/blog/snyk-vs-open-source-scanners",
@@ -499,15 +373,6 @@ export const posts: BlogPost[] = [
   image: "/blog/snyk-vs-open-source-scanners.jpg",
 },
   {
-  href: "/blog/is-traefik-docker-image-safe",
-  category: "Security Concepts",
-  title: "Is the Traefik Docker Image Safe? What Our Scanner Found",
-  description:
-    "We scanned traefik:v3.3 with ScanRook: 299 findings (22 critical). What that means, which CVEs matter, and why almost all of them come from Alpine.",
-  publishDate: "2026-08-07",
-  image: "/blog/series-image-safety-2.jpg",
-},
-  {
   href: "/blog/minimal-docker-images-guide",
   category: "Best practices",
   title: "The Minimal Docker Image Guide: Alpine, Distroless, Scratch",
@@ -517,33 +382,6 @@ export const posts: BlogPost[] = [
   image: "/blog/minimal-docker-images-guide.jpg",
 },
   {
-  href: "/blog/is-wordpress-docker-image-safe",
-  category: "Security Concepts",
-  title: "Is the WordPress Docker Image Safe? What Our Scanner Found",
-  description:
-    "We scanned wordpress:6.8 with ScanRook: 23,132 findings (733 critical). What that means, which CVEs matter, and why the Alpine FPM tag cuts findings 96%.",
-  publishDate: "2026-08-09",
-  image: "/blog/series-image-safety-3.jpg",
-},
-  {
-  href: "/blog/argocd-gitops-image-scanning",
-  category: "Integrations",
-  title: "ArgoCD Image Scanning: Gating a GitOps Pipeline",
-  description:
-    "How to scan container images in ArgoCD-synced manifests before merge, using a GitOps CI gate and a PreSync hook so unscanned images never reach a cluster.",
-  publishDate: "2026-08-10",
-  image: "/blog/argocd-gitops-image-scanning.jpg",
-},
-  {
-  href: "/blog/is-elasticsearch-docker-image-safe",
-  category: "Security Concepts",
-  title: "Is the Elasticsearch Docker Image Safe? What Our Scanner Found",
-  description:
-    "We scanned elasticsearch:9.0.3 with ScanRook: 50 findings (4 critical) from a partial heuristic scan. What that means and which CVEs actually matter.",
-  publishDate: "2026-08-11",
-  image: "/blog/series-image-safety-4.jpg",
-},
-  {
   href: "/blog/how-to-triage-vulnerability-scan-results",
   category: "Best practices",
   title: "How to Triage Vulnerability Scan Results",
@@ -551,15 +389,6 @@ export const posts: BlogPost[] = [
     "A repeatable vulnerability triage process: rank findings by severity, EPSS, KEV, and reachability, gate CI, assign owners, and re-scan on a cadence.",
   publishDate: "2026-08-12",
   image: "/blog/how-to-triage-vulnerability-scan-results.jpg",
-},
-  {
-  href: "/blog/is-grafana-docker-image-safe",
-  category: "Security Concepts",
-  title: "Is the Grafana Docker Image Safe? What Our Scanner Found",
-  description:
-    "We scanned grafana/grafana:12.0.2 with ScanRook: 492 findings (54 critical). What that means, which CVEs matter, and why Alpine drives most of them.",
-  publishDate: "2026-08-13",
-  image: "/blog/series-image-safety-5.jpg",
 },
   {
   href: "/blog/sbom-requirements-2026",
@@ -598,15 +427,6 @@ export const posts: BlogPost[] = [
   image: "/blog/eu-cyber-resilience-act-containers.jpg",
 },
   {
-  href: "/blog/pre-commit-vulnerability-scanning",
-  category: "Integrations",
-  title: "Pre-Commit Vulnerability Scanning for Dependencies",
-  description:
-    "How to catch known-vulnerable dependencies before they are committed, using a pre-commit hook that runs ScanRook against your source tree on every git commit.",
-  publishDate: "2026-08-19",
-  image: "/blog/pre-commit-vulnerability-scanning.jpg",
-},
-  {
   href: "/blog/cyclonedx-vs-spdx",
   category: "Compliance",
   title: "CycloneDX vs SPDX: Which SBOM Format Should You Use?",
@@ -623,15 +443,6 @@ export const posts: BlogPost[] = [
     "How to generate an SBOM in CI: a working GitHub Actions workflow, format choice, enrichment, and gating builds on unexpected dependency changes.",
   publishDate: "2026-08-21",
   image: "/blog/sbom-generation-in-ci.jpg",
-},
-  {
-  href: "/blog/scan-images-on-registry-push",
-  category: "Integrations",
-  title: "How to Scan Docker Images on Registry Push",
-  description:
-    "How to trigger a ScanRook scan automatically when an image is pushed to your registry, using registry webhooks or GitHub Actions registry_package events.",
-  publishDate: "2026-08-22",
-  image: "/blog/scan-images-on-registry-push.jpg",
 },
   {
   href: "/blog/vex-explained",
@@ -769,6 +580,250 @@ export const posts: BlogPost[] = [
       "What Kubernetes vulnerability scanning covers, image versus cluster scanning, the main tools, and how to gate vulnerable images before they reach a cluster.",
     publishDate: "2026-09-06",
     image: "/blog/kubernetes-vulnerability-scanning-guide.jpg",
+  },
+  // ── Replacement batch (real-volume topics) ──
+  {
+    href: "/blog/shellshock-cve-2014-6271",
+    category: "CVE Deep Dive",
+    title: "Shellshock (CVE-2014-6271) Explained: Detection and Fixes",
+    description:
+      "Shellshock (CVE-2014-6271) let attackers run commands through a Bash environment-variable bug. How the exploit worked, affected versions, follow-ups, and fixes.",
+    publishDate: "2026-09-08",
+    image: "/blog/shellshock-cve-2014-6271.jpg",
+  },
+  {
+    href: "/blog/falco-runtime-security-explained",
+    category: "Scanning concepts",
+    title: "Falco Explained: Runtime Security vs Image Scanning",
+    description:
+      "Falco is CNCF runtime security: eBPF syscall threat detection at runtime. How it works, how it differs from image and SCA scanning, and when to use each.",
+    publishDate: "2026-09-10",
+    image: "/blog/falco-runtime-security-explained.jpg",
+  },
+  {
+    href: "/blog/github-security-advisories-explained",
+    category: "Data sources",
+    title: "GHSA Explained: What GitHub Security Advisories Are",
+    description:
+      "GHSA explained: what GitHub Security Advisories and GHSA IDs are, how the GitHub Advisory Database relates to CVE and OSV, and how scanners use it.",
+    publishDate: "2026-09-12",
+    image: "/blog/github-security-advisories-explained.jpg",
+  },
+  {
+    href: "/blog/what-is-a-zero-day-vulnerability",
+    category: "Security Concepts",
+    title: "What Is a Zero-Day Vulnerability? A Plain-English Guide",
+    description:
+      "A plain-English guide to zero-day vulnerabilities: what zero day means, how they differ from n-days, real examples, and how scanning helps post-disclosure.",
+    publishDate: "2026-09-14",
+    image: "/blog/what-is-a-zero-day-vulnerability.jpg",
+  },
+  {
+    href: "/blog/cis-benchmarks-explained",
+    category: "Compliance",
+    title: "CIS Benchmarks Explained: Docker and Kubernetes Hardening",
+    description:
+      "What CIS Benchmarks are: how the consensus hardening guides work, the Docker and Kubernetes benchmarks, kube-bench and Docker Bench, and where scanning fits.",
+    publishDate: "2026-09-16",
+    image: "/blog/cis-benchmarks-explained.jpg",
+  },
+  {
+    href: "/blog/trufflehog-secret-scanning",
+    category: "Scanning concepts",
+    title: "TruffleHog: Secret Scanning With Credential Verification",
+    description:
+      "TruffleHog is an open-source secret scanner that verifies found credentials against live APIs. How it works, what it catches, and where ScanRook fits.",
+    publishDate: "2026-09-18",
+    image: "/blog/trufflehog-secret-scanning.jpg",
+  },
+  {
+    href: "/blog/what-is-a-vulnerability",
+    category: "Security Concepts",
+    title: "What Is a Vulnerability? Weaknesses, CVEs, and Risk",
+    description:
+      "What a vulnerability is in security terms: how it differs from threats and risk, common types, the CVE lifecycle, and how scanners find known weaknesses.",
+    publishDate: "2026-07-16",
+    image: "/blog/what-is-a-vulnerability.jpg",
+  },
+  {
+    href: "/blog/vulnerability-management-guide",
+    category: "Best practices",
+    title: "Vulnerability Management: A Practical Lifecycle Guide",
+    description:
+      "Vulnerability management is a continuous lifecycle, not a one-time scan. The stages, risk-based prioritization, SLAs, metrics, and where ScanRook fits.",
+    publishDate: "2026-07-18",
+    image: "/blog/vulnerability-management-guide.jpg",
+  },
+  {
+    href: "/blog/what-is-software-composition-analysis",
+    category: "Scanning concepts",
+    title: "What Is SCA? Software Composition Analysis Explained",
+    description:
+      "What SCA (software composition analysis) is: how it inventories open-source components, matches them to known CVEs and licenses, and where it fits vs SAST.",
+    publishDate: "2026-07-20",
+    image: "/blog/what-is-software-composition-analysis.jpg",
+  },
+  {
+    href: "/blog/gitleaks-secret-scanning",
+    category: "Scanning concepts",
+    title: "Gitleaks: Fast Secret Scanning for Git Repos and CI",
+    description:
+      "Gitleaks is a fast, open-source secret scanner for git repos and CI. How its regex and entropy detection works, its tradeoffs, and where ScanRook fits.",
+    publishDate: "2026-07-22",
+    image: "/blog/gitleaks-secret-scanning.jpg",
+  },
+  {
+    href: "/blog/ubuntu-vs-debian-docker-base-image",
+    category: "Best practices",
+    title: "Ubuntu vs Debian: Which Docker Base Image to Choose",
+    description:
+      "Ubuntu vs Debian as a Docker base image: real security, size, and support tradeoffs, plus a clear recommendation for most container workloads.",
+    publishDate: "2026-07-23",
+    image: "/blog/ubuntu-vs-debian-docker-base-image.jpg",
+  },
+  {
+    href: "/blog/sast-vs-dast-explained",
+    category: "Security Concepts",
+    title: "SAST vs DAST: How Application Security Testing Differs",
+    description:
+      "SAST vs DAST explained: how static and dynamic application security testing differ, what each catches and misses, and where SCA and IAST fit alongside them.",
+    publishDate: "2026-07-24",
+    image: "/blog/sast-vs-dast-explained.jpg",
+  },
+  {
+    href: "/blog/anchore-alternatives",
+    category: "Benchmarks",
+    title: "Anchore Alternatives in 2026: A Fair Comparison",
+    description:
+      "An honest look at Anchore alternatives — Grype, Syft, Trivy, Snyk, and ScanRook — covering the open-source tools, Anchore Enterprise, and when each wins.",
+    publishDate: "2026-07-26",
+    image: "/blog/anchore-alternatives.jpg",
+  },
+  {
+    href: "/blog/patch-management-guide",
+    category: "Best practices",
+    title: "Patch Management: A Practical Guide for Modern Stacks",
+    description:
+      "Patch management is how you close known vulnerabilities. The lifecycle, prioritization, testing, and why containers are rebuilt instead of patched.",
+    publishDate: "2026-07-28",
+    image: "/blog/patch-management-guide.jpg",
+  },
+  {
+    href: "/blog/heartbleed-cve-2014-0160",
+    category: "CVE Deep Dive",
+    title: "Heartbleed (CVE-2014-0160) Explained: Impact and Remediation",
+    description:
+      "Heartbleed (CVE-2014-0160) leaked server memory through an OpenSSL TLS heartbeat over-read. Affected versions, the private-key risk, and how to remediate it.",
+    publishDate: "2026-07-29",
+    image: "/blog/heartbleed-cve-2014-0160.jpg",
+  },
+  {
+    href: "/blog/kubernetes-secrets-security",
+    category: "Best practices",
+    title: "Kubernetes Secrets Security: A Practical Guide",
+    description:
+      "A practical guide to Kubernetes secrets security: why base64 is not encryption, encryption at rest, RBAC, external secret stores, and safe mounting.",
+    publishDate: "2026-07-30",
+    image: "/blog/kubernetes-secrets-security.jpg",
+  },
+  {
+    href: "/blog/docker-security-guide",
+    category: "Best practices",
+    title: "Docker Security: A Practical Hardening Guide for 2026",
+    description:
+      "A practical Docker security guide: harden containers with non-root users, dropped capabilities, read-only filesystems, seccomp, and image scanning.",
+    publishDate: "2026-08-01",
+    image: "/blog/docker-security-guide.jpg",
+  },
+  {
+    href: "/blog/docker-rootless-mode",
+    category: "Best practices",
+    title: "Docker Rootless Mode: How and Why to Run Without Root",
+    description:
+      "Docker rootless mode runs the daemon as a non-root user so a container escape lands unprivileged. How it works, how to set it up, and its limits.",
+    publishDate: "2026-08-02",
+    image: "/blog/docker-rootless-mode.jpg",
+  },
+  {
+    href: "/blog/nvd-api-key-guide",
+    category: "Data sources",
+    title: "NVD API Key: How to Get One and Why Scanners Need It",
+    description:
+      "How to request and use an NVD API key: the rate limits with and without one, how to send it, and why vulnerability scanners need it for enrichment.",
+    publishDate: "2026-08-03",
+    image: "/blog/nvd-api-key-guide.jpg",
+  },
+  {
+    href: "/blog/kube-bench-cis-scanning",
+    category: "Scanning concepts",
+    title: "kube-bench: Scanning Kubernetes Against the CIS Benchmark",
+    description:
+      "kube-bench checks whether your Kubernetes cluster is configured to the CIS Benchmark. How it works, how to run it, what it catches, and what it does not.",
+    publishDate: "2026-08-05",
+    image: "/blog/kube-bench-cis-scanning.jpg",
+  },
+  {
+    href: "/blog/secret-scanning-guide",
+    category: "Scanning concepts",
+    title: "Secret Scanning: A Practical Guide to Finding Leaked Keys",
+    description:
+      "Secret scanning finds hardcoded credentials in code, git history, and images. Detection methods, the tool landscape, remediation, and where ScanRook fits.",
+    publishDate: "2026-08-07",
+    image: "/blog/secret-scanning-guide.jpg",
+  },
+  {
+    href: "/blog/trivy-operator-kubernetes",
+    category: "Integrations",
+    title: "Trivy Operator: Continuous Scanning Inside Kubernetes",
+    description:
+      "The Trivy Operator continuously scans Kubernetes workloads and writes vulnerability, config, and secret reports as CRDs. How to install and use it.",
+    publishDate: "2026-08-09",
+    image: "/blog/trivy-operator-kubernetes.jpg",
+  },
+  {
+    href: "/blog/leaky-vessels-cve-2024-21626",
+    category: "CVE Deep Dive",
+    title: "Leaky Vessels (CVE-2024-21626): runc Container Escape",
+    description:
+      "Leaky Vessels (CVE-2024-21626) is a runc container escape via a leaked file descriptor. How it works, the affected versions, the 1.1.12 fix, and detection.",
+    publishDate: "2026-08-10",
+    image: "/blog/leaky-vessels-cve-2024-21626.jpg",
+  },
+  {
+    href: "/blog/pod-security-standards-guide",
+    category: "Best practices",
+    title: "Pod Security Standards: A Practical Kubernetes Guide",
+    description:
+      "A practical guide to Kubernetes Pod Security Standards: the Privileged, Baseline, and Restricted profiles, Pod Security Admission, and enforcement.",
+    publishDate: "2026-08-11",
+    image: "/blog/pod-security-standards-guide.jpg",
+  },
+  {
+    href: "/blog/trivy-vs-grype",
+    category: "Benchmarks",
+    title: "Trivy vs Grype: An Honest Comparison of Two Scanners",
+    description:
+      "Trivy vs Grype compared honestly: scope, databases, output formats, speed, and finding depth, with benchmark data and when to pick each scanner.",
+    publishDate: "2026-08-13",
+    image: "/blog/trivy-vs-grype.jpg",
+  },
+  {
+    href: "/blog/alpine-vs-ubuntu-docker",
+    category: "Best practices",
+    title: "Alpine vs Ubuntu: Choosing a Docker Base Image",
+    description:
+      "Alpine vs Ubuntu for Docker base images: musl vs glibc, size and attack surface, compatibility tradeoffs, and how to choose the right one for you.",
+    publishDate: "2026-08-19",
+    image: "/blog/alpine-vs-ubuntu-docker.jpg",
+  },
+  {
+    href: "/blog/pod-security-admission-guide",
+    category: "Best practices",
+    title: "Pod Security Admission: A Practical Kubernetes Guide",
+    description:
+      "Pod Security Admission enforces the Pod Security Standards in Kubernetes with namespace labels. How to configure the enforce, audit, and warn modes safely.",
+    publishDate: "2026-08-22",
+    image: "/blog/pod-security-admission-guide.jpg",
   },
 ];
 
