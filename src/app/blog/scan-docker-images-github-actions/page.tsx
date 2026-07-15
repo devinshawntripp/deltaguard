@@ -7,7 +7,7 @@ import { isPublished } from "@/lib/publishGate";
 export const revalidate = 3600;
 const PUBLISH_DATE = "2026-07-09";
 
-const title = `How to Scan Docker Images in GitHub Actions | ${APP_NAME}`;
+const title = `Trivy in GitHub Actions: Scan Docker Images in CI | ${APP_NAME}`;
 const description =
   "A complete GitHub Actions workflow for scanning Docker images: install the scanner, scan on pull request, upload reports, and fail builds on critical CVEs.";
 
@@ -15,15 +15,15 @@ export const metadata: Metadata = {
   title,
   description,
   keywords: [
-    "github actions docker scan",
+    "trivy github actions",
+    "trivy action",
+    "aquasecurity trivy-action",
     "scan docker images github actions",
+    "github actions docker scan",
     "github actions vulnerability scanning",
     "github actions container security",
-    "docker image scan ci",
-    "github actions security workflow",
     "fail build on cve",
     "container scanning pipeline",
-    "github actions scanrook",
     "ci cd vulnerability scanning",
   ],
   alternates: { canonical: "/blog/scan-docker-images-github-actions" },
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
 const articleJsonLd = {
   "@context": "https://schema.org",
   "@type": "BlogPosting",
-  headline: "How to Scan Docker Images in GitHub Actions",
+  headline: "Trivy in GitHub Actions: Scan Docker Images in CI",
   description,
   author: { "@type": "Organization", name: "ScanRook" },
   publisher: { "@type": "Organization", name: "ScanRook" },
@@ -119,14 +119,15 @@ export default function Page() {
         <header className="grid gap-3">
           <div className="text-xs uppercase tracking-wide muted">Integrations</div>
           <h1 className="text-3xl font-semibold tracking-tight">
-            How to Scan Docker Images in GitHub Actions
+            Trivy in GitHub Actions: Scan Docker Images in CI
           </h1>
           <p className="text-sm muted">Published July 9, 2026 &middot; 9 min read</p>
           <p className="text-sm muted">
-            A GitHub Actions docker scan is the cheapest security control you can add to a container
-            pipeline: every image is checked before it ships, and merges are blocked when new
-            critical CVEs appear. This guide builds the complete workflow &mdash; install, scan,
-            report, gate &mdash; and explains every step.
+            Scanning Docker images in GitHub Actions is the cheapest security control you can add to
+            a container pipeline: every image is checked before it ships, and merges are blocked when
+            new critical CVEs appear. This guide builds the complete workflow two ways &mdash; the
+            popular Trivy GitHub Actions step and a deeper-coverage ScanRook job &mdash; and explains
+            every step: install, scan, report, gate.
           </p>
         </header>
 
@@ -158,7 +159,40 @@ export default function Page() {
         </section>
 
         <section className="grid gap-3">
-          <h2 className="text-xl font-semibold tracking-tight">The complete workflow</h2>
+          <h2 className="text-xl font-semibold tracking-tight">Scanning with Trivy in GitHub Actions</h2>
+          <p className="text-sm muted">
+            The most common way teams scan Docker images in GitHub Actions is Aqua Security&apos;s
+            official <code className="text-xs rounded bg-black/[.06] dark:bg-white/[.06] px-1.5 py-0.5">aquasecurity/trivy-action</code>.
+            It wraps the Trivy CLI in a ready-made step: point it at an image reference or a tarball,
+            set a severity threshold, and let{" "}
+            <code className="text-xs rounded bg-black/[.06] dark:bg-white/[.06] px-1.5 py-0.5">exit-code: 1</code>{" "}
+            fail the build when matching findings appear.
+          </p>
+          <pre className="rounded-lg border border-black/10 dark:border-white/10 bg-black/[.04] dark:bg-white/[.04] p-3 text-xs overflow-x-auto">{`      - name: Build container image
+        run: docker build -t myapp:ci .
+
+      - name: Scan image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: myapp:ci
+          format: table
+          exit-code: "1"
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true`}</pre>
+          <p className="text-sm muted">
+            Trivy in GitHub Actions is fast and effectively zero-config, and it can also emit SARIF to
+            surface findings in GitHub&apos;s code-scanning tab via{" "}
+            <code className="text-xs rounded bg-black/[.06] dark:bg-white/[.06] px-1.5 py-0.5">github/codeql-action/upload-sarif</code>.
+            Its tradeoff is the one shared by every single-database scanner: it matches against one
+            aggregated advisory feed, so finding depth is shallower than a multi-source scan. The
+            ScanRook workflow below is the deeper-coverage alternative, and the two run side by side
+            happily &mdash; Trivy for fast pull-request feedback, ScanRook on main and nightly for
+            audit-grade coverage.
+          </p>
+        </section>
+
+        <section className="grid gap-3">
+          <h2 className="text-xl font-semibold tracking-tight">The complete ScanRook workflow</h2>
           <p className="text-sm muted">
             Save this as{" "}
             <code className="text-xs rounded bg-black/[.06] dark:bg-white/[.06] px-1.5 py-0.5">.github/workflows/scanrook.yml</code>{" "}

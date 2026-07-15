@@ -7,7 +7,7 @@ import { isPublished } from "@/lib/publishGate";
 export const revalidate = 3600;
 const PUBLISH_DATE = "2026-08-17";
 
-const title = `The EU Cyber Resilience Act and Container Images | ${APP_NAME}`;
+const title = `Cyber Resilience Act and Container Images | ${APP_NAME}`;
 const description =
   "What the EU Cyber Resilience Act means for container images: SBOM duties, vulnerability handling, and patching obligations for products with digital elements.";
 
@@ -15,15 +15,15 @@ export const metadata: Metadata = {
   title,
   description,
   keywords: [
-    "eu cyber resilience act containers",
     "cyber resilience act",
+    "eu cyber resilience act",
+    "cyber resilience act containers",
+    "cyber resilience act compliance",
     "cra container images",
     "eu cra sbom",
-    "cyber resilience act compliance",
     "cra vulnerability handling",
     "products with digital elements",
     "cra 2027",
-    "eu cra requirements",
     "cra software supply chain",
   ],
   alternates: { canonical: "/blog/eu-cyber-resilience-act-containers" },
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
 const articleJsonLd = {
   "@context": "https://schema.org",
   "@type": "BlogPosting",
-  headline: "The EU Cyber Resilience Act and Container Images",
+  headline: "Cyber Resilience Act and Container Images",
   description,
   author: { "@type": "Organization", name: "ScanRook" },
   publisher: { "@type": "Organization", name: "ScanRook" },
@@ -119,11 +119,11 @@ export default function Page() {
         <header className="grid gap-3">
           <div className="text-xs uppercase tracking-wide muted">Compliance</div>
           <h1 className="text-3xl font-semibold tracking-tight">
-            The EU Cyber Resilience Act and Container Images
+            Cyber Resilience Act and Container Images
           </h1>
           <p className="text-sm muted">Published August 17, 2026 &middot; 9 min read</p>
           <p className="text-sm muted">
-            The EU Cyber Resilience Act does not mention container images by name, but for any team
+            The Cyber Resilience Act does not mention container images by name, but for any team
             shipping software packaged as containers into the EU market, the Act&apos;s component
             documentation and vulnerability-handling duties land squarely on what is inside those
             images. Here is what the CRA actually asks for and what it means in container terms.

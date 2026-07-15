@@ -7,7 +7,7 @@ import { isPublished } from "@/lib/publishGate";
 export const revalidate = 3600;
 const PUBLISH_DATE = "2026-07-25";
 
-const title = `Jenkins Docker Image Scanning: A Complete Pipeline | ${APP_NAME}`;
+const title = `Jenkins Security Scan for Docker Images: Full Pipeline | ${APP_NAME}`;
 const description =
   "A complete Jenkins pipeline for scanning Docker images: build, save, scan with ScanRook, archive the report, and fail the build on critical or high CVEs.";
 
@@ -15,16 +15,16 @@ export const metadata: Metadata = {
   title,
   description,
   keywords: [
-    "jenkins docker image scan",
+    "jenkins security scan",
+    "jenkins security scanning",
+    "jenkins pipeline security scan",
     "jenkins container scanning",
+    "jenkins docker image scan",
     "jenkins vulnerability scanning",
     "jenkinsfile docker security",
-    "jenkins pipeline container scan",
     "fail jenkins build on cve",
-    "jenkins declarative pipeline docker",
     "jenkins ci cd security",
-    "jenkins scanrook",
-    "docker image scanning jenkinsfile",
+    "jenkins declarative pipeline docker",
   ],
   alternates: { canonical: "/blog/jenkins-container-scanning" },
   openGraph: {
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
 const articleJsonLd = {
   "@context": "https://schema.org",
   "@type": "BlogPosting",
-  headline: "Jenkins Docker Image Scanning: A Complete Pipeline",
+  headline: "Jenkins Security Scan for Docker Images: Full Pipeline",
   description,
   author: { "@type": "Organization", name: "ScanRook" },
   publisher: { "@type": "Organization", name: "ScanRook" },
@@ -119,14 +119,14 @@ export default function Page() {
         <header className="grid gap-3">
           <div className="text-xs uppercase tracking-wide muted">Integrations</div>
           <h1 className="text-3xl font-semibold tracking-tight">
-            Jenkins Docker Image Scanning: A Complete Pipeline
+            Jenkins Security Scan for Docker Images: Full Pipeline
           </h1>
           <p className="text-sm muted">Published July 25, 2026 &middot; 9 min read</p>
           <p className="text-sm muted">
-            A Jenkins docker image scan stage is straightforward to add and easy to get wrong in the
-            details &mdash; credentials handling, agent choice, and what actually fails the build.
-            This guide builds a complete declarative Jenkinsfile that builds, scans, archives the
-            report, and gates on severity, and explains each stage.
+            A Jenkins security scan stage for your Docker images is straightforward to add and easy
+            to get wrong in the details &mdash; credentials handling, agent choice, and what actually
+            fails the build. This guide builds a complete declarative Jenkinsfile that builds, scans,
+            archives the report, and gates on severity, and explains each stage.
           </p>
         </header>
 
@@ -137,7 +137,7 @@ export default function Page() {
         />
 
         <section className="grid gap-3">
-          <h2 className="text-xl font-semibold tracking-tight">Why scan inside the Jenkins pipeline</h2>
+          <h2 className="text-xl font-semibold tracking-tight">Why run a Jenkins security scan in the pipeline</h2>
           <p className="text-sm muted">
             Jenkins is often the system of record for what actually got built and deployed, which
             makes it a natural place to attach a security gate: the scan result lives next to the

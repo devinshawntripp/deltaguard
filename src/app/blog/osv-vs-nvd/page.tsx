@@ -7,7 +7,7 @@ import { isPublished } from "@/lib/publishGate";
 export const revalidate = 3600;
 const PUBLISH_DATE = "2026-08-15";
 
-const title = `OSV vs NVD: How the Two Vulnerability Databases Actually Differ | ${APP_NAME}`;
+const title = `OSV vs NVD: OSV Scanner and NVD Coverage Compared | ${APP_NAME}`;
 const description =
   "OSV vs NVD compared: how each publishes and matches vulnerability data, where their coverage diverges, and why scanners that use only one develop blind spots.";
 
@@ -15,15 +15,15 @@ export const metadata: Metadata = {
   title,
   description,
   keywords: [
+    "osv scanner",
+    "osv-scanner",
+    "google osv scanner",
     "osv vs nvd",
     "osv database",
     "nvd database",
-    "open source vulnerabilities vs nvd",
-    "cpe matching vs osv",
-    "vulnerability database comparison",
     "osv api",
     "nvd cpe",
-    "which vulnerability database is best",
+    "vulnerability database comparison",
     "osv nvd differences",
   ],
   alternates: { canonical: "/blog/osv-vs-nvd" },
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
 const articleJsonLd = {
   "@context": "https://schema.org",
   "@type": "BlogPosting",
-  headline: "OSV vs NVD: How the Two Vulnerability Databases Actually Differ",
+  headline: "OSV vs NVD: OSV Scanner and NVD Coverage Compared",
   description,
   author: { "@type": "Organization", name: "ScanRook" },
   publisher: { "@type": "Organization", name: "ScanRook" },
@@ -119,14 +119,15 @@ export default function Page() {
         <header className="grid gap-3">
           <div className="text-xs uppercase tracking-wide muted">Benchmarks</div>
           <h1 className="text-3xl font-semibold tracking-tight">
-            OSV vs NVD: How the Two Vulnerability Databases Actually Differ
+            OSV vs NVD: OSV Scanner and NVD Coverage Compared
           </h1>
           <p className="text-sm muted">Published August 15, 2026 &middot; 9 min read</p>
           <p className="text-sm muted">
             OSV vs NVD is not a competition with one winner &mdash; it is two different models for
             publishing the same underlying thing: knowledge that a piece of software has a flaw.
-            Understanding how each one is built explains why scanners that lean on only one of them
-            end up with different, and sometimes surprising, blind spots.
+            Tools like Google&apos;s OSV Scanner query the OSV feed directly, while other scanners
+            lean on NVD&apos;s CPE data, and understanding how each database is built explains why a
+            scanner that uses only one ends up with different, and sometimes surprising, blind spots.
           </p>
         </header>
 
@@ -149,6 +150,24 @@ export default function Page() {
               guide to the OSV API
             </Link>{" "}
             covers the schema and query mechanics in depth.
+          </p>
+        </section>
+
+        <section className="grid gap-3">
+          <h2 className="text-xl font-semibold tracking-tight">The OSV Scanner tool</h2>
+          <p className="text-sm muted">
+            The database is separate from the tooling that reads it. Google also maintains{" "}
+            <strong>OSV-Scanner</strong>, an open-source command-line scanner that queries the OSV
+            database directly. Point the OSV Scanner at a lockfile, an SBOM, a source directory, or a
+            container image and it resolves each dependency, then matches it against OSV&apos;s
+            per-ecosystem version ranges using the same free OSV API described above.
+          </p>
+          <p className="text-sm muted">
+            Because the OSV Scanner sources its findings from OSV alone, its coverage inherits
+            OSV&apos;s scope: strong for npm, PyPI, Go, crates.io, and Linux-distro packages, but it
+            will not surface a CVE that only NVD&apos;s CPE matching knows about. That single-source
+            dependency is the exact trade-off this comparison is about &mdash; any scanner is only as
+            complete as the databases behind it.
           </p>
         </section>
 

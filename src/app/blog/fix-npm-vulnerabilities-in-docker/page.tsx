@@ -7,7 +7,7 @@ import { isPublished } from "@/lib/publishGate";
 export const revalidate = 3600;
 const PUBLISH_DATE = "2026-08-04";
 
-const title = `How to Fix npm Vulnerabilities in Docker Builds | ${APP_NAME}`;
+const title = `How to Fix npm Vulnerabilities in Docker with npm audit fix | ${APP_NAME}`;
 const description =
   "How to fix npm vulnerabilities in Docker builds: audit and patch the lockfile, use npm ci, exclude devDependencies, and verify with a rescan.";
 
@@ -15,15 +15,15 @@ export const metadata: Metadata = {
   title,
   description,
   keywords: [
+    "npm audit fix",
+    "npm audit fix docker",
+    "npm audit fix dockerfile",
+    "npm audit fix force",
     "fix npm vulnerabilities docker",
     "npm audit docker build",
     "npm vulnerabilities in container",
-    "npm audit fix dockerfile",
-    "docker node_modules vulnerabilities",
     "npm ci docker security",
     "exclude devdependencies docker",
-    "package-lock.json security",
-    "node docker cve",
     "npm package vulnerability docker image",
   ],
   alternates: { canonical: "/blog/fix-npm-vulnerabilities-in-docker" },
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
 const articleJsonLd = {
   "@context": "https://schema.org",
   "@type": "BlogPosting",
-  headline: "How to Fix npm Vulnerabilities in Docker Builds",
+  headline: "How to Fix npm Vulnerabilities in Docker with npm audit fix",
   description,
   author: { "@type": "Organization", name: "ScanRook" },
   publisher: { "@type": "Organization", name: "ScanRook" },
@@ -119,14 +119,16 @@ export default function Page() {
         <header className="grid gap-3">
           <div className="text-xs uppercase tracking-wide muted">Best practices</div>
           <h1 className="text-3xl font-semibold tracking-tight">
-            How to Fix npm Vulnerabilities in Docker Builds
+            How to Fix npm Vulnerabilities in Docker with npm audit fix
           </h1>
           <p className="text-sm muted">Published August 4, 2026 &middot; 9 min read</p>
           <p className="text-sm muted">
             A Node image scan usually splits findings into two buckets: OS packages from the base
             image, and npm packages from your dependency tree. This guide focuses on the second
-            bucket &mdash; fixing npm vulnerabilities in Docker builds without breaking reproducible
-            installs or accidentally shipping devDependencies.
+            bucket &mdash; fixing npm vulnerabilities in Docker builds with{" "}
+            <code className="text-xs rounded bg-black/[.06] dark:bg-white/[.06] px-1.5 py-0.5">npm audit fix</code>{" "}
+            and a disciplined rebuild, without breaking reproducible installs or accidentally
+            shipping devDependencies.
           </p>
         </header>
 

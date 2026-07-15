@@ -7,7 +7,7 @@ import { isPublished } from "@/lib/publishGate";
 export const revalidate = 3600;
 const PUBLISH_DATE = "2026-07-15";
 
-const title = `Multi-Stage Docker Builds for Security: A Practical Guide | ${APP_NAME}`;
+const title = `Docker Multi-Stage Build Security: A Practical Guide | ${APP_NAME}`;
 const description =
   "How multi-stage Docker builds improve security: split build and runtime stages, avoid leaking build secrets, and ship a minimal final image.";
 
@@ -15,12 +15,12 @@ export const metadata: Metadata = {
   title,
   description,
   keywords: [
-    "multi-stage docker build security",
-    "docker multi-stage build",
+    "docker multi stage build",
+    "docker multi-stage build security",
+    "docker multi-stage build example",
     "multi-stage dockerfile example",
     "docker build secrets",
     "reduce docker attack surface",
-    "docker build stage separation",
     "multi-stage build best practices",
     "docker copy from build stage",
     "secure dockerfile pattern",
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
 const articleJsonLd = {
   "@context": "https://schema.org",
   "@type": "BlogPosting",
-  headline: "Multi-Stage Docker Builds for Security: A Practical Guide",
+  headline: "Docker Multi-Stage Build Security: A Practical Guide",
   description,
   author: { "@type": "Organization", name: "ScanRook" },
   publisher: { "@type": "Organization", name: "ScanRook" },
@@ -119,11 +119,11 @@ export default function Page() {
         <header className="grid gap-3">
           <div className="text-xs uppercase tracking-wide muted">Best practices</div>
           <h1 className="text-3xl font-semibold tracking-tight">
-            Multi-Stage Docker Builds for Security: A Practical Guide
+            Docker Multi-Stage Build Security: A Practical Guide
           </h1>
           <p className="text-sm muted">Published July 15, 2026 &middot; 9 min read</p>
           <p className="text-sm muted">
-            Multi-stage Docker build security comes down to one idea: nothing needed only to build
+            A Docker multi-stage build comes down to one security idea: nothing needed only to build
             the application should exist in the image you run in production. This guide covers the
             pattern end to end &mdash; splitting stages, handling secrets safely, and shipping a
             final image with the smallest possible footprint.

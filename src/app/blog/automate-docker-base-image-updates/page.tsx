@@ -7,7 +7,7 @@ import { isPublished } from "@/lib/publishGate";
 export const revalidate = 3600;
 const PUBLISH_DATE = "2026-07-31";
 
-const title = `How to Automate Docker Base Image Updates | ${APP_NAME}`;
+const title = `Automate Docker Base Image Updates with Renovate | ${APP_NAME}`;
 const description =
   "How to automate Docker base image updates with Renovate or Dependabot, scheduled CI rebuilds, digest pinning, and automatic scan verification.";
 
@@ -15,16 +15,16 @@ export const metadata: Metadata = {
   title,
   description,
   keywords: [
-    "automate docker base image updates",
+    "renovate docker",
+    "renovate dockerfile",
     "renovate docker base image",
+    "renovate bot docker",
+    "automate docker base image updates",
     "dependabot dockerfile",
-    "scheduled docker rebuild ci",
     "automatic base image updates",
     "docker digest pinning automation",
-    "keep docker images patched",
     "docker base image bot",
     "automated dockerfile updates",
-    "ci cron docker rebuild",
   ],
   alternates: { canonical: "/blog/automate-docker-base-image-updates" },
   openGraph: {
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
 const articleJsonLd = {
   "@context": "https://schema.org",
   "@type": "BlogPosting",
-  headline: "How to Automate Docker Base Image Updates",
+  headline: "Automate Docker Base Image Updates with Renovate",
   description,
   author: { "@type": "Organization", name: "ScanRook" },
   publisher: { "@type": "Organization", name: "ScanRook" },
@@ -119,14 +119,14 @@ export default function Page() {
         <header className="grid gap-3">
           <div className="text-xs uppercase tracking-wide muted">Best practices</div>
           <h1 className="text-3xl font-semibold tracking-tight">
-            How to Automate Docker Base Image Updates
+            Automate Docker Base Image Updates with Renovate
           </h1>
           <p className="text-sm muted">Published July 31, 2026 &middot; 9 min read</p>
           <p className="text-sm muted">
             Manually remembering to rebuild against a fresh base image is a patch cadence that fails
             the moment someone is on vacation. This guide covers how to automate Docker base image
-            updates end to end: a bot that proposes the update, a scheduled rebuild, and a scan gate
-            that decides whether it merges.
+            updates end to end with Renovate (or Dependabot): the bot proposes the update, a
+            scheduled rebuild runs, and a scan gate decides whether it merges.
           </p>
         </header>
 
