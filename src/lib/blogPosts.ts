@@ -825,6 +825,475 @@ export const posts: BlogPost[] = [
     publishDate: "2026-08-22",
     image: "/blog/pod-security-admission-guide.jpg",
   },
+  // ── December-fill batch (real-volume topics) ──
+  {
+    href: "/blog/tekton",
+    category: "Integrations",
+    title: "Tekton Pipelines: Container Scanning in Cloud-Native CI/CD",
+    description:
+      "Tekton is a Kubernetes-native CI/CD framework built from Tasks and Pipelines. How it works, how to add a container scanning Task, and where ScanRook fits.",
+    publishDate: "2026-09-20",
+    image: "/blog/tekton.jpg",
+  },
+  {
+    href: "/blog/indicators-of-compromise",
+    category: "Security Concepts",
+    title: "Indicators of Compromise (IOCs): Types, Examples, and Use",
+    description:
+      "Indicators of compromise (IOCs) are forensic clues a system was breached. The main types, real examples, IOCs vs IOAs, and how they fit detection.",
+    publishDate: "2026-09-22",
+    image: "/blog/indicators-of-compromise.jpg",
+  },
+  {
+    href: "/blog/clair",
+    category: "Benchmarks",
+    title: "Clair: How the Open-Source Container Scanner Works",
+    description:
+      "Clair is the open-source engine that scans container images for CVEs and powers Quay. How its indexer and matcher work, its tradeoffs, and where ScanRook fits.",
+    publishDate: "2026-09-24",
+    image: "/blog/clair.jpg",
+  },
+  {
+    href: "/blog/nist-800-53",
+    category: "Compliance",
+    title: "NIST 800-53: A Practical Guide to Security Controls",
+    description:
+      "NIST SP 800-53 is the control catalog behind FISMA and FedRAMP. Its control families, the RMF, the controls scanning maps to, and where ScanRook fits.",
+    publishDate: "2026-09-26",
+    image: "/blog/nist-800-53.jpg",
+  },
+  {
+    href: "/blog/wazuh",
+    category: "Scanning concepts",
+    title: "Wazuh: Open-Source XDR and SIEM, Explained",
+    description:
+      "Wazuh is a free, open-source XDR and SIEM platform built on agents. Its components, vulnerability detection, compliance mapping, and where ScanRook fits.",
+    publishDate: "2026-09-28",
+    image: "/blog/wazuh.jpg",
+  },
+  {
+    href: "/blog/semgrep",
+    category: "Scanning concepts",
+    title: "Semgrep Explained: Fast Static Analysis for Finding Bugs",
+    description:
+      "Semgrep is an open-source static analysis tool that finds bugs and vulnerabilities with code-pattern rules. How it works, its limits, and where ScanRook fits.",
+    publishDate: "2026-09-30",
+    image: "/blog/semgrep.jpg",
+  },
+  {
+    href: "/blog/mitre-attack",
+    category: "Security Concepts",
+    title: "MITRE ATT&CK Explained: The Adversary Tactics Framework",
+    description:
+      "MITRE ATT&CK is a knowledge base of real-world adversary tactics and techniques. What the matrix contains, how teams use it, and how it maps to CVEs you scan.",
+    publishDate: "2026-10-02",
+    image: "/blog/mitre-attack.jpg",
+  },
+  {
+    href: "/blog/vulnerability-scanning",
+    category: "Scanning concepts",
+    title: "Vulnerability Scanning: How It Works and What It Finds",
+    description:
+      "Vulnerability scanning finds known security flaws in your code, dependencies, containers, and hosts. How it works, the main types, and how to act on results.",
+    publishDate: "2026-10-04",
+    image: "/blog/vulnerability-scanning.jpg",
+  },
+  {
+    href: "/blog/checkov",
+    category: "Scanning concepts",
+    title: "Checkov Explained: Scanning Infrastructure as Code",
+    description:
+      "Checkov is an open-source static analysis tool that scans infrastructure as code for misconfigurations. How it works, what it covers, and where ScanRook fits.",
+    publishDate: "2026-10-06",
+    image: "/blog/checkov.jpg",
+  },
+  {
+    href: "/blog/typosquatting",
+    category: "Security Concepts",
+    title: "Typosquatting Explained: How Lookalike Packages Attack",
+    description:
+      "Typosquatting tricks developers into installing malicious lookalike packages. How the attack works, real examples, how to defend, and where scanning helps.",
+    publishDate: "2026-10-08",
+    image: "/blog/typosquatting.jpg",
+  },
+  {
+    href: "/blog/cis-controls",
+    category: "Compliance",
+    title: "CIS Controls v8 Explained: The 18 Critical Security Controls",
+    description:
+      "The CIS Controls are 18 prioritized safeguards for cyber defense. What each control and Implementation Group covers, and where vulnerability scanning fits.",
+    publishDate: "2026-10-10",
+    image: "/blog/cis-controls.jpg",
+  },
+  {
+    href: "/blog/cyber-kill-chain",
+    category: "Security Concepts",
+    title: "The Cyber Kill Chain Explained: 7 Stages of an Attack",
+    description:
+      "The cyber kill chain maps an intrusion into 7 stages. What each stage means, how defenders break the chain, and where vulnerability scanning fits in.",
+    publishDate: "2026-10-12",
+    image: "/blog/cyber-kill-chain.jpg",
+  },
+  {
+    href: "/blog/dependabot",
+    category: "Best practices",
+    title: "Dependabot Explained: Automated Dependency Security",
+    description:
+      "Dependabot raises alerts and pull requests to fix vulnerable dependencies. How its three features work, what it misses, and where image scanning fits.",
+    publishDate: "2026-10-14",
+    image: "/blog/dependabot.jpg",
+  },
+  {
+    href: "/blog/defense-in-depth",
+    category: "Security Concepts",
+    title: "Defense in Depth Explained: Layered Security That Works",
+    description:
+      "Defense in depth layers independent security controls so no single failure is fatal. The layers, how they apply to containers, and where scanning fits.",
+    publishDate: "2026-10-16",
+    image: "/blog/defense-in-depth.jpg",
+  },
+  {
+    href: "/blog/eternalblue",
+    category: "CVE Deep Dive",
+    title: "EternalBlue (MS17-010): The Exploit Behind WannaCry",
+    description:
+      "EternalBlue (MS17-010, CVE-2017-0144) is the SMBv1 exploit behind WannaCry. How it worked, affected Windows versions, impact, and how to remediate it.",
+    publishDate: "2026-10-18",
+    image: "/blog/eternalblue.jpg",
+  },
+  {
+    href: "/blog/in-toto",
+    category: "Best practices",
+    title: "in-toto Explained: Securing the Software Supply Chain",
+    description:
+      "in-toto is a framework that secures the software supply chain by signing and verifying each build step, so you can prove an artifact was built as intended.",
+    publishDate: "2026-10-20",
+    image: "/blog/in-toto.jpg",
+  },
+  {
+    href: "/blog/osquery",
+    category: "Scanning concepts",
+    title: "osquery Explained: Query Your OS Like a Database",
+    description:
+      "osquery exposes your operating system as a SQL database you can query for processes, packages, and network state across a fleet of hosts. How it works.",
+    publishDate: "2026-10-22",
+    image: "/blog/osquery.jpg",
+  },
+  {
+    href: "/blog/remediation-vs-mitigation",
+    category: "Security Concepts",
+    title: "Remediation vs Mitigation: What's the Difference?",
+    description:
+      "Remediation vs mitigation: remediation removes a vulnerability at its root, mitigation reduces the risk while it remains. When to use each, with examples.",
+    publishDate: "2026-10-24",
+    image: "/blog/remediation-vs-mitigation.jpg",
+  },
+  {
+    href: "/blog/external-secrets-operator",
+    category: "Best practices",
+    title: "External Secrets Operator: Kubernetes Secrets, Synced",
+    description:
+      "External Secrets Operator syncs secrets from AWS, Vault, and other managers into Kubernetes so credentials stay out of Git and your image manifests.",
+    publishDate: "2026-10-26",
+    image: "/blog/external-secrets-operator.jpg",
+  },
+  {
+    href: "/blog/iast",
+    category: "Security Concepts",
+    title: "IAST Explained: Interactive Application Security Testing",
+    description:
+      "IAST (interactive application security testing) instruments a running app to find real vulnerabilities during testing. How it compares to SAST and DAST.",
+    publishDate: "2026-10-28",
+    image: "/blog/iast.jpg",
+  },
+  {
+    href: "/blog/git-secrets",
+    category: "Best practices",
+    title: "git-secrets: Block Secrets Before They Reach a Commit",
+    description:
+      "git-secrets blocks credentials before they reach a git commit with regex hooks. How it works, its limits, and where scanning the built image fits.",
+    publishDate: "2026-10-30",
+    image: "/blog/git-secrets.jpg",
+  },
+  {
+    href: "/blog/image-scanning",
+    category: "Best practices",
+    title: "Image Scanning: How Container Vulnerability Scanning Works",
+    description:
+      "Image scanning finds known CVEs in a container's OS packages and dependencies. How it works, what it catches and misses, and where to run it.",
+    publishDate: "2026-11-01",
+    image: "/blog/image-scanning.jpg",
+  },
+  {
+    href: "/blog/github-advanced-security",
+    category: "Benchmarks",
+    title: "GitHub Advanced Security: What It Covers and What It Misses",
+    description:
+      "GitHub Advanced Security bundles CodeQL, secret scanning, and Dependabot. What it covers, how it is priced, and where container CVE scanning fits.",
+    publishDate: "2026-11-03",
+    image: "/blog/github-advanced-security.jpg",
+  },
+  {
+    href: "/blog/openscap",
+    category: "Scanning concepts",
+    title: "OpenSCAP Explained: Compliance and OVAL Vulnerability Scans",
+    description:
+      "OpenSCAP is the open-source SCAP scanner for Linux compliance and OVAL vulnerability checks. How it works, its scope, and where ScanRook fits.",
+    publishDate: "2026-11-05",
+    image: "/blog/openscap.jpg",
+  },
+  {
+    href: "/blog/cvss-calculator",
+    category: "Security Concepts",
+    title: "CVSS Calculator: How to Read and Build a Vector String",
+    description:
+      "A CVSS calculator turns metric selections into a vector string and 0-10 base score. How the v3.1 and v4.0 metrics work, with a worked example.",
+    publishDate: "2026-11-07",
+    image: "/blog/cvss-calculator.jpg",
+  },
+  {
+    href: "/blog/attack-surface-management",
+    category: "Security Concepts",
+    title: "Attack Surface Management: A Practical Primer for 2026",
+    description:
+      "Attack surface management is the continuous discovery, inventory, and monitoring of every asset an attacker can reach. What it covers and where scanning fits.",
+    publishDate: "2026-11-09",
+    image: "/blog/attack-surface-management.jpg",
+  },
+  {
+    href: "/blog/kubernetes-network-policies",
+    category: "Best practices",
+    title: "Kubernetes Network Policies: A Practical Guide",
+    description:
+      "How Kubernetes network policies work: default-allow behavior, a default-deny pattern with working YAML, egress control, and where image scanning fits alongside.",
+    publishDate: "2026-11-11",
+    image: "/blog/kubernetes-network-policies.jpg",
+  },
+  {
+    href: "/blog/security-posture",
+    category: "Security Concepts",
+    title: "Security Posture: What It Means and How to Measure It",
+    description:
+      "Security posture is the overall state of your security controls. What it includes, the metrics that measure it, CSPM vs DSPM vs ASPM, and how to improve it.",
+    publishDate: "2026-11-13",
+    image: "/blog/security-posture.jpg",
+  },
+  {
+    href: "/blog/jfrog-xray",
+    category: "Benchmarks",
+    title: "JFrog Xray: What It Does and How It Compares",
+    description:
+      "JFrog Xray is an SCA and security tool built into Artifactory. What it does, its strengths and tradeoffs, and how it compares to a multi-source scanner.",
+    publishDate: "2026-11-15",
+    image: "/blog/jfrog-xray.jpg",
+  },
+  {
+    href: "/blog/dora-compliance",
+    category: "Compliance",
+    title: "DORA Compliance: The EU Digital Operational Resilience Act",
+    description:
+      "DORA is the EU Digital Operational Resilience Act for financial firms. Who it applies to, its five pillars, key dates, and where vulnerability scanning fits.",
+    publishDate: "2026-11-17",
+    image: "/blog/dora-compliance.jpg",
+  },
+  {
+    href: "/blog/license-compliance",
+    category: "Compliance",
+    title: "License Compliance for Open Source: A Practical 2026 Guide",
+    description:
+      "License compliance means meeting open-source license obligations. The main license families, common mistakes, building a program, and where SBOMs and scans fit.",
+    publishDate: "2026-11-19",
+    image: "/blog/license-compliance.jpg",
+  },
+  {
+    href: "/blog/cve-vs-cwe",
+    category: "Security Concepts",
+    title: "CVE vs CWE: The Difference and Why Both Matter",
+    description:
+      "CVE vs CWE explained: a CVE is one specific vulnerability, a CWE is the weakness class behind it. How they relate, who maintains each, and why both matter.",
+    publishDate: "2026-11-21",
+    image: "/blog/cve-vs-cwe.jpg",
+  },
+  {
+    href: "/blog/drone-ci",
+    category: "Integrations",
+    title: "Drone CI: Scan Docker Images in Your Pipeline",
+    description:
+      "Scan Docker images in Drone CI: a complete container-native .drone.yml that builds the image, scans it with ScanRook, and fails the build on critical CVEs.",
+    publishDate: "2026-11-23",
+    image: "/blog/drone-ci.jpg",
+  },
+  {
+    href: "/blog/shift-left-security",
+    category: "Security Concepts",
+    title: "Shift Left Security: What It Means and How to Do It",
+    description:
+      "Shift left security moves testing earlier in the SDLC. What it means, the practices and tools, the alert-fatigue trap, and why you still need runtime coverage.",
+    publishDate: "2026-11-25",
+    image: "/blog/shift-left-security.jpg",
+  },
+  {
+    href: "/blog/docker-socket",
+    category: "Best practices",
+    title: "Docker Socket Security: Why Mounting It Is Dangerous",
+    description:
+      "Mounting the Docker socket into a container grants root-equivalent control of the host. Why /var/run/docker.sock is dangerous and how to avoid exposing it.",
+    publishDate: "2026-11-27",
+    image: "/blog/docker-socket.jpg",
+  },
+  {
+    href: "/blog/sca-tools",
+    category: "Best practices",
+    title: "SCA Tools in 2026: A Practical Guide to Composition Analysis",
+    description:
+      "SCA tools inventory open-source dependencies and match them to known CVEs and licenses. How they work, the main tools compared, and where ScanRook fits.",
+    publishDate: "2026-11-29",
+    image: "/blog/sca-tools.jpg",
+  },
+  {
+    href: "/blog/kics",
+    category: "Best practices",
+    title: "KICS Explained: Open-Source IaC Security Scanning",
+    description:
+      "KICS is an open-source IaC scanner from Checkmarx that finds misconfigurations in Terraform, Kubernetes, and Dockerfiles, and where ScanRook fits alongside it.",
+    publishDate: "2026-12-01",
+    image: "/blog/kics.jpg",
+  },
+  {
+    href: "/blog/harbor-registry",
+    category: "Best practices",
+    title: "Harbor Registry Explained: Scanning, Signing, and RBAC",
+    description:
+      "Harbor is a CNCF open-source container registry with scanning, signing, and RBAC. How its security features work, and where a deeper image scanner fits in.",
+    publishDate: "2026-12-03",
+    image: "/blog/harbor-registry.jpg",
+  },
+  {
+    href: "/blog/container-runtime-security",
+    category: "Best practices",
+    title: "Container Runtime Security: A Practical Guide",
+    description:
+      "Container runtime security protects workloads while they run, after build-time scanning ends. The threats, the controls, the tools, and where ScanRook fits.",
+    publishDate: "2026-12-05",
+    image: "/blog/container-runtime-security.jpg",
+  },
+  {
+    href: "/blog/reachability-analysis",
+    category: "Security Concepts",
+    title: "Reachability Analysis: Cutting Vulnerability Noise",
+    description:
+      "Reachability analysis tells you whether a vulnerable code path is actually callable, cutting false positives. How it works, its limits, and where ScanRook fits.",
+    publishDate: "2026-12-07",
+    image: "/blog/reachability-analysis.jpg",
+  },
+  {
+    href: "/blog/sealed-secrets",
+    category: "Best practices",
+    title: "Sealed Secrets in Kubernetes: Encrypt Secrets Safely for Git",
+    description:
+      "Sealed Secrets encrypt Kubernetes Secrets for safe storage in Git. How the kubeseal controller works, its scopes, key rotation, and where scanning fits.",
+    publishDate: "2026-12-09",
+    image: "/blog/sealed-secrets.jpg",
+  },
+  {
+    href: "/blog/nist-800-190",
+    category: "Compliance",
+    title: "NIST 800-190 Explained: The Container Security Guide",
+    description:
+      "NIST 800-190 is NIST's container security guide. The image, registry, orchestrator, container, and host risks it covers, and how to apply its countermeasures.",
+    publishDate: "2026-12-11",
+    image: "/blog/nist-800-190.jpg",
+  },
+  {
+    href: "/blog/bluekeep",
+    category: "CVE Deep Dive",
+    title: "BlueKeep (CVE-2019-0708): The Wormable RDP Vulnerability",
+    description:
+      "BlueKeep (CVE-2019-0708) is a wormable, pre-auth RCE in Windows RDP rated CVSS 9.8. Affected versions, how the flaw works, remediation, and NLA mitigation.",
+    publishDate: "2026-12-13",
+    image: "/blog/bluekeep.jpg",
+  },
+  {
+    href: "/blog/ripple20",
+    category: "CVE Deep Dive",
+    title: "Ripple20: 19 Vulnerabilities in the Treck TCP/IP Stack",
+    description:
+      "Ripple20 is a set of 19 vulnerabilities in the Treck embedded TCP/IP stack that rippled through IoT supply chains. Critical CVEs, affected devices, and fixes.",
+    publishDate: "2026-12-15",
+    image: "/blog/ripple20.jpg",
+  },
+  {
+    href: "/blog/security-context-kubernetes",
+    category: "Best practices",
+    title: "Security Context in Kubernetes: Harden Pods and Containers",
+    description:
+      "A Kubernetes securityContext hardens pods and containers: runAsNonRoot, dropped capabilities, no privilege escalation, read-only root FS, and how to enforce it.",
+    publishDate: "2026-12-17",
+    image: "/blog/security-context-kubernetes.jpg",
+  },
+  {
+    href: "/blog/software-provenance",
+    category: "Security Concepts",
+    title: "Software Provenance: What It Is and Why It Matters",
+    description:
+      "Software provenance is verifiable evidence of where a build artifact came from and how it was built. How SLSA and in-toto attestations work, and why it matters.",
+    publishDate: "2026-12-19",
+    image: "/blog/software-provenance.jpg",
+  },
+  {
+    href: "/blog/yarn-audit",
+    category: "Best practices",
+    title: "yarn audit: Scanning Yarn Dependencies for Vulnerabilities",
+    description:
+      "How yarn audit checks Yarn dependencies against the GitHub Advisory Database, how Yarn Classic and Berry differ, its limits, and where scanning fits.",
+    publishDate: "2026-12-21",
+    image: "/blog/yarn-audit.jpg",
+  },
+  {
+    href: "/blog/dependency-confusion",
+    category: "Security Concepts",
+    title: "Dependency Confusion: How the Supply Chain Attack Works",
+    description:
+      "Dependency confusion tricks a package manager into installing a malicious public package instead of your private one. How the attack works and how to stop it.",
+    publishDate: "2026-12-23",
+    image: "/blog/dependency-confusion.jpg",
+  },
+  {
+    href: "/blog/container-scanning-tools",
+    category: "Benchmarks",
+    title: "Container Scanning Tools in 2026: An Honest Comparison",
+    description:
+      "Container scanning tools in 2026 compared fairly: Trivy, Grype, Clair, Docker Scout, Snyk, and ScanRook, on finding depth, speed, scope, and when each fits.",
+    publishDate: "2026-12-25",
+    image: "/blog/container-scanning-tools.jpg",
+  },
+  {
+    href: "/blog/terrascan",
+    category: "Best practices",
+    title: "Terrascan: Scanning Infrastructure as Code for Misconfigs",
+    description:
+      "Terrascan is an open-source scanner for Infrastructure as Code misconfigurations. How it works with OPA policies, what it covers, and where it fits.",
+    publishDate: "2026-12-27",
+    image: "/blog/terrascan.jpg",
+  },
+  {
+    href: "/blog/ecr-image-scanning",
+    category: "Best practices",
+    title: "Amazon ECR Image Scanning: Basic vs Enhanced, Explained",
+    description:
+      "Amazon ECR image scanning explained: basic Clair scans versus enhanced Amazon Inspector, how to enable each, read the findings, and where ScanRook fits.",
+    publishDate: "2026-12-29",
+    image: "/blog/ecr-image-scanning.jpg",
+  },
+  {
+    href: "/blog/gitlab-container-scanning",
+    category: "Best practices",
+    title: "GitLab Container Scanning: How It Works and Its Limits",
+    description:
+      "How GitLab container scanning works: the Trivy analyzer, the Ultimate-tier dashboard, how to enable the template, its limits, and where ScanRook fits in.",
+    publishDate: "2026-12-31",
+    image: "/blog/gitlab-container-scanning.jpg",
+  },
 ];
 
 export const categoryColors: Record<string, string> = {
