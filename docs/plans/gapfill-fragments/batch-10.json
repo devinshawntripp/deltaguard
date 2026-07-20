@@ -1,0 +1,57 @@
+[
+  {
+    "href": "/blog/github-actions-security",
+    "category": "Integrations",
+    "title": "GitHub Actions Security: Harden Your Workflows",
+    "description": "A practical guide to GitHub Actions security: token permissions, pinning actions to SHAs, script injection, OIDC, self-hosted runners, and scanning build artifacts.",
+    "publishDate": "2026-12-06",
+    "image": "/blog/github-actions-security.jpg",
+    "keyword": "github actions security",
+    "difficulty": 23,
+    "volume": 70
+  },
+  {
+    "href": "/blog/continuous-compliance",
+    "category": "Compliance",
+    "title": "Continuous Compliance: From Audit Season to Always-On",
+    "description": "What continuous compliance actually means, how to turn controls into automated checks, collect evidence from your pipeline, and catch drift before an auditor does.",
+    "publishDate": "2026-12-08",
+    "image": "/blog/continuous-compliance.jpg",
+    "keyword": "continuous compliance",
+    "difficulty": 0,
+    "volume": 140
+  },
+  {
+    "href": "/blog/helm-security",
+    "category": "Best practices",
+    "title": "Helm Security: Charts, Values and Release Hardening",
+    "description": "Helm security in practice: verify chart provenance, pin dependencies and image digests, keep secrets out of values, and scan rendered manifests before install.",
+    "publishDate": "2026-12-10",
+    "image": "/blog/helm-security.jpg",
+    "keyword": "helm security",
+    "difficulty": 0,
+    "volume": 140
+  },
+  {
+    "href": "/blog/container-escape",
+    "category": "Security Concepts",
+    "title": "Container Escape: How It Happens and How to Stop It",
+    "description": "Container escape explained: the misconfigurations, runtime bugs and kernel flaws that break isolation, real CVEs that did it, and the layered defenses that hold.",
+    "publishDate": "2026-12-12",
+    "image": "/blog/container-escape.jpg",
+    "keyword": "container escape",
+    "difficulty": 4,
+    "volume": 90
+  },
+  {
+    "href": "/blog/ebpf-security",
+    "category": "Deep scanning",
+    "title": "eBPF Security: Kernel-Level Visibility, Explained",
+    "description": "How eBPF security tools see syscalls, files and network flows from the kernel, what the verifier does, where eBPF stops helping, and how it pairs with scanning.",
+    "publishDate": "2026-12-14",
+    "image": "/blog/ebpf-security.jpg",
+    "keyword": "ebpf security",
+    "difficulty": 20,
+    "volume": 50
+  }
+]

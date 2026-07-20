@@ -1,0 +1,57 @@
+[
+  {
+    "href": "/blog/sops-secrets",
+    "category": "Best practices",
+    "title": "SOPS Secrets: Encrypting Config Files in Git",
+    "description": "How SOPS secrets work: envelope encryption with age, KMS or PGP, .sops.yaml creation rules, key rotation, and using encrypted files in Kubernetes and CI.",
+    "publishDate": "2026-11-26",
+    "image": "/blog/sops-secrets.jpg",
+    "keyword": "sops secrets",
+    "difficulty": 16,
+    "volume": 140
+  },
+  {
+    "href": "/blog/aks-security",
+    "category": "Best practices",
+    "title": "AKS Security: Hardening Azure Kubernetes Service",
+    "description": "A practical AKS security guide: Entra ID and workload identity, private API servers, node patching, network policy, admission control and image scanning.",
+    "publishDate": "2026-11-28",
+    "image": "/blog/aks-security.jpg",
+    "keyword": "aks security",
+    "difficulty": 0,
+    "volume": 170
+  },
+  {
+    "href": "/blog/private-registry-security",
+    "category": "Best practices",
+    "title": "Private Registry Security: Hardening Registries",
+    "description": "How to secure a private container registry: authentication, tag immutability, signing, proxy caching, retention and scanning at push. Tool-agnostic guidance.",
+    "publishDate": "2026-11-30",
+    "image": "/blog/private-registry-security.jpg",
+    "keyword": "private registry",
+    "difficulty": 22,
+    "volume": 110
+  },
+  {
+    "href": "/blog/cve-numbering-authority",
+    "category": "Security Concepts",
+    "title": "CVE Numbering Authority: How CVE IDs Get Assigned",
+    "description": "What a CVE Numbering Authority is, how the CNA hierarchy and scopes work, what goes in a CVE Record, and why CNA data quality decides what your scanner can match.",
+    "publishDate": "2026-12-02",
+    "image": "/blog/cve-numbering-authority.jpg",
+    "keyword": "cve numbering authority",
+    "difficulty": 21,
+    "volume": 70
+  },
+  {
+    "href": "/blog/vulnerability-prioritization",
+    "category": "Prioritization",
+    "title": "Vulnerability Prioritization: From CVSS to Real Risk",
+    "description": "A practical vulnerability prioritization framework: why severity is not risk, how to layer exploitation, exposure and reachability signals, and defensible SLAs.",
+    "publishDate": "2026-12-04",
+    "image": "/blog/vulnerability-prioritization.jpg",
+    "keyword": "vulnerability prioritization",
+    "difficulty": 0,
+    "volume": 140
+  }
+]

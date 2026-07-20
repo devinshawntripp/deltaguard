@@ -1,0 +1,42 @@
+[
+ {
+  "slug": "docker-scout",
+  "keyword": "docker scout",
+  "category": "Scanning concepts",
+  "publishDate": "2026-10-17",
+  "difficulty": 17,
+  "volume": 390
+ },
+ {
+  "slug": "spotbugs",
+  "keyword": "spotbugs",
+  "category": "Scanning concepts",
+  "publishDate": "2026-10-19",
+  "difficulty": 14,
+  "volume": 320
+ },
+ {
+  "slug": "sbom-tools",
+  "keyword": "sbom tools",
+  "category": "Data sources",
+  "publishDate": "2026-10-21",
+  "difficulty": 11,
+  "volume": 320
+ },
+ {
+  "slug": "artifact-registry",
+  "keyword": "artifact registry",
+  "category": "Integrations",
+  "publishDate": "2026-10-23",
+  "difficulty": 20,
+  "volume": 320
+ },
+ {
+  "slug": "kubernetes-rbac",
+  "keyword": "kubernetes rbac",
+  "category": "Best practices",
+  "publishDate": "2026-10-25",
+  "difficulty": 16,
+  "volume": 320
+ }
+]

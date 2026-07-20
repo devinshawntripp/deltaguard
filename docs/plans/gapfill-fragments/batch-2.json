@@ -1,0 +1,57 @@
+[
+  {
+    "href": "/blog/aws-guardduty",
+    "category": "Integrations",
+    "title": "AWS GuardDuty: What It Detects and What It Misses",
+    "description": "AWS GuardDuty analyzes CloudTrail, VPC Flow Logs, DNS and EKS audit data for threats. How it works, what its findings mean, and the gap it leaves for image scanning.",
+    "publishDate": "2026-09-17",
+    "image": "/blog/aws-guardduty.jpg",
+    "keyword": "aws guardduty",
+    "difficulty": 3,
+    "volume": 2400
+  },
+  {
+    "href": "/blog/fips-140-2",
+    "category": "Compliance",
+    "title": "FIPS 140-2 Explained: Levels, Validation, and Containers",
+    "description": "FIPS 140-2 validates cryptographic modules for US federal use. What the four levels mean, how FIPS 140-3 supersedes it, and how to run FIPS mode in containers.",
+    "publishDate": "2026-09-19",
+    "image": "/blog/fips-140-2.jpg",
+    "keyword": "fips 140-2",
+    "difficulty": 22,
+    "volume": 2400
+  },
+  {
+    "href": "/blog/tetragon",
+    "category": "Deep scanning",
+    "title": "Tetragon: eBPF Runtime Security and In-Kernel Enforcement",
+    "description": "Tetragon uses eBPF to observe and enforce process, file and network activity in Kubernetes. How TracingPolicies work, how it differs from Falco, and its limits.",
+    "publishDate": "2026-09-21",
+    "image": "/blog/tetragon.jpg",
+    "keyword": "tetragon",
+    "difficulty": 27,
+    "volume": 2900
+  },
+  {
+    "href": "/blog/kustomize-security",
+    "category": "Best practices",
+    "title": "Kustomize Security: Overlays, Digests and Safe Manifests",
+    "description": "Kustomize composes Kubernetes manifests without templates. How the base and overlay model works, the security defaults to set, and how to scan the output.",
+    "publishDate": "2026-09-23",
+    "image": "/blog/kustomize-security.jpg",
+    "keyword": "kustomize",
+    "difficulty": 24,
+    "volume": 1900
+  },
+  {
+    "href": "/blog/skopeo",
+    "category": "Best practices",
+    "title": "Skopeo: Inspect, Copy and Mirror Container Images Safely",
+    "description": "Skopeo works with container images and registries without a daemon or root. Inspecting manifests, copying between transports, and mirroring air-gapped registries.",
+    "publishDate": "2026-09-25",
+    "image": "/blog/skopeo.jpg",
+    "keyword": "skopeo",
+    "difficulty": 2,
+    "volume": 1600
+  }
+]

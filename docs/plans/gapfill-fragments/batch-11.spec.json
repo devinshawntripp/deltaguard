@@ -1,0 +1,42 @@
+[
+ {
+  "slug": "image-promotion",
+  "keyword": "image promotion",
+  "category": "Best practices",
+  "publishDate": "2026-12-16",
+  "difficulty": 0,
+  "volume": 90
+ },
+ {
+  "slug": "secret-rotation",
+  "keyword": "secret rotation",
+  "category": "Best practices",
+  "publishDate": "2026-12-18",
+  "difficulty": 6,
+  "volume": 70
+ },
+ {
+  "slug": "image-pull-secrets",
+  "keyword": "image pull secrets",
+  "category": "Best practices",
+  "publishDate": "2026-12-20",
+  "difficulty": 11,
+  "volume": 70
+ },
+ {
+  "slug": "ci-cd-security-best-practices",
+  "keyword": "ci cd security best practices",
+  "category": "Best practices",
+  "publishDate": "2026-12-22",
+  "difficulty": 9,
+  "volume": 70
+ },
+ {
+  "slug": "red-hat-security-advisories",
+  "keyword": "red hat security advisories",
+  "category": "Data sources",
+  "publishDate": "2026-12-24",
+  "difficulty": 13,
+  "volume": 50
+ }
+]

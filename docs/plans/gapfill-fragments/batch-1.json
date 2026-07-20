@@ -1,0 +1,57 @@
+[
+  {
+    "href": "/blog/aws-inspector",
+    "category": "Integrations",
+    "title": "AWS Inspector: How Amazon's Vulnerability Scanner Works",
+    "description": "How AWS Inspector scans EC2, ECR images and Lambda for CVEs, how agentless and agent-based scanning differ, what it costs you in effort, and where it stops.",
+    "publishDate": "2026-09-07",
+    "image": "/blog/aws-inspector.jpg",
+    "keyword": "aws inspector",
+    "difficulty": 0,
+    "volume": 1600
+  },
+  {
+    "href": "/blog/mtls-mutual-tls",
+    "category": "Security Concepts",
+    "title": "mTLS Explained: How Mutual TLS Authentication Works",
+    "description": "What mTLS is, how the mutual TLS handshake differs from ordinary TLS, real nginx and Istio config, certificate rotation, and the failure modes that bite teams.",
+    "publishDate": "2026-09-09",
+    "image": "/blog/mtls-mutual-tls.jpg",
+    "keyword": "mtls",
+    "difficulty": 15,
+    "volume": 5400
+  },
+  {
+    "href": "/blog/nikto-web-scanner",
+    "category": "Scanning concepts",
+    "title": "Nikto: What the Web Server Scanner Actually Checks",
+    "description": "Nikto is a fast, loud web server scanner for known bad paths and misconfigurations. How it works, real commands, tuning, false positives, and its blind spots.",
+    "publishDate": "2026-09-11",
+    "image": "/blog/nikto-web-scanner.jpg",
+    "keyword": "nikto",
+    "difficulty": 17,
+    "volume": 4400
+  },
+  {
+    "href": "/blog/disa-stig",
+    "category": "Compliance",
+    "title": "DISA STIG: What It Is and How to Actually Comply",
+    "description": "A practical guide to the DISA STIG: how STIGs are structured, CAT I/II/III severities, CCI mapping to NIST 800-53, automating checks with SCAP, and the gaps.",
+    "publishDate": "2026-09-13",
+    "image": "/blog/disa-stig.jpg",
+    "keyword": "disa stig",
+    "difficulty": 22,
+    "volume": 4400
+  },
+  {
+    "href": "/blog/brakeman-rails-security",
+    "category": "Scanning concepts",
+    "title": "Brakeman: Static Security Analysis for Rails Apps",
+    "description": "How Brakeman statically analyses a Rails codebase for SQL injection, XSS and mass assignment, its confidence levels, CI setup, and what it deliberately misses.",
+    "publishDate": "2026-09-15",
+    "image": "/blog/brakeman-rails-security.jpg",
+    "keyword": "brakeman",
+    "difficulty": 11,
+    "volume": 2900
+  }
+]

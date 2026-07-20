@@ -1,0 +1,42 @@
+[
+ {
+  "slug": "sops-secrets",
+  "keyword": "sops secrets",
+  "category": "Best practices",
+  "publishDate": "2026-11-26",
+  "difficulty": 16,
+  "volume": 140
+ },
+ {
+  "slug": "aks-security",
+  "keyword": "aks security",
+  "category": "Best practices",
+  "publishDate": "2026-11-28",
+  "difficulty": 0,
+  "volume": 170
+ },
+ {
+  "slug": "private-registry-security",
+  "keyword": "private registry",
+  "category": "Best practices",
+  "publishDate": "2026-11-30",
+  "difficulty": 22,
+  "volume": 110
+ },
+ {
+  "slug": "cve-numbering-authority",
+  "keyword": "cve numbering authority",
+  "category": "Security Concepts",
+  "publishDate": "2026-12-02",
+  "difficulty": 21,
+  "volume": 70
+ },
+ {
+  "slug": "vulnerability-prioritization",
+  "keyword": "vulnerability prioritization",
+  "category": "Prioritization",
+  "publishDate": "2026-12-04",
+  "difficulty": 0,
+  "volume": 140
+ }
+]

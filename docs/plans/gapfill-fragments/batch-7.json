@@ -1,0 +1,57 @@
+[
+ {
+  "href": "/blog/mitre-d3fend",
+  "category": "Security Concepts",
+  "title": "MITRE D3FEND: The Countermeasure Side of ATT&CK",
+  "description": "MITRE D3FEND is a knowledge graph of defensive techniques that maps countermeasures to ATT&CK. How its tactics, digital artifacts and IDs actually work.",
+  "publishDate": "2026-11-06",
+  "image": "/blog/mitre-d3fend.jpg",
+  "keyword": "mitre d3fend",
+  "difficulty": 6,
+  "volume": 260
+ },
+ {
+  "href": "/blog/kev-catalog",
+  "category": "Prioritization",
+  "title": "KEV Catalog: How to Use CISA's Exploited CVE List",
+  "description": "The KEV catalog lists CVEs with confirmed exploitation. Its JSON schema, the BOD 22-01 due dates, and how to wire it into scan triage without over-trusting it.",
+  "publishDate": "2026-11-08",
+  "image": "/blog/kev-catalog.jpg",
+  "keyword": "kev catalog",
+  "difficulty": 17,
+  "volume": 260
+ },
+ {
+  "href": "/blog/bandit-python",
+  "category": "Scanning concepts",
+  "title": "Bandit for Python: Practical SAST Without the Noise",
+  "description": "Bandit is Python's AST-based security linter. Its test IDs, severity and confidence flags, pyproject config, CI wiring, and how to keep false positives in check.",
+  "publishDate": "2026-11-10",
+  "image": "/blog/bandit-python.jpg",
+  "keyword": "bandit python",
+  "difficulty": 12,
+  "volume": 210
+ },
+ {
+  "href": "/blog/gosec",
+  "category": "Scanning concepts",
+  "title": "gosec: Static Security Analysis for Go, Tuned Properly",
+  "description": "gosec scans Go source for insecure patterns. Its rule IDs, severity and confidence filters, nosec suppressions, CI wiring, and how it differs from govulncheck.",
+  "publishDate": "2026-11-12",
+  "image": "/blog/gosec.jpg",
+  "keyword": "gosec",
+  "difficulty": 9,
+  "volume": 210
+ },
+ {
+  "href": "/blog/immutable-infrastructure",
+  "category": "Architecture",
+  "title": "Immutable Infrastructure: Why Rebuilds Beat Patching",
+  "description": "Immutable infrastructure replaces servers instead of patching them. What it means in practice, the security properties it buys, its real costs, and how to adopt it.",
+  "publishDate": "2026-11-14",
+  "image": "/blog/immutable-infrastructure.jpg",
+  "keyword": "immutable infrastructure",
+  "difficulty": 7,
+  "volume": 210
+ }
+]

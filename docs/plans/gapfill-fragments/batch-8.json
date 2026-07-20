@@ -1,0 +1,57 @@
+[
+  {
+    "href": "/blog/cilium-network-policy",
+    "category": "Best practices",
+    "title": "Cilium Network Policy: A Practical Guide",
+    "description": "How Cilium network policy works with eBPF and identities, how CiliumNetworkPolicy extends Kubernetes NetworkPolicy to L7 and DNS, and how to roll it out safely.",
+    "publishDate": "2026-11-16",
+    "image": "/blog/cilium-network-policy.jpg",
+    "keyword": "cilium network policy",
+    "difficulty": 8,
+    "volume": 210
+  },
+  {
+    "href": "/blog/dockerfile-best-practices",
+    "category": "Best practices",
+    "title": "Dockerfile Best Practices for Secure, Small Images",
+    "description": "Dockerfile best practices that cut vulnerabilities and image size: multi-stage builds, pinned bases, non-root users, cache ordering, and secret-safe builds.",
+    "publishDate": "2026-11-18",
+    "image": "/blog/dockerfile-best-practices.jpg",
+    "keyword": "dockerfile best practices",
+    "difficulty": 22,
+    "volume": 170
+  },
+  {
+    "href": "/blog/kubernetes-security-best-practices",
+    "category": "Best practices",
+    "title": "Kubernetes Security Best Practices: A Layered Guide",
+    "description": "Kubernetes security best practices that matter in production: RBAC, Pod Security Admission, network policy, secrets, image provenance, and node hardening.",
+    "publishDate": "2026-11-20",
+    "image": "/blog/kubernetes-security-best-practices.jpg",
+    "keyword": "kubernetes security best practices",
+    "difficulty": 19,
+    "volume": 170
+  },
+  {
+    "href": "/blog/pwnkit",
+    "category": "CVE Deep Dive",
+    "title": "PwnKit (CVE-2021-4034): The polkit Root Bug",
+    "description": "PwnKit, CVE-2021-4034, is a local root escalation in polkit's pkexec that sat unnoticed for 12 years. How it works, who is affected, and how to check and fix it.",
+    "publishDate": "2026-11-22",
+    "image": "/blog/pwnkit.jpg",
+    "keyword": "pwnkit",
+    "difficulty": 18,
+    "volume": 170
+  },
+  {
+    "href": "/blog/follina",
+    "category": "CVE Deep Dive",
+    "title": "Follina (CVE-2022-30190): The MSDT Office Bug",
+    "description": "Follina, CVE-2022-30190, turned a Word document into code execution with macros disabled. How the MSDT protocol handler was abused, and what it teaches.",
+    "publishDate": "2026-11-24",
+    "image": "/blog/follina.jpg",
+    "keyword": "follina",
+    "difficulty": 13,
+    "volume": 140
+  }
+]

@@ -1,0 +1,57 @@
+[
+ {
+  "href": "/blog/buildkit-security",
+  "category": "Best practices",
+  "title": "BuildKit Security: Hardening Your Docker Builds",
+  "description": "BuildKit changed how Docker images are built. How its secret mounts, cache, provenance attestations and rootless mode work, and how to build images safely.",
+  "publishDate": "2026-10-07",
+  "image": "/blog/buildkit-security.jpg",
+  "keyword": "buildkit",
+  "difficulty": 21,
+  "volume": 720
+ },
+ {
+  "href": "/blog/policy-as-code",
+  "category": "Architecture",
+  "title": "Policy as Code: How It Works and Where to Enforce It",
+  "description": "Policy as code turns security rules into versioned, testable files. How OPA, Rego, Kyverno and Conftest work, where to enforce them, and how to avoid sprawl.",
+  "publishDate": "2026-10-09",
+  "image": "/blog/policy-as-code.jpg",
+  "keyword": "policy as code",
+  "difficulty": 11,
+  "volume": 590
+ },
+ {
+  "href": "/blog/dirty-cow",
+  "category": "CVE Deep Dive",
+  "title": "Dirty COW (CVE-2016-5195): The Kernel Race Explained",
+  "description": "Dirty COW was a nine-year-old Linux kernel race condition that gave any local user root. How the copy-on-write bug worked and why containers did not stop it.",
+  "publishDate": "2026-10-11",
+  "image": "/blog/dirty-cow.jpg",
+  "keyword": "dirty cow",
+  "difficulty": 8,
+  "volume": 480
+ },
+ {
+  "href": "/blog/owasp-asvs",
+  "category": "Compliance",
+  "title": "OWASP ASVS: A Practical Guide to the Standard",
+  "description": "OWASP ASVS turns application security from opinion into a checklist you can verify. What the levels mean, how it is organised, and how to adopt it in practice.",
+  "publishDate": "2026-10-13",
+  "image": "/blog/owasp-asvs.jpg",
+  "keyword": "owasp asvs",
+  "difficulty": 12,
+  "volume": 480
+ },
+ {
+  "href": "/blog/flux-cd-security",
+  "category": "Integrations",
+  "title": "Flux CD Security: Hardening Your GitOps Pipeline",
+  "description": "Flux CD makes Git the control plane for your cluster. How to harden it: cosign source verification, tenant impersonation, SOPS secrets, and scanning in CI.",
+  "publishDate": "2026-10-15",
+  "image": "/blog/flux-cd-security.jpg",
+  "keyword": "flux cd",
+  "difficulty": 18,
+  "volume": 480
+ }
+]

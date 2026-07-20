@@ -1,0 +1,42 @@
+[
+ {
+  "slug": "open-policy-agent",
+  "keyword": "open policy agent",
+  "category": "Architecture",
+  "publishDate": "2026-09-27",
+  "difficulty": 5,
+  "volume": 1600
+ },
+ {
+  "slug": "yara-rules",
+  "keyword": "yara rules",
+  "category": "Deep scanning",
+  "publishDate": "2026-09-29",
+  "difficulty": 25,
+  "volume": 1300
+ },
+ {
+  "slug": "buildah",
+  "keyword": "buildah",
+  "category": "Best practices",
+  "publishDate": "2026-10-01",
+  "difficulty": 18,
+  "volume": 880
+ },
+ {
+  "slug": "sigma-rules",
+  "keyword": "sigma rules",
+  "category": "Deep scanning",
+  "publishDate": "2026-10-03",
+  "difficulty": 21,
+  "volume": 880
+ },
+ {
+  "slug": "dependency-track",
+  "keyword": "dependency track",
+  "category": "Integrations",
+  "publishDate": "2026-10-05",
+  "difficulty": 11,
+  "volume": 720
+ }
+]

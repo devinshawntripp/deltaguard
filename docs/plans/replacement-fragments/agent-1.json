@@ -1,0 +1,47 @@
+[
+  {
+    "href": "/blog/shellshock-cve-2014-6271",
+    "category": "CVE Deep Dive",
+    "title": "Shellshock (CVE-2014-6271) Explained: Detection and Fixes",
+    "description": "Shellshock (CVE-2014-6271) let attackers run commands through a Bash environment-variable bug. How the exploit worked, affected versions, follow-ups, and fixes.",
+    "publishDate": "2026-07-06",
+    "image": "/blog/shellshock-cve-2014-6271.jpg",
+    "keyword": "shellshock"
+  },
+  {
+    "href": "/blog/heartbleed-cve-2014-0160",
+    "category": "CVE Deep Dive",
+    "title": "Heartbleed (CVE-2014-0160) Explained: Impact and Remediation",
+    "description": "Heartbleed (CVE-2014-0160) leaked server memory through an OpenSSL TLS heartbeat over-read. Affected versions, the private-key risk, and how to remediate it.",
+    "publishDate": "2026-07-29",
+    "image": "/blog/heartbleed-cve-2014-0160.jpg",
+    "keyword": "heartbleed"
+  },
+  {
+    "href": "/blog/leaky-vessels-cve-2024-21626",
+    "category": "CVE Deep Dive",
+    "title": "Leaky Vessels (CVE-2024-21626): runc Container Escape",
+    "description": "Leaky Vessels (CVE-2024-21626) is a runc container escape via a leaked file descriptor. How it works, the affected versions, the 1.1.12 fix, and detection.",
+    "publishDate": "2026-08-10",
+    "image": "/blog/leaky-vessels-cve-2024-21626.jpg",
+    "keyword": "leaky vessels"
+  },
+  {
+    "href": "/blog/github-security-advisories-explained",
+    "category": "Data sources",
+    "title": "GHSA Explained: What GitHub Security Advisories Are",
+    "description": "GHSA explained: what GitHub Security Advisories and GHSA IDs are, how the GitHub Advisory Database relates to CVE and OSV, and how scanners use it.",
+    "publishDate": "2026-07-10",
+    "image": "/blog/github-security-advisories-explained.jpg",
+    "keyword": "ghsa"
+  },
+  {
+    "href": "/blog/falco-runtime-security-explained",
+    "category": "Scanning concepts",
+    "title": "Falco Explained: Runtime Security vs Image Scanning",
+    "description": "Falco is CNCF runtime security: eBPF syscall threat detection at runtime. How it works, how it differs from image and SCA scanning, and when to use each.",
+    "publishDate": "2026-07-08",
+    "image": "/blog/falco-runtime-security-explained.jpg",
+    "keyword": "falco"
+  }
+]

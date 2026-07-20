@@ -1,0 +1,57 @@
+[
+  {
+    "href": "/blog/attack-surface-management",
+    "category": "Security Concepts",
+    "title": "Attack Surface Management: A Practical Primer for 2026",
+    "description": "Attack surface management is the continuous discovery, inventory, and monitoring of every asset an attacker can reach. What it covers and where scanning fits.",
+    "publishDate": "2026-11-09",
+    "image": "/blog/attack-surface-management.jpg",
+    "keyword": "attack surface management",
+    "difficulty": 6,
+    "volume": 720
+  },
+  {
+    "href": "/blog/kubernetes-network-policies",
+    "category": "Best practices",
+    "title": "Kubernetes Network Policies: A Practical Guide",
+    "description": "How Kubernetes network policies work: default-allow behavior, a default-deny pattern with working YAML, egress control, and where image scanning fits alongside.",
+    "publishDate": "2026-11-11",
+    "image": "/blog/kubernetes-network-policies.jpg",
+    "keyword": "kubernetes network policies",
+    "difficulty": 3,
+    "volume": 590
+  },
+  {
+    "href": "/blog/security-posture",
+    "category": "Security Concepts",
+    "title": "Security Posture: What It Means and How to Measure It",
+    "description": "Security posture is the overall state of your security controls. What it includes, the metrics that measure it, CSPM vs DSPM vs ASPM, and how to improve it.",
+    "publishDate": "2026-11-13",
+    "image": "/blog/security-posture.jpg",
+    "keyword": "security posture",
+    "difficulty": 17,
+    "volume": 880
+  },
+  {
+    "href": "/blog/jfrog-xray",
+    "category": "Benchmarks",
+    "title": "JFrog Xray: What It Does and How It Compares",
+    "description": "JFrog Xray is an SCA and security tool built into Artifactory. What it does, its strengths and tradeoffs, and how it compares to a multi-source scanner.",
+    "publishDate": "2026-11-15",
+    "image": "/blog/jfrog-xray.jpg",
+    "keyword": "jfrog xray",
+    "difficulty": 8,
+    "volume": 590
+  },
+  {
+    "href": "/blog/dora-compliance",
+    "category": "Compliance",
+    "title": "DORA Compliance: The EU Digital Operational Resilience Act",
+    "description": "DORA is the EU Digital Operational Resilience Act for financial firms. Who it applies to, its five pillars, key dates, and where vulnerability scanning fits.",
+    "publishDate": "2026-11-17",
+    "image": "/blog/dora-compliance.jpg",
+    "keyword": "dora compliance",
+    "difficulty": 17,
+    "volume": 720
+  }
+]

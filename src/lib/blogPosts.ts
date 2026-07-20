@@ -1294,6 +1294,528 @@ export const posts: BlogPost[] = [
     publishDate: "2026-12-31",
     image: "/blog/gitlab-container-scanning.jpg",
   },
+  {
+    href: "/blog/aws-inspector",
+    category: "Integrations",
+    title: "AWS Inspector: How Amazon's Vulnerability Scanner Works",
+    description:
+      "How AWS Inspector scans EC2, ECR images and Lambda for CVEs, how agentless and agent-based scanning differ, what it costs you in effort, and where it stops.",
+    publishDate: "2026-09-07",
+    image: "/blog/aws-inspector.jpg",
+  },
+  {
+    href: "/blog/mtls-mutual-tls",
+    category: "Security Concepts",
+    title: "mTLS Explained: How Mutual TLS Authentication Works",
+    description:
+      "What mTLS is, how the mutual TLS handshake differs from ordinary TLS, real nginx and Istio config, certificate rotation, and the failure modes that bite teams.",
+    publishDate: "2026-09-09",
+    image: "/blog/mtls-mutual-tls.jpg",
+  },
+  {
+    href: "/blog/nikto-web-scanner",
+    category: "Scanning concepts",
+    title: "Nikto: What the Web Server Scanner Actually Checks",
+    description:
+      "Nikto is a fast, loud web server scanner for known bad paths and misconfigurations. How it works, real commands, tuning, false positives, and its blind spots.",
+    publishDate: "2026-09-11",
+    image: "/blog/nikto-web-scanner.jpg",
+  },
+  {
+    href: "/blog/disa-stig",
+    category: "Compliance",
+    title: "DISA STIG: What It Is and How to Actually Comply",
+    description:
+      "A practical guide to the DISA STIG: how STIGs are structured, CAT I/II/III severities, CCI mapping to NIST 800-53, automating checks with SCAP, and the gaps.",
+    publishDate: "2026-09-13",
+    image: "/blog/disa-stig.jpg",
+  },
+  {
+    href: "/blog/brakeman-rails-security",
+    category: "Scanning concepts",
+    title: "Brakeman: Static Security Analysis for Rails Apps",
+    description:
+      "How Brakeman statically analyses a Rails codebase for SQL injection, XSS and mass assignment, its confidence levels, CI setup, and what it deliberately misses.",
+    publishDate: "2026-09-15",
+    image: "/blog/brakeman-rails-security.jpg",
+  },
+  {
+    href: "/blog/aws-guardduty",
+    category: "Integrations",
+    title: "AWS GuardDuty: What It Detects and What It Misses",
+    description:
+      "AWS GuardDuty analyzes CloudTrail, VPC Flow Logs, DNS and EKS audit data for threats. How it works, what its findings mean, and the gap it leaves for image scanning.",
+    publishDate: "2026-09-17",
+    image: "/blog/aws-guardduty.jpg",
+  },
+  {
+    href: "/blog/fips-140-2",
+    category: "Compliance",
+    title: "FIPS 140-2 Explained: Levels, Validation, and Containers",
+    description:
+      "FIPS 140-2 validates cryptographic modules for US federal use. What the four levels mean, how FIPS 140-3 supersedes it, and how to run FIPS mode in containers.",
+    publishDate: "2026-09-19",
+    image: "/blog/fips-140-2.jpg",
+  },
+  {
+    href: "/blog/tetragon",
+    category: "Deep scanning",
+    title: "Tetragon: eBPF Runtime Security and In-Kernel Enforcement",
+    description:
+      "Tetragon uses eBPF to observe and enforce process, file and network activity in Kubernetes. How TracingPolicies work, how it differs from Falco, and its limits.",
+    publishDate: "2026-09-21",
+    image: "/blog/tetragon.jpg",
+  },
+  {
+    href: "/blog/kustomize-security",
+    category: "Best practices",
+    title: "Kustomize Security: Overlays, Digests and Safe Manifests",
+    description:
+      "Kustomize composes Kubernetes manifests without templates. How the base and overlay model works, the security defaults to set, and how to scan the output.",
+    publishDate: "2026-09-23",
+    image: "/blog/kustomize-security.jpg",
+  },
+  {
+    href: "/blog/skopeo",
+    category: "Best practices",
+    title: "Skopeo: Inspect, Copy and Mirror Container Images Safely",
+    description:
+      "Skopeo works with container images and registries without a daemon or root. Inspecting manifests, copying between transports, and mirroring air-gapped registries.",
+    publishDate: "2026-09-25",
+    image: "/blog/skopeo.jpg",
+  },
+  {
+    href: "/blog/open-policy-agent",
+    category: "Architecture",
+    title: "Open Policy Agent: Policy as Code, Explained",
+    description:
+      "How Open Policy Agent works: the Rego language, the decision model, Gatekeeper and Conftest, and how to gate container image scan results with policy as code.",
+    publishDate: "2026-09-27",
+    image: "/blog/open-policy-agent.jpg",
+  },
+  {
+    href: "/blog/yara-rules",
+    category: "Deep scanning",
+    title: "YARA Rules: How to Write Ones That Actually Work",
+    description:
+      "A practical guide to YARA rules: rule anatomy, string types and modifiers, condition logic, PE and ELF modules, tuning false positives, and where to get rulesets.",
+    publishDate: "2026-09-29",
+    image: "/blog/yara-rules.jpg",
+  },
+  {
+    href: "/blog/buildah",
+    category: "Best practices",
+    title: "Buildah: Rootless, Daemonless Container Builds",
+    description:
+      "How Buildah builds OCI images without a daemon or root: the scriptable build model, rootless CI patterns, minimal images from scratch, and scanning what you build.",
+    publishDate: "2026-10-01",
+    image: "/blog/buildah.jpg",
+  },
+  {
+    href: "/blog/sigma-rules",
+    category: "Deep scanning",
+    title: "Sigma Rules: Detection as Code for Any SIEM",
+    description:
+      "How Sigma rules work: the YAML structure, logsource and detection blocks, field modifiers, converting rules to SIEM queries with sigma-cli, and tuning for noise.",
+    publishDate: "2026-10-03",
+    image: "/blog/sigma-rules.jpg",
+  },
+  {
+    href: "/blog/dependency-track",
+    category: "Integrations",
+    title: "Dependency-Track: Continuous SBOM Analysis",
+    description:
+      "How OWASP Dependency-Track works: SBOM ingestion, the analyzers behind its findings, policy and VEX support, CI upload patterns, and where a scanner fits.",
+    publishDate: "2026-10-05",
+    image: "/blog/dependency-track.jpg",
+  },
+  {
+    href: "/blog/buildkit-security",
+    category: "Best practices",
+    title: "BuildKit Security: Hardening Your Docker Builds",
+    description:
+      "BuildKit changed how Docker images are built. How its secret mounts, cache, provenance attestations and rootless mode work, and how to build images safely.",
+    publishDate: "2026-10-07",
+    image: "/blog/buildkit-security.jpg",
+  },
+  {
+    href: "/blog/policy-as-code",
+    category: "Architecture",
+    title: "Policy as Code: How It Works and Where to Enforce It",
+    description:
+      "Policy as code turns security rules into versioned, testable files. How OPA, Rego, Kyverno and Conftest work, where to enforce them, and how to avoid sprawl.",
+    publishDate: "2026-10-09",
+    image: "/blog/policy-as-code.jpg",
+  },
+  {
+    href: "/blog/dirty-cow",
+    category: "CVE Deep Dive",
+    title: "Dirty COW (CVE-2016-5195): The Kernel Race Explained",
+    description:
+      "Dirty COW was a nine-year-old Linux kernel race condition that gave any local user root. How the copy-on-write bug worked and why containers did not stop it.",
+    publishDate: "2026-10-11",
+    image: "/blog/dirty-cow.jpg",
+  },
+  {
+    href: "/blog/owasp-asvs",
+    category: "Compliance",
+    title: "OWASP ASVS: A Practical Guide to the Standard",
+    description:
+      "OWASP ASVS turns application security from opinion into a checklist you can verify. What the levels mean, how it is organised, and how to adopt it in practice.",
+    publishDate: "2026-10-13",
+    image: "/blog/owasp-asvs.jpg",
+  },
+  {
+    href: "/blog/flux-cd-security",
+    category: "Integrations",
+    title: "Flux CD Security: Hardening Your GitOps Pipeline",
+    description:
+      "Flux CD makes Git the control plane for your cluster. How to harden it: cosign source verification, tenant impersonation, SOPS secrets, and scanning in CI.",
+    publishDate: "2026-10-15",
+    image: "/blog/flux-cd-security.jpg",
+  },
+  {
+    href: "/blog/docker-scout",
+    category: "Scanning concepts",
+    title: "Docker Scout: How It Works and When to Use It",
+    description:
+      "Docker Scout analyzes image SBOMs for CVEs, suggests base image upgrades, and enforces policy. How it works, the CLI commands, limits, and where it fits.",
+    publishDate: "2026-10-17",
+    image: "/blog/docker-scout.jpg",
+  },
+  {
+    href: "/blog/spotbugs",
+    category: "Scanning concepts",
+    title: "SpotBugs: Static Analysis for Java Bytecode",
+    description:
+      "SpotBugs finds bug patterns in compiled Java bytecode. How it works, Maven and Gradle setup, the Find Security Bugs plugin, and what it cannot catch.",
+    publishDate: "2026-10-19",
+    image: "/blog/spotbugs.jpg",
+  },
+  {
+    href: "/blog/sbom-tools",
+    category: "Data sources",
+    title: "SBOM Tools: Generate, Validate, and Use Them",
+    description:
+      "A practical map of the SBOM tools ecosystem: generators, validators, quality scorers, storage platforms, and the scanners that consume SBOMs for CVEs.",
+    publishDate: "2026-10-21",
+    image: "/blog/sbom-tools.jpg",
+  },
+  {
+    href: "/blog/artifact-registry",
+    category: "Integrations",
+    title: "Artifact Registry: Securing Your Build Outputs",
+    description:
+      "What an artifact registry does, how Google Artifact Registry and its peers compare, and how to add scanning, signing, and cleanup policies that hold up.",
+    publishDate: "2026-10-23",
+    image: "/blog/artifact-registry.jpg",
+  },
+  {
+    href: "/blog/kubernetes-rbac",
+    category: "Best practices",
+    title: "Kubernetes RBAC: A Practical Security Guide",
+    description:
+      "How Kubernetes RBAC really works: Roles vs ClusterRoles, the binding scope matrix, the verbs that grant cluster admin by accident, and how to audit it.",
+    publishDate: "2026-10-25",
+    image: "/blog/kubernetes-rbac.jpg",
+  },
+  {
+    href: "/blog/printnightmare",
+    category: "CVE Deep Dive",
+    title: "PrintNightmare: The Windows Print Spooler RCE Explained",
+    description:
+      "PrintNightmare explained: how CVE-2021-34527 turned the Windows Print Spooler into remote code execution and domain compromise, and how to verify you are patched.",
+    publishDate: "2026-10-27",
+    image: "/blog/printnightmare.jpg",
+  },
+  {
+    href: "/blog/kubescape",
+    category: "Scanning concepts",
+    title: "Kubescape: Kubernetes Security Posture Scanning",
+    description:
+      "What Kubescape does, how its control frameworks and CVE scanning work, how to run it in CI and in-cluster, and where it overlaps with image scanners like ScanRook.",
+    publishDate: "2026-10-29",
+    image: "/blog/kubescape.jpg",
+  },
+  {
+    href: "/blog/opa-gatekeeper",
+    category: "Architecture",
+    title: "OPA Gatekeeper: Kubernetes Policy Enforcement",
+    description:
+      "How OPA Gatekeeper enforces policy at the Kubernetes admission layer: ConstraintTemplates, Constraints, Rego, audit mode, and where image scanning fits.",
+    publishDate: "2026-10-31",
+    image: "/blog/opa-gatekeeper.jpg",
+  },
+  {
+    href: "/blog/dirty-pipe",
+    category: "CVE Deep Dive",
+    title: "Dirty Pipe (CVE-2022-0847): The Linux Kernel Flaw",
+    description:
+      "Dirty Pipe explained: how CVE-2022-0847 let any user overwrite read-only files, why it enabled container escape, which kernels are affected, and how to check yours.",
+    publishDate: "2026-11-02",
+    image: "/blog/dirty-pipe.jpg",
+  },
+  {
+    href: "/blog/nuclei-scanner",
+    category: "Scanning concepts",
+    title: "Nuclei Scanner: Template-Based Vulnerability Scanning",
+    description:
+      "How the Nuclei scanner works: YAML templates, the community template library, running it safely, and where template-based scanning ends and artifact scanning begins.",
+    publishDate: "2026-11-04",
+    image: "/blog/nuclei-scanner.jpg",
+  },
+  {
+    href: "/blog/mitre-d3fend",
+    category: "Security Concepts",
+    title: "MITRE D3FEND: The Countermeasure Side of ATT&CK",
+    description:
+      "MITRE D3FEND is a knowledge graph of defensive techniques that maps countermeasures to ATT&CK. How its tactics, digital artifacts and IDs actually work.",
+    publishDate: "2026-11-06",
+    image: "/blog/mitre-d3fend.jpg",
+  },
+  {
+    href: "/blog/kev-catalog",
+    category: "Prioritization",
+    title: "KEV Catalog: How to Use CISA's Exploited CVE List",
+    description:
+      "The KEV catalog lists CVEs with confirmed exploitation. Its JSON schema, the BOD 22-01 due dates, and how to wire it into scan triage without over-trusting it.",
+    publishDate: "2026-11-08",
+    image: "/blog/kev-catalog.jpg",
+  },
+  {
+    href: "/blog/bandit-python",
+    category: "Scanning concepts",
+    title: "Bandit for Python: Practical SAST Without the Noise",
+    description:
+      "Bandit is Python's AST-based security linter. Its test IDs, severity and confidence flags, pyproject config, CI wiring, and how to keep false positives in check.",
+    publishDate: "2026-11-10",
+    image: "/blog/bandit-python.jpg",
+  },
+  {
+    href: "/blog/gosec",
+    category: "Scanning concepts",
+    title: "gosec: Static Security Analysis for Go, Tuned Properly",
+    description:
+      "gosec scans Go source for insecure patterns. Its rule IDs, severity and confidence filters, nosec suppressions, CI wiring, and how it differs from govulncheck.",
+    publishDate: "2026-11-12",
+    image: "/blog/gosec.jpg",
+  },
+  {
+    href: "/blog/immutable-infrastructure",
+    category: "Architecture",
+    title: "Immutable Infrastructure: Why Rebuilds Beat Patching",
+    description:
+      "Immutable infrastructure replaces servers instead of patching them. What it means in practice, the security properties it buys, its real costs, and how to adopt it.",
+    publishDate: "2026-11-14",
+    image: "/blog/immutable-infrastructure.jpg",
+  },
+  {
+    href: "/blog/cilium-network-policy",
+    category: "Best practices",
+    title: "Cilium Network Policy: A Practical Guide",
+    description:
+      "How Cilium network policy works with eBPF and identities, how CiliumNetworkPolicy extends Kubernetes NetworkPolicy to L7 and DNS, and how to roll it out safely.",
+    publishDate: "2026-11-16",
+    image: "/blog/cilium-network-policy.jpg",
+  },
+  {
+    href: "/blog/dockerfile-best-practices",
+    category: "Best practices",
+    title: "Dockerfile Best Practices for Secure, Small Images",
+    description:
+      "Dockerfile best practices that cut vulnerabilities and image size: multi-stage builds, pinned bases, non-root users, cache ordering, and secret-safe builds.",
+    publishDate: "2026-11-18",
+    image: "/blog/dockerfile-best-practices.jpg",
+  },
+  {
+    href: "/blog/kubernetes-security-best-practices",
+    category: "Best practices",
+    title: "Kubernetes Security Best Practices: A Layered Guide",
+    description:
+      "Kubernetes security best practices that matter in production: RBAC, Pod Security Admission, network policy, secrets, image provenance, and node hardening.",
+    publishDate: "2026-11-20",
+    image: "/blog/kubernetes-security-best-practices.jpg",
+  },
+  {
+    href: "/blog/pwnkit",
+    category: "CVE Deep Dive",
+    title: "PwnKit (CVE-2021-4034): The polkit Root Bug",
+    description:
+      "PwnKit, CVE-2021-4034, is a local root escalation in polkit's pkexec that sat unnoticed for 12 years. How it works, who is affected, and how to check and fix it.",
+    publishDate: "2026-11-22",
+    image: "/blog/pwnkit.jpg",
+  },
+  {
+    href: "/blog/follina",
+    category: "CVE Deep Dive",
+    title: "Follina (CVE-2022-30190): The MSDT Office Bug",
+    description:
+      "Follina, CVE-2022-30190, turned a Word document into code execution with macros disabled. How the MSDT protocol handler was abused, and what it teaches.",
+    publishDate: "2026-11-24",
+    image: "/blog/follina.jpg",
+  },
+  {
+    href: "/blog/sops-secrets",
+    category: "Best practices",
+    title: "SOPS Secrets: Encrypting Config Files in Git",
+    description:
+      "How SOPS secrets work: envelope encryption with age, KMS or PGP, .sops.yaml creation rules, key rotation, and using encrypted files in Kubernetes and CI.",
+    publishDate: "2026-11-26",
+    image: "/blog/sops-secrets.jpg",
+  },
+  {
+    href: "/blog/aks-security",
+    category: "Best practices",
+    title: "AKS Security: Hardening Azure Kubernetes Service",
+    description:
+      "A practical AKS security guide: Entra ID and workload identity, private API servers, node patching, network policy, admission control and image scanning.",
+    publishDate: "2026-11-28",
+    image: "/blog/aks-security.jpg",
+  },
+  {
+    href: "/blog/private-registry-security",
+    category: "Best practices",
+    title: "Private Registry Security: Hardening Registries",
+    description:
+      "How to secure a private container registry: authentication, tag immutability, signing, proxy caching, retention and scanning at push. Tool-agnostic guidance.",
+    publishDate: "2026-11-30",
+    image: "/blog/private-registry-security.jpg",
+  },
+  {
+    href: "/blog/cve-numbering-authority",
+    category: "Security Concepts",
+    title: "CVE Numbering Authority: How CVE IDs Get Assigned",
+    description:
+      "What a CVE Numbering Authority is, how the CNA hierarchy and scopes work, what goes in a CVE Record, and why CNA data quality decides what your scanner can match.",
+    publishDate: "2026-12-02",
+    image: "/blog/cve-numbering-authority.jpg",
+  },
+  {
+    href: "/blog/vulnerability-prioritization",
+    category: "Prioritization",
+    title: "Vulnerability Prioritization: From CVSS to Real Risk",
+    description:
+      "A practical vulnerability prioritization framework: why severity is not risk, how to layer exploitation, exposure and reachability signals, and defensible SLAs.",
+    publishDate: "2026-12-04",
+    image: "/blog/vulnerability-prioritization.jpg",
+  },
+  {
+    href: "/blog/github-actions-security",
+    category: "Integrations",
+    title: "GitHub Actions Security: Harden Your Workflows",
+    description:
+      "A practical guide to GitHub Actions security: token permissions, pinning actions to SHAs, script injection, OIDC, self-hosted runners, and scanning build artifacts.",
+    publishDate: "2026-12-06",
+    image: "/blog/github-actions-security.jpg",
+  },
+  {
+    href: "/blog/continuous-compliance",
+    category: "Compliance",
+    title: "Continuous Compliance: From Audit Season to Always-On",
+    description:
+      "What continuous compliance actually means, how to turn controls into automated checks, collect evidence from your pipeline, and catch drift before an auditor does.",
+    publishDate: "2026-12-08",
+    image: "/blog/continuous-compliance.jpg",
+  },
+  {
+    href: "/blog/helm-security",
+    category: "Best practices",
+    title: "Helm Security: Charts, Values and Release Hardening",
+    description:
+      "Helm security in practice: verify chart provenance, pin dependencies and image digests, keep secrets out of values, and scan rendered manifests before install.",
+    publishDate: "2026-12-10",
+    image: "/blog/helm-security.jpg",
+  },
+  {
+    href: "/blog/container-escape",
+    category: "Security Concepts",
+    title: "Container Escape: How It Happens and How to Stop It",
+    description:
+      "Container escape explained: the misconfigurations, runtime bugs and kernel flaws that break isolation, real CVEs that did it, and the layered defenses that hold.",
+    publishDate: "2026-12-12",
+    image: "/blog/container-escape.jpg",
+  },
+  {
+    href: "/blog/ebpf-security",
+    category: "Deep scanning",
+    title: "eBPF Security: Kernel-Level Visibility, Explained",
+    description:
+      "How eBPF security tools see syscalls, files and network flows from the kernel, what the verifier does, where eBPF stops helping, and how it pairs with scanning.",
+    publishDate: "2026-12-14",
+    image: "/blog/ebpf-security.jpg",
+  },
+  {
+    href: "/blog/image-promotion",
+    category: "Best practices",
+    title: "Image Promotion: Moving Containers Between Environments",
+    description:
+      "How image promotion works: build once, promote by digest through dev, staging and production registries, and enforce the right gate at every hop.",
+    publishDate: "2026-12-16",
+    image: "/blog/image-promotion.jpg",
+  },
+  {
+    href: "/blog/secret-rotation",
+    category: "Best practices",
+    title: "Secret Rotation: How to Do It Without Breaking Things",
+    description:
+      "A practical guide to secret rotation: the dual-credential pattern, sensible intervals, automating rotation in Kubernetes, and what to do after a leak.",
+    publishDate: "2026-12-18",
+    image: "/blog/secret-rotation.jpg",
+  },
+  {
+    href: "/blog/image-pull-secrets",
+    category: "Best practices",
+    title: "Image Pull Secrets in Kubernetes: Setup and Pitfalls",
+    description:
+      "How Kubernetes image pull secrets work: creating dockerconfigjson secrets, attaching them via service accounts, credential resolution order, and rotation.",
+    publishDate: "2026-12-20",
+    image: "/blog/image-pull-secrets.jpg",
+  },
+  {
+    href: "/blog/ci-cd-security-best-practices",
+    category: "Best practices",
+    title: "CI/CD Security Best Practices: Securing the Pipeline",
+    description:
+      "CI/CD security best practices that hold up in production: short-lived identity, least-privilege jobs, pinned dependencies, isolated runners, and real gates.",
+    publishDate: "2026-12-22",
+    image: "/blog/ci-cd-security-best-practices.jpg",
+  },
+  {
+    href: "/blog/red-hat-security-advisories",
+    category: "Data sources",
+    title: "Red Hat Security Advisories: RHSA, OVAL and CSAF",
+    description:
+      "How Red Hat security advisories work: RHSA errata, the four-level severity scale, per-CVE affected states, and the OVAL, CSAF and VEX data behind them.",
+    publishDate: "2026-12-24",
+    image: "/blog/red-hat-security-advisories.jpg",
+  },
+  {
+    href: "/blog/bundler-audit",
+    category: "Scanning concepts",
+    title: "Bundler Audit: Scanning Ruby Gemfile.lock for CVEs",
+    description:
+      "How bundler audit checks a Ruby Gemfile.lock against the ruby-advisory-db, what it catches, what it misses, and how to wire it into CI without noisy builds.",
+    publishDate: "2026-12-26",
+    image: "/blog/bundler-audit.jpg",
+  },
+  {
+    href: "/blog/lambda-security",
+    category: "Best practices",
+    title: "Lambda Security: Hardening AWS Serverless Functions",
+    description:
+      "A practical Lambda security guide: least-privilege execution roles, dependency and layer vulnerabilities, secrets handling, runtime upkeep, and what to scan.",
+    publishDate: "2026-12-28",
+    image: "/blog/lambda-security.jpg",
+  },
+  {
+    href: "/blog/kubernetes-admission-controller",
+    category: "Architecture",
+    title: "Admission Controllers in Kubernetes: How the Gate Works",
+    description:
+      "How an admission controller in Kubernetes intercepts API requests: the mutating and validating phases, webhooks, CEL policies, failure modes, and safe rollout.",
+    publishDate: "2026-12-30",
+    image: "/blog/kubernetes-admission-controller.jpg",
+  },
 ];
 
 export const categoryColors: Record<string, string> = {

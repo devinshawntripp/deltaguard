@@ -1,0 +1,35 @@
+[
+  {
+    "href": "/blog/bundler-audit",
+    "category": "Scanning concepts",
+    "title": "Bundler Audit: Scanning Ruby Gemfile.lock for CVEs",
+    "description": "How bundler audit checks a Ruby Gemfile.lock against the ruby-advisory-db, what it catches, what it misses, and how to wire it into CI without noisy builds.",
+    "publishDate": "2026-12-26",
+    "image": "/blog/bundler-audit.jpg",
+    "keyword": "bundler audit",
+    "difficulty": 0,
+    "volume": 50
+  },
+  {
+    "href": "/blog/lambda-security",
+    "category": "Best practices",
+    "title": "Lambda Security: Hardening AWS Serverless Functions",
+    "description": "A practical Lambda security guide: least-privilege execution roles, dependency and layer vulnerabilities, secrets handling, runtime upkeep, and what to scan.",
+    "publishDate": "2026-12-28",
+    "image": "/blog/lambda-security.jpg",
+    "keyword": "lambda security",
+    "difficulty": 0,
+    "volume": 50
+  },
+  {
+    "href": "/blog/kubernetes-admission-controller",
+    "category": "Architecture",
+    "title": "Admission Controllers in Kubernetes: How the Gate Works",
+    "description": "How an admission controller in Kubernetes intercepts API requests: the mutating and validating phases, webhooks, CEL policies, failure modes, and safe rollout.",
+    "publishDate": "2026-12-30",
+    "image": "/blog/kubernetes-admission-controller.jpg",
+    "keyword": "admission controller kubernetes",
+    "difficulty": 1,
+    "volume": 50
+  }
+]

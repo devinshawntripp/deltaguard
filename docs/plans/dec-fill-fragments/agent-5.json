@@ -1,0 +1,57 @@
+[
+  {
+    "href": "/blog/git-secrets",
+    "category": "Best practices",
+    "title": "git-secrets: Block Secrets Before They Reach a Commit",
+    "description": "git-secrets blocks credentials before they reach a git commit with regex hooks. How it works, its limits, and where scanning the built image fits.",
+    "publishDate": "2026-10-30",
+    "image": "/blog/git-secrets.jpg",
+    "keyword": "git secrets",
+    "difficulty": 19,
+    "volume": 1300
+  },
+  {
+    "href": "/blog/image-scanning",
+    "category": "Best practices",
+    "title": "Image Scanning: How Container Vulnerability Scanning Works",
+    "description": "Image scanning finds known CVEs in a container's OS packages and dependencies. How it works, what it catches and misses, and where to run it.",
+    "publishDate": "2026-11-01",
+    "image": "/blog/image-scanning.jpg",
+    "keyword": "image scanning",
+    "difficulty": 32,
+    "volume": 1600
+  },
+  {
+    "href": "/blog/github-advanced-security",
+    "category": "Benchmarks",
+    "title": "GitHub Advanced Security: What It Covers and What It Misses",
+    "description": "GitHub Advanced Security bundles CodeQL, secret scanning, and Dependabot. What it covers, how it is priced, and where container CVE scanning fits.",
+    "publishDate": "2026-11-03",
+    "image": "/blog/github-advanced-security.jpg",
+    "keyword": "github advanced security",
+    "difficulty": 34,
+    "volume": 1600
+  },
+  {
+    "href": "/blog/openscap",
+    "category": "Scanning concepts",
+    "title": "OpenSCAP Explained: Compliance and OVAL Vulnerability Scans",
+    "description": "OpenSCAP is the open-source SCAP scanner for Linux compliance and OVAL vulnerability checks. How it works, its scope, and where ScanRook fits.",
+    "publishDate": "2026-11-05",
+    "image": "/blog/openscap.jpg",
+    "keyword": "openscap",
+    "difficulty": 11,
+    "volume": 1000
+  },
+  {
+    "href": "/blog/cvss-calculator",
+    "category": "Security Concepts",
+    "title": "CVSS Calculator: How to Read and Build a Vector String",
+    "description": "A CVSS calculator turns metric selections into a vector string and 0-10 base score. How the v3.1 and v4.0 metrics work, with a worked example.",
+    "publishDate": "2026-11-07",
+    "image": "/blog/cvss-calculator.jpg",
+    "keyword": "cvss calculator",
+    "difficulty": 38,
+    "volume": 1600
+  }
+]

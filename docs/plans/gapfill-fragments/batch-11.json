@@ -1,0 +1,57 @@
+[
+  {
+    "href": "/blog/image-promotion",
+    "category": "Best practices",
+    "title": "Image Promotion: Moving Containers Between Environments",
+    "description": "How image promotion works: build once, promote by digest through dev, staging and production registries, and enforce the right gate at every hop.",
+    "publishDate": "2026-12-16",
+    "image": "/blog/image-promotion.jpg",
+    "keyword": "image promotion",
+    "difficulty": 0,
+    "volume": 90
+  },
+  {
+    "href": "/blog/secret-rotation",
+    "category": "Best practices",
+    "title": "Secret Rotation: How to Do It Without Breaking Things",
+    "description": "A practical guide to secret rotation: the dual-credential pattern, sensible intervals, automating rotation in Kubernetes, and what to do after a leak.",
+    "publishDate": "2026-12-18",
+    "image": "/blog/secret-rotation.jpg",
+    "keyword": "secret rotation",
+    "difficulty": 6,
+    "volume": 70
+  },
+  {
+    "href": "/blog/image-pull-secrets",
+    "category": "Best practices",
+    "title": "Image Pull Secrets in Kubernetes: Setup and Pitfalls",
+    "description": "How Kubernetes image pull secrets work: creating dockerconfigjson secrets, attaching them via service accounts, credential resolution order, and rotation.",
+    "publishDate": "2026-12-20",
+    "image": "/blog/image-pull-secrets.jpg",
+    "keyword": "image pull secrets",
+    "difficulty": 11,
+    "volume": 70
+  },
+  {
+    "href": "/blog/ci-cd-security-best-practices",
+    "category": "Best practices",
+    "title": "CI/CD Security Best Practices: Securing the Pipeline",
+    "description": "CI/CD security best practices that hold up in production: short-lived identity, least-privilege jobs, pinned dependencies, isolated runners, and real gates.",
+    "publishDate": "2026-12-22",
+    "image": "/blog/ci-cd-security-best-practices.jpg",
+    "keyword": "ci cd security best practices",
+    "difficulty": 9,
+    "volume": 70
+  },
+  {
+    "href": "/blog/red-hat-security-advisories",
+    "category": "Data sources",
+    "title": "Red Hat Security Advisories: RHSA, OVAL and CSAF",
+    "description": "How Red Hat security advisories work: RHSA errata, the four-level severity scale, per-CVE affected states, and the OVAL, CSAF and VEX data behind them.",
+    "publishDate": "2026-12-24",
+    "image": "/blog/red-hat-security-advisories.jpg",
+    "keyword": "red hat security advisories",
+    "difficulty": 13,
+    "volume": 50
+  }
+]
