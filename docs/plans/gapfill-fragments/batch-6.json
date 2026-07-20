@@ -1,0 +1,57 @@
+[
+  {
+    "href": "/blog/printnightmare",
+    "category": "CVE Deep Dive",
+    "title": "PrintNightmare: The Windows Print Spooler RCE Explained",
+    "description": "PrintNightmare explained: how CVE-2021-34527 turned the Windows Print Spooler into remote code execution and domain compromise, and how to verify you are patched.",
+    "publishDate": "2026-10-27",
+    "image": "/blog/printnightmare.jpg",
+    "keyword": "printnightmare",
+    "difficulty": 22,
+    "volume": 320
+  },
+  {
+    "href": "/blog/kubescape",
+    "category": "Scanning concepts",
+    "title": "Kubescape: Kubernetes Security Posture Scanning",
+    "description": "What Kubescape does, how its control frameworks and CVE scanning work, how to run it in CI and in-cluster, and where it overlaps with image scanners like ScanRook.",
+    "publishDate": "2026-10-29",
+    "image": "/blog/kubescape.jpg",
+    "keyword": "kubescape",
+    "difficulty": 20,
+    "volume": 260
+  },
+  {
+    "href": "/blog/opa-gatekeeper",
+    "category": "Architecture",
+    "title": "OPA Gatekeeper: Kubernetes Policy Enforcement",
+    "description": "How OPA Gatekeeper enforces policy at the Kubernetes admission layer: ConstraintTemplates, Constraints, Rego, audit mode, and where image scanning fits.",
+    "publishDate": "2026-10-31",
+    "image": "/blog/opa-gatekeeper.jpg",
+    "keyword": "opa gatekeeper",
+    "difficulty": 14,
+    "volume": 260
+  },
+  {
+    "href": "/blog/dirty-pipe",
+    "category": "CVE Deep Dive",
+    "title": "Dirty Pipe (CVE-2022-0847): The Linux Kernel Flaw",
+    "description": "Dirty Pipe explained: how CVE-2022-0847 let any user overwrite read-only files, why it enabled container escape, which kernels are affected, and how to check yours.",
+    "publishDate": "2026-11-02",
+    "image": "/blog/dirty-pipe.jpg",
+    "keyword": "dirty pipe",
+    "difficulty": 22,
+    "volume": 260
+  },
+  {
+    "href": "/blog/nuclei-scanner",
+    "category": "Scanning concepts",
+    "title": "Nuclei Scanner: Template-Based Vulnerability Scanning",
+    "description": "How the Nuclei scanner works: YAML templates, the community template library, running it safely, and where template-based scanning ends and artifact scanning begins.",
+    "publishDate": "2026-11-04",
+    "image": "/blog/nuclei-scanner.jpg",
+    "keyword": "nuclei scanner",
+    "difficulty": 3,
+    "volume": 260
+  }
+]

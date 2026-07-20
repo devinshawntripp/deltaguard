@@ -1,0 +1,42 @@
+[
+ {
+  "slug": "cilium-network-policy",
+  "keyword": "cilium network policy",
+  "category": "Best practices",
+  "publishDate": "2026-11-16",
+  "difficulty": 8,
+  "volume": 210
+ },
+ {
+  "slug": "dockerfile-best-practices",
+  "keyword": "dockerfile best practices",
+  "category": "Best practices",
+  "publishDate": "2026-11-18",
+  "difficulty": 22,
+  "volume": 170
+ },
+ {
+  "slug": "kubernetes-security-best-practices",
+  "keyword": "kubernetes security best practices",
+  "category": "Best practices",
+  "publishDate": "2026-11-20",
+  "difficulty": 19,
+  "volume": 170
+ },
+ {
+  "slug": "pwnkit",
+  "keyword": "pwnkit",
+  "category": "CVE Deep Dive",
+  "publishDate": "2026-11-22",
+  "difficulty": 18,
+  "volume": 170
+ },
+ {
+  "slug": "follina",
+  "keyword": "follina",
+  "category": "CVE Deep Dive",
+  "publishDate": "2026-11-24",
+  "difficulty": 13,
+  "volume": 140
+ }
+]

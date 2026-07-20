@@ -1,0 +1,24 @@
+[
+  {
+    "href": "/blog/ecr-image-scanning",
+    "category": "Best practices",
+    "title": "Amazon ECR Image Scanning: Basic vs Enhanced, Explained",
+    "description": "Amazon ECR image scanning explained: basic Clair scans versus enhanced Amazon Inspector, how to enable each, read the findings, and where ScanRook fits.",
+    "publishDate": "2026-12-29",
+    "image": "/blog/ecr-image-scanning.jpg",
+    "keyword": "ecr image scanning",
+    "difficulty": 5,
+    "volume": 50
+  },
+  {
+    "href": "/blog/gitlab-container-scanning",
+    "category": "Best practices",
+    "title": "GitLab Container Scanning: How It Works and Its Limits",
+    "description": "How GitLab container scanning works: the Trivy analyzer, the Ultimate-tier dashboard, how to enable the template, its limits, and where ScanRook fits in.",
+    "publishDate": "2026-12-31",
+    "image": "/blog/gitlab-container-scanning.jpg",
+    "keyword": "gitlab container scanning",
+    "difficulty": 9,
+    "volume": 140
+  }
+]

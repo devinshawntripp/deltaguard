@@ -1,0 +1,466 @@
+[
+ {
+  "slug": "aws-inspector",
+  "keyword": "aws inspector",
+  "category": "Integrations",
+  "publishDate": "2026-09-07",
+  "difficulty": 0,
+  "volume": 1600
+ },
+ {
+  "slug": "mtls-mutual-tls",
+  "keyword": "mtls",
+  "category": "Security Concepts",
+  "publishDate": "2026-09-09",
+  "difficulty": 15,
+  "volume": 5400
+ },
+ {
+  "slug": "nikto-web-scanner",
+  "keyword": "nikto",
+  "category": "Scanning concepts",
+  "publishDate": "2026-09-11",
+  "difficulty": 17,
+  "volume": 4400
+ },
+ {
+  "slug": "disa-stig",
+  "keyword": "disa stig",
+  "category": "Compliance",
+  "publishDate": "2026-09-13",
+  "difficulty": 22,
+  "volume": 4400
+ },
+ {
+  "slug": "brakeman-rails-security",
+  "keyword": "brakeman",
+  "category": "Scanning concepts",
+  "publishDate": "2026-09-15",
+  "difficulty": 11,
+  "volume": 2900
+ },
+ {
+  "slug": "aws-guardduty",
+  "keyword": "aws guardduty",
+  "category": "Integrations",
+  "publishDate": "2026-09-17",
+  "difficulty": 3,
+  "volume": 2400
+ },
+ {
+  "slug": "fips-140-2",
+  "keyword": "fips 140-2",
+  "category": "Compliance",
+  "publishDate": "2026-09-19",
+  "difficulty": 22,
+  "volume": 2400
+ },
+ {
+  "slug": "tetragon",
+  "keyword": "tetragon",
+  "category": "Deep scanning",
+  "publishDate": "2026-09-21",
+  "difficulty": 27,
+  "volume": 2900
+ },
+ {
+  "slug": "kustomize-security",
+  "keyword": "kustomize",
+  "category": "Best practices",
+  "publishDate": "2026-09-23",
+  "difficulty": 24,
+  "volume": 1900
+ },
+ {
+  "slug": "skopeo",
+  "keyword": "skopeo",
+  "category": "Best practices",
+  "publishDate": "2026-09-25",
+  "difficulty": 2,
+  "volume": 1600
+ },
+ {
+  "slug": "open-policy-agent",
+  "keyword": "open policy agent",
+  "category": "Architecture",
+  "publishDate": "2026-09-27",
+  "difficulty": 5,
+  "volume": 1600
+ },
+ {
+  "slug": "yara-rules",
+  "keyword": "yara rules",
+  "category": "Deep scanning",
+  "publishDate": "2026-09-29",
+  "difficulty": 25,
+  "volume": 1300
+ },
+ {
+  "slug": "buildah",
+  "keyword": "buildah",
+  "category": "Best practices",
+  "publishDate": "2026-10-01",
+  "difficulty": 18,
+  "volume": 880
+ },
+ {
+  "slug": "sigma-rules",
+  "keyword": "sigma rules",
+  "category": "Deep scanning",
+  "publishDate": "2026-10-03",
+  "difficulty": 21,
+  "volume": 880
+ },
+ {
+  "slug": "dependency-track",
+  "keyword": "dependency track",
+  "category": "Integrations",
+  "publishDate": "2026-10-05",
+  "difficulty": 11,
+  "volume": 720
+ },
+ {
+  "slug": "buildkit-security",
+  "keyword": "buildkit",
+  "category": "Best practices",
+  "publishDate": "2026-10-07",
+  "difficulty": 21,
+  "volume": 720
+ },
+ {
+  "slug": "policy-as-code",
+  "keyword": "policy as code",
+  "category": "Architecture",
+  "publishDate": "2026-10-09",
+  "difficulty": 11,
+  "volume": 590
+ },
+ {
+  "slug": "dirty-cow",
+  "keyword": "dirty cow",
+  "category": "CVE Deep Dive",
+  "publishDate": "2026-10-11",
+  "difficulty": 8,
+  "volume": 480
+ },
+ {
+  "slug": "owasp-asvs",
+  "keyword": "owasp asvs",
+  "category": "Compliance",
+  "publishDate": "2026-10-13",
+  "difficulty": 12,
+  "volume": 480
+ },
+ {
+  "slug": "flux-cd-security",
+  "keyword": "flux cd",
+  "category": "Integrations",
+  "publishDate": "2026-10-15",
+  "difficulty": 18,
+  "volume": 480
+ },
+ {
+  "slug": "docker-scout",
+  "keyword": "docker scout",
+  "category": "Scanning concepts",
+  "publishDate": "2026-10-17",
+  "difficulty": 17,
+  "volume": 390
+ },
+ {
+  "slug": "spotbugs",
+  "keyword": "spotbugs",
+  "category": "Scanning concepts",
+  "publishDate": "2026-10-19",
+  "difficulty": 14,
+  "volume": 320
+ },
+ {
+  "slug": "sbom-tools",
+  "keyword": "sbom tools",
+  "category": "Data sources",
+  "publishDate": "2026-10-21",
+  "difficulty": 11,
+  "volume": 320
+ },
+ {
+  "slug": "artifact-registry",
+  "keyword": "artifact registry",
+  "category": "Integrations",
+  "publishDate": "2026-10-23",
+  "difficulty": 20,
+  "volume": 320
+ },
+ {
+  "slug": "kubernetes-rbac",
+  "keyword": "kubernetes rbac",
+  "category": "Best practices",
+  "publishDate": "2026-10-25",
+  "difficulty": 16,
+  "volume": 320
+ },
+ {
+  "slug": "printnightmare",
+  "keyword": "printnightmare",
+  "category": "CVE Deep Dive",
+  "publishDate": "2026-10-27",
+  "difficulty": 22,
+  "volume": 320
+ },
+ {
+  "slug": "kubescape",
+  "keyword": "kubescape",
+  "category": "Scanning concepts",
+  "publishDate": "2026-10-29",
+  "difficulty": 20,
+  "volume": 260
+ },
+ {
+  "slug": "opa-gatekeeper",
+  "keyword": "opa gatekeeper",
+  "category": "Architecture",
+  "publishDate": "2026-10-31",
+  "difficulty": 14,
+  "volume": 260
+ },
+ {
+  "slug": "dirty-pipe",
+  "keyword": "dirty pipe",
+  "category": "CVE Deep Dive",
+  "publishDate": "2026-11-02",
+  "difficulty": 22,
+  "volume": 260
+ },
+ {
+  "slug": "nuclei-scanner",
+  "keyword": "nuclei scanner",
+  "category": "Scanning concepts",
+  "publishDate": "2026-11-04",
+  "difficulty": 3,
+  "volume": 260
+ },
+ {
+  "slug": "mitre-d3fend",
+  "keyword": "mitre d3fend",
+  "category": "Security Concepts",
+  "publishDate": "2026-11-06",
+  "difficulty": 6,
+  "volume": 260
+ },
+ {
+  "slug": "kev-catalog",
+  "keyword": "kev catalog",
+  "category": "Prioritization",
+  "publishDate": "2026-11-08",
+  "difficulty": 17,
+  "volume": 260
+ },
+ {
+  "slug": "bandit-python",
+  "keyword": "bandit python",
+  "category": "Scanning concepts",
+  "publishDate": "2026-11-10",
+  "difficulty": 12,
+  "volume": 210
+ },
+ {
+  "slug": "gosec",
+  "keyword": "gosec",
+  "category": "Scanning concepts",
+  "publishDate": "2026-11-12",
+  "difficulty": 9,
+  "volume": 210
+ },
+ {
+  "slug": "immutable-infrastructure",
+  "keyword": "immutable infrastructure",
+  "category": "Architecture",
+  "publishDate": "2026-11-14",
+  "difficulty": 7,
+  "volume": 210
+ },
+ {
+  "slug": "cilium-network-policy",
+  "keyword": "cilium network policy",
+  "category": "Best practices",
+  "publishDate": "2026-11-16",
+  "difficulty": 8,
+  "volume": 210
+ },
+ {
+  "slug": "dockerfile-best-practices",
+  "keyword": "dockerfile best practices",
+  "category": "Best practices",
+  "publishDate": "2026-11-18",
+  "difficulty": 22,
+  "volume": 170
+ },
+ {
+  "slug": "kubernetes-security-best-practices",
+  "keyword": "kubernetes security best practices",
+  "category": "Best practices",
+  "publishDate": "2026-11-20",
+  "difficulty": 19,
+  "volume": 170
+ },
+ {
+  "slug": "pwnkit",
+  "keyword": "pwnkit",
+  "category": "CVE Deep Dive",
+  "publishDate": "2026-11-22",
+  "difficulty": 18,
+  "volume": 170
+ },
+ {
+  "slug": "follina",
+  "keyword": "follina",
+  "category": "CVE Deep Dive",
+  "publishDate": "2026-11-24",
+  "difficulty": 13,
+  "volume": 140
+ },
+ {
+  "slug": "sops-secrets",
+  "keyword": "sops secrets",
+  "category": "Best practices",
+  "publishDate": "2026-11-26",
+  "difficulty": 16,
+  "volume": 140
+ },
+ {
+  "slug": "aks-security",
+  "keyword": "aks security",
+  "category": "Best practices",
+  "publishDate": "2026-11-28",
+  "difficulty": 0,
+  "volume": 170
+ },
+ {
+  "slug": "private-registry-security",
+  "keyword": "private registry",
+  "category": "Best practices",
+  "publishDate": "2026-11-30",
+  "difficulty": 22,
+  "volume": 110
+ },
+ {
+  "slug": "cve-numbering-authority",
+  "keyword": "cve numbering authority",
+  "category": "Security Concepts",
+  "publishDate": "2026-12-02",
+  "difficulty": 21,
+  "volume": 70
+ },
+ {
+  "slug": "vulnerability-prioritization",
+  "keyword": "vulnerability prioritization",
+  "category": "Prioritization",
+  "publishDate": "2026-12-04",
+  "difficulty": 0,
+  "volume": 140
+ },
+ {
+  "slug": "github-actions-security",
+  "keyword": "github actions security",
+  "category": "Integrations",
+  "publishDate": "2026-12-06",
+  "difficulty": 23,
+  "volume": 70
+ },
+ {
+  "slug": "continuous-compliance",
+  "keyword": "continuous compliance",
+  "category": "Compliance",
+  "publishDate": "2026-12-08",
+  "difficulty": 0,
+  "volume": 140
+ },
+ {
+  "slug": "helm-security",
+  "keyword": "helm security",
+  "category": "Best practices",
+  "publishDate": "2026-12-10",
+  "difficulty": 0,
+  "volume": 140
+ },
+ {
+  "slug": "container-escape",
+  "keyword": "container escape",
+  "category": "Security Concepts",
+  "publishDate": "2026-12-12",
+  "difficulty": 4,
+  "volume": 90
+ },
+ {
+  "slug": "ebpf-security",
+  "keyword": "ebpf security",
+  "category": "Deep scanning",
+  "publishDate": "2026-12-14",
+  "difficulty": 20,
+  "volume": 50
+ },
+ {
+  "slug": "image-promotion",
+  "keyword": "image promotion",
+  "category": "Best practices",
+  "publishDate": "2026-12-16",
+  "difficulty": 0,
+  "volume": 90
+ },
+ {
+  "slug": "secret-rotation",
+  "keyword": "secret rotation",
+  "category": "Best practices",
+  "publishDate": "2026-12-18",
+  "difficulty": 6,
+  "volume": 70
+ },
+ {
+  "slug": "image-pull-secrets",
+  "keyword": "image pull secrets",
+  "category": "Best practices",
+  "publishDate": "2026-12-20",
+  "difficulty": 11,
+  "volume": 70
+ },
+ {
+  "slug": "ci-cd-security-best-practices",
+  "keyword": "ci cd security best practices",
+  "category": "Best practices",
+  "publishDate": "2026-12-22",
+  "difficulty": 9,
+  "volume": 70
+ },
+ {
+  "slug": "red-hat-security-advisories",
+  "keyword": "red hat security advisories",
+  "category": "Data sources",
+  "publishDate": "2026-12-24",
+  "difficulty": 13,
+  "volume": 50
+ },
+ {
+  "slug": "bundler-audit",
+  "keyword": "bundler audit",
+  "category": "Scanning concepts",
+  "publishDate": "2026-12-26",
+  "difficulty": 0,
+  "volume": 50
+ },
+ {
+  "slug": "lambda-security",
+  "keyword": "lambda security",
+  "category": "Best practices",
+  "publishDate": "2026-12-28",
+  "difficulty": 0,
+  "volume": 50
+ },
+ {
+  "slug": "kubernetes-admission-controller",
+  "keyword": "admission controller kubernetes",
+  "category": "Architecture",
+  "publishDate": "2026-12-30",
+  "difficulty": 1,
+  "volume": 50
+ }
+]

@@ -1,0 +1,42 @@
+[
+ {
+  "slug": "mitre-d3fend",
+  "keyword": "mitre d3fend",
+  "category": "Security Concepts",
+  "publishDate": "2026-11-06",
+  "difficulty": 6,
+  "volume": 260
+ },
+ {
+  "slug": "kev-catalog",
+  "keyword": "kev catalog",
+  "category": "Prioritization",
+  "publishDate": "2026-11-08",
+  "difficulty": 17,
+  "volume": 260
+ },
+ {
+  "slug": "bandit-python",
+  "keyword": "bandit python",
+  "category": "Scanning concepts",
+  "publishDate": "2026-11-10",
+  "difficulty": 12,
+  "volume": 210
+ },
+ {
+  "slug": "gosec",
+  "keyword": "gosec",
+  "category": "Scanning concepts",
+  "publishDate": "2026-11-12",
+  "difficulty": 9,
+  "volume": 210
+ },
+ {
+  "slug": "immutable-infrastructure",
+  "keyword": "immutable infrastructure",
+  "category": "Architecture",
+  "publishDate": "2026-11-14",
+  "difficulty": 7,
+  "volume": 210
+ }
+]

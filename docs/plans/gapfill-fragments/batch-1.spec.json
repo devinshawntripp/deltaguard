@@ -1,0 +1,42 @@
+[
+ {
+  "slug": "aws-inspector",
+  "keyword": "aws inspector",
+  "category": "Integrations",
+  "publishDate": "2026-09-07",
+  "difficulty": 0,
+  "volume": 1600
+ },
+ {
+  "slug": "mtls-mutual-tls",
+  "keyword": "mtls",
+  "category": "Security Concepts",
+  "publishDate": "2026-09-09",
+  "difficulty": 15,
+  "volume": 5400
+ },
+ {
+  "slug": "nikto-web-scanner",
+  "keyword": "nikto",
+  "category": "Scanning concepts",
+  "publishDate": "2026-09-11",
+  "difficulty": 17,
+  "volume": 4400
+ },
+ {
+  "slug": "disa-stig",
+  "keyword": "disa stig",
+  "category": "Compliance",
+  "publishDate": "2026-09-13",
+  "difficulty": 22,
+  "volume": 4400
+ },
+ {
+  "slug": "brakeman-rails-security",
+  "keyword": "brakeman",
+  "category": "Scanning concepts",
+  "publishDate": "2026-09-15",
+  "difficulty": 11,
+  "volume": 2900
+ }
+]

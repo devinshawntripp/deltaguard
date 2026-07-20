@@ -1,0 +1,57 @@
+[
+  {
+    "href": "/blog/open-policy-agent",
+    "category": "Architecture",
+    "title": "Open Policy Agent: Policy as Code, Explained",
+    "description": "How Open Policy Agent works: the Rego language, the decision model, Gatekeeper and Conftest, and how to gate container image scan results with policy as code.",
+    "publishDate": "2026-09-27",
+    "image": "/blog/open-policy-agent.jpg",
+    "keyword": "open policy agent",
+    "difficulty": 5,
+    "volume": 1600
+  },
+  {
+    "href": "/blog/yara-rules",
+    "category": "Deep scanning",
+    "title": "YARA Rules: How to Write Ones That Actually Work",
+    "description": "A practical guide to YARA rules: rule anatomy, string types and modifiers, condition logic, PE and ELF modules, tuning false positives, and where to get rulesets.",
+    "publishDate": "2026-09-29",
+    "image": "/blog/yara-rules.jpg",
+    "keyword": "yara rules",
+    "difficulty": 25,
+    "volume": 1300
+  },
+  {
+    "href": "/blog/buildah",
+    "category": "Best practices",
+    "title": "Buildah: Rootless, Daemonless Container Builds",
+    "description": "How Buildah builds OCI images without a daemon or root: the scriptable build model, rootless CI patterns, minimal images from scratch, and scanning what you build.",
+    "publishDate": "2026-10-01",
+    "image": "/blog/buildah.jpg",
+    "keyword": "buildah",
+    "difficulty": 18,
+    "volume": 880
+  },
+  {
+    "href": "/blog/sigma-rules",
+    "category": "Deep scanning",
+    "title": "Sigma Rules: Detection as Code for Any SIEM",
+    "description": "How Sigma rules work: the YAML structure, logsource and detection blocks, field modifiers, converting rules to SIEM queries with sigma-cli, and tuning for noise.",
+    "publishDate": "2026-10-03",
+    "image": "/blog/sigma-rules.jpg",
+    "keyword": "sigma rules",
+    "difficulty": 21,
+    "volume": 880
+  },
+  {
+    "href": "/blog/dependency-track",
+    "category": "Integrations",
+    "title": "Dependency-Track: Continuous SBOM Analysis",
+    "description": "How OWASP Dependency-Track works: SBOM ingestion, the analyzers behind its findings, policy and VEX support, CI upload patterns, and where a scanner fits.",
+    "publishDate": "2026-10-05",
+    "image": "/blog/dependency-track.jpg",
+    "keyword": "dependency track",
+    "difficulty": 11,
+    "volume": 720
+  }
+]

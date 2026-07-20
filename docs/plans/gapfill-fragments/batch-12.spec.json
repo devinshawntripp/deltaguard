@@ -1,0 +1,26 @@
+[
+ {
+  "slug": "bundler-audit",
+  "keyword": "bundler audit",
+  "category": "Scanning concepts",
+  "publishDate": "2026-12-26",
+  "difficulty": 0,
+  "volume": 50
+ },
+ {
+  "slug": "lambda-security",
+  "keyword": "lambda security",
+  "category": "Best practices",
+  "publishDate": "2026-12-28",
+  "difficulty": 0,
+  "volume": 50
+ },
+ {
+  "slug": "kubernetes-admission-controller",
+  "keyword": "admission controller kubernetes",
+  "category": "Architecture",
+  "publishDate": "2026-12-30",
+  "difficulty": 1,
+  "volume": 50
+ }
+]

@@ -1,0 +1,42 @@
+[
+ {
+  "slug": "buildkit-security",
+  "keyword": "buildkit",
+  "category": "Best practices",
+  "publishDate": "2026-10-07",
+  "difficulty": 21,
+  "volume": 720
+ },
+ {
+  "slug": "policy-as-code",
+  "keyword": "policy as code",
+  "category": "Architecture",
+  "publishDate": "2026-10-09",
+  "difficulty": 11,
+  "volume": 590
+ },
+ {
+  "slug": "dirty-cow",
+  "keyword": "dirty cow",
+  "category": "CVE Deep Dive",
+  "publishDate": "2026-10-11",
+  "difficulty": 8,
+  "volume": 480
+ },
+ {
+  "slug": "owasp-asvs",
+  "keyword": "owasp asvs",
+  "category": "Compliance",
+  "publishDate": "2026-10-13",
+  "difficulty": 12,
+  "volume": 480
+ },
+ {
+  "slug": "flux-cd-security",
+  "keyword": "flux cd",
+  "category": "Integrations",
+  "publishDate": "2026-10-15",
+  "difficulty": 18,
+  "volume": 480
+ }
+]

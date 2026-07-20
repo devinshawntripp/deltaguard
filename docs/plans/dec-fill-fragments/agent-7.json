@@ -1,0 +1,57 @@
+[
+  {
+    "href": "/blog/license-compliance",
+    "category": "Compliance",
+    "title": "License Compliance for Open Source: A Practical 2026 Guide",
+    "description": "License compliance means meeting open-source license obligations. The main license families, common mistakes, building a program, and where SBOMs and scans fit.",
+    "publishDate": "2026-11-19",
+    "image": "/blog/license-compliance.jpg",
+    "keyword": "license compliance",
+    "difficulty": 4,
+    "volume": 390
+  },
+  {
+    "href": "/blog/cve-vs-cwe",
+    "category": "Security Concepts",
+    "title": "CVE vs CWE: The Difference and Why Both Matter",
+    "description": "CVE vs CWE explained: a CVE is one specific vulnerability, a CWE is the weakness class behind it. How they relate, who maintains each, and why both matter.",
+    "publishDate": "2026-11-21",
+    "image": "/blog/cve-vs-cwe.jpg",
+    "keyword": "cve vs cwe",
+    "difficulty": 0,
+    "volume": 260
+  },
+  {
+    "href": "/blog/drone-ci",
+    "category": "Integrations",
+    "title": "Drone CI: Scan Docker Images in Your Pipeline",
+    "description": "Scan Docker images in Drone CI: a complete container-native .drone.yml that builds the image, scans it with ScanRook, and fails the build on critical CVEs.",
+    "publishDate": "2026-11-23",
+    "image": "/blog/drone-ci.jpg",
+    "keyword": "drone ci",
+    "difficulty": 3,
+    "volume": 320
+  },
+  {
+    "href": "/blog/shift-left-security",
+    "category": "Security Concepts",
+    "title": "Shift Left Security: What It Means and How to Do It",
+    "description": "Shift left security moves testing earlier in the SDLC. What it means, the practices and tools, the alert-fatigue trap, and why you still need runtime coverage.",
+    "publishDate": "2026-11-25",
+    "image": "/blog/shift-left-security.jpg",
+    "keyword": "shift left security",
+    "difficulty": 6,
+    "volume": 390
+  },
+  {
+    "href": "/blog/docker-socket",
+    "category": "Best practices",
+    "title": "Docker Socket Security: Why Mounting It Is Dangerous",
+    "description": "Mounting the Docker socket into a container grants root-equivalent control of the host. Why /var/run/docker.sock is dangerous and how to avoid exposing it.",
+    "publishDate": "2026-11-27",
+    "image": "/blog/docker-socket.jpg",
+    "keyword": "docker socket",
+    "difficulty": 2,
+    "volume": 260
+  }
+]

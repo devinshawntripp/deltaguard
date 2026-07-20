@@ -1,0 +1,42 @@
+[
+ {
+  "slug": "github-actions-security",
+  "keyword": "github actions security",
+  "category": "Integrations",
+  "publishDate": "2026-12-06",
+  "difficulty": 23,
+  "volume": 70
+ },
+ {
+  "slug": "continuous-compliance",
+  "keyword": "continuous compliance",
+  "category": "Compliance",
+  "publishDate": "2026-12-08",
+  "difficulty": 0,
+  "volume": 140
+ },
+ {
+  "slug": "helm-security",
+  "keyword": "helm security",
+  "category": "Best practices",
+  "publishDate": "2026-12-10",
+  "difficulty": 0,
+  "volume": 140
+ },
+ {
+  "slug": "container-escape",
+  "keyword": "container escape",
+  "category": "Security Concepts",
+  "publishDate": "2026-12-12",
+  "difficulty": 4,
+  "volume": 90
+ },
+ {
+  "slug": "ebpf-security",
+  "keyword": "ebpf security",
+  "category": "Deep scanning",
+  "publishDate": "2026-12-14",
+  "difficulty": 20,
+  "volume": 50
+ }
+]

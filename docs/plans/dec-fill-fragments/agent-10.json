@@ -1,0 +1,57 @@
+[
+  {
+    "href": "/blog/software-provenance",
+    "category": "Security Concepts",
+    "title": "Software Provenance: What It Is and Why It Matters",
+    "description": "Software provenance is verifiable evidence of where a build artifact came from and how it was built. How SLSA and in-toto attestations work, and why it matters.",
+    "publishDate": "2026-12-19",
+    "image": "/blog/software-provenance.jpg",
+    "keyword": "software provenance",
+    "difficulty": 0,
+    "volume": 50
+  },
+  {
+    "href": "/blog/yarn-audit",
+    "category": "Best practices",
+    "title": "yarn audit: Scanning Yarn Dependencies for Vulnerabilities",
+    "description": "How yarn audit checks Yarn dependencies against the GitHub Advisory Database, how Yarn Classic and Berry differ, its limits, and where scanning fits.",
+    "publishDate": "2026-12-21",
+    "image": "/blog/yarn-audit.jpg",
+    "keyword": "yarn audit",
+    "difficulty": 7,
+    "volume": 170
+  },
+  {
+    "href": "/blog/dependency-confusion",
+    "category": "Security Concepts",
+    "title": "Dependency Confusion: How the Supply Chain Attack Works",
+    "description": "Dependency confusion tricks a package manager into installing a malicious public package instead of your private one. How the attack works and how to stop it.",
+    "publishDate": "2026-12-23",
+    "image": "/blog/dependency-confusion.jpg",
+    "keyword": "dependency confusion",
+    "difficulty": 5,
+    "volume": 90
+  },
+  {
+    "href": "/blog/container-scanning-tools",
+    "category": "Benchmarks",
+    "title": "Container Scanning Tools in 2026: An Honest Comparison",
+    "description": "Container scanning tools in 2026 compared fairly: Trivy, Grype, Clair, Docker Scout, Snyk, and ScanRook, on finding depth, speed, scope, and when each fits.",
+    "publishDate": "2026-12-25",
+    "image": "/blog/container-scanning-tools.jpg",
+    "keyword": "container scanning tools",
+    "difficulty": 12,
+    "volume": 260
+  },
+  {
+    "href": "/blog/terrascan",
+    "category": "Best practices",
+    "title": "Terrascan: Scanning Infrastructure as Code for Misconfigs",
+    "description": "Terrascan is an open-source scanner for Infrastructure as Code misconfigurations. How it works with OPA policies, what it covers, and where it fits.",
+    "publishDate": "2026-12-27",
+    "image": "/blog/terrascan.jpg",
+    "keyword": "terrascan",
+    "difficulty": 15,
+    "volume": 320
+  }
+]

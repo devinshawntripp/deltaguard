@@ -1,0 +1,57 @@
+[
+  {
+    "href": "/blog/sca-tools",
+    "category": "Best practices",
+    "title": "SCA Tools in 2026: A Practical Guide to Composition Analysis",
+    "description": "SCA tools inventory open-source dependencies and match them to known CVEs and licenses. How they work, the main tools compared, and where ScanRook fits.",
+    "publishDate": "2026-11-29",
+    "image": "/blog/sca-tools.jpg",
+    "keyword": "sca tools",
+    "difficulty": 11,
+    "volume": 480
+  },
+  {
+    "href": "/blog/kics",
+    "category": "Best practices",
+    "title": "KICS Explained: Open-Source IaC Security Scanning",
+    "description": "KICS is an open-source IaC scanner from Checkmarx that finds misconfigurations in Terraform, Kubernetes, and Dockerfiles, and where ScanRook fits alongside it.",
+    "publishDate": "2026-12-01",
+    "image": "/blog/kics.jpg",
+    "keyword": "kics",
+    "difficulty": 28,
+    "volume": 880
+  },
+  {
+    "href": "/blog/harbor-registry",
+    "category": "Best practices",
+    "title": "Harbor Registry Explained: Scanning, Signing, and RBAC",
+    "description": "Harbor is a CNCF open-source container registry with scanning, signing, and RBAC. How its security features work, and where a deeper image scanner fits in.",
+    "publishDate": "2026-12-03",
+    "image": "/blog/harbor-registry.jpg",
+    "keyword": "harbor registry",
+    "difficulty": 11,
+    "volume": 390
+  },
+  {
+    "href": "/blog/container-runtime-security",
+    "category": "Best practices",
+    "title": "Container Runtime Security: A Practical Guide",
+    "description": "Container runtime security protects workloads while they run, after build-time scanning ends. The threats, the controls, the tools, and where ScanRook fits.",
+    "publishDate": "2026-12-05",
+    "image": "/blog/container-runtime-security.jpg",
+    "keyword": "container runtime security",
+    "difficulty": 0,
+    "volume": 110
+  },
+  {
+    "href": "/blog/reachability-analysis",
+    "category": "Security Concepts",
+    "title": "Reachability Analysis: Cutting Vulnerability Noise",
+    "description": "Reachability analysis tells you whether a vulnerable code path is actually callable, cutting false positives. How it works, its limits, and where ScanRook fits.",
+    "publishDate": "2026-12-07",
+    "image": "/blog/reachability-analysis.jpg",
+    "keyword": "reachability analysis",
+    "difficulty": 0,
+    "volume": 110
+  }
+]
