@@ -1,0 +1,700 @@
+[
+ {
+  "slug": "alpine-vs-debian-vs-distroless",
+  "enhancement": "comparison-chart",
+  "scan_data": {
+   "alpine": {
+    "tag": "alpine:3.20",
+    "source": "scanrook v1.14.2 warm-cache scan (pre-existing benchmark artifact)",
+    "total": 301,
+    "critical": 20,
+    "high": 136,
+    "medium": 131,
+    "low": 10,
+    "top_cves": [
+     {
+      "id": "CVE-2021-42377",
+      "severity": "critical",
+      "package": "busybox-binsh"
+     },
+     {
+      "id": "CVE-2022-48174",
+      "severity": "critical",
+      "package": "busybox-binsh"
+     },
+     {
+      "id": "CVE-2016-2148",
+      "severity": "critical",
+      "package": "busybox-binsh"
+     },
+     {
+      "id": "CVE-2021-3711",
+      "severity": "critical",
+      "package": "libcrypto3"
+     },
+     {
+      "id": "CVE-2022-2274",
+      "severity": "critical",
+      "package": "libcrypto3"
+     }
+    ]
+   },
+   "ubuntu": {
+    "tag": "ubuntu:24.04",
+    "source": "scanrook v1.14.2 warm-cache scan (pre-existing benchmark artifact)",
+    "total": 1365,
+    "critical": 130,
+    "high": 426,
+    "medium": 652,
+    "low": 128,
+    "top_cves": [
+     {
+      "id": "CVE-2005-2023",
+      "severity": "critical",
+      "package": "gpgv"
+     },
+     {
+      "id": "CVE-2006-6235",
+      "severity": "critical",
+      "package": "gpgv"
+     },
+     {
+      "id": "CVE-2009-1300",
+      "severity": "critical",
+      "package": "libapt-pkg6.0t64"
+     },
+     {
+      "id": "CVE-2009-1358",
+      "severity": "critical",
+      "package": "libapt-pkg6.0t64"
+     },
+     {
+      "id": "CVE-2015-0235",
+      "severity": "critical",
+      "package": "libc-bin"
+     }
+    ]
+   },
+   "redis": {
+    "tag": "redis:7-alpine",
+    "source": "scanrook v1.14.2 warm-cache scan (pre-existing benchmark artifact)",
+    "total": 299,
+    "critical": 20,
+    "high": 136,
+    "medium": 131,
+    "low": 8,
+    "top_cves": [
+     {
+      "id": "CVE-2021-42377",
+      "severity": "critical",
+      "package": "busybox-binsh"
+     },
+     {
+      "id": "CVE-2022-48174",
+      "severity": "critical",
+      "package": "busybox-binsh"
+     },
+     {
+      "id": "CVE-2016-2148",
+      "severity": "critical",
+      "package": "busybox-binsh"
+     },
+     {
+      "id": "CVE-2021-3711",
+      "severity": "critical",
+      "package": "libcrypto3"
+     },
+     {
+      "id": "CVE-2022-2274",
+      "severity": "critical",
+      "package": "libcrypto3"
+     }
+    ],
+    "alt": {
+     "tag": "redis:7",
+     "total": 1399,
+     "critical": 114,
+     "high": 307,
+     "medium": 345,
+     "low": 45
+    }
+   },
+   "busybox": {
+    "tag": "busybox:1.37",
+    "source": "scanrook v1.14.2 warm-cache scan (2026-07-04, local)",
+    "total": 2,
+    "critical": 0,
+    "high": 0,
+    "medium": 1,
+    "low": 1,
+    "top_cves": [
+     {
+      "id": "CVE-2025-60876",
+      "severity": "medium",
+      "package": "busybox"
+     },
+     {
+      "id": "CVE-2025-46394",
+      "severity": "low",
+      "package": "busybox"
+     }
+    ],
+    "note": "Scan was partial (runtime inventory unavailable, heuristics only). busybox is genuinely minimal, but supplement with public advisory data."
+   }
+  },
+  "scan_meta": {
+   "generated": "2026-07-04",
+   "scanner_version": "1.14.2"
+  }
+ },
+ {
+  "slug": "migrating-to-distroless-images",
+  "enhancement": "comparison-chart",
+  "scan_data": {
+   "node": {
+    "tag": "node:22",
+    "source": "scanrook v1.14.2 warm-cache scan (pre-existing benchmark artifact)",
+    "total": 30726,
+    "critical": 1794,
+    "high": 8867,
+    "medium": 17133,
+    "low": 1058,
+    "top_cves": [
+     {
+      "id": "CVE-2005-2023",
+      "severity": "critical",
+      "package": "dirmngr"
+     },
+     {
+      "id": "CVE-2006-6235",
+      "severity": "critical",
+      "package": "dirmngr"
+     },
+     {
+      "id": "CVE-2004-1304",
+      "severity": "critical",
+      "package": "file"
+     },
+     {
+      "id": "CVE-2005-2023",
+      "severity": "critical",
+      "package": "gnupg"
+     },
+     {
+      "id": "CVE-2006-6235",
+      "severity": "critical",
+      "package": "gnupg"
+     }
+    ],
+    "alt": {
+     "tag": "node:22-alpine",
+     "total": 306,
+     "critical": 23,
+     "high": 141,
+     "medium": 134,
+     "low": 8
+    }
+   },
+   "golang": {
+    "tag": "golang:1.23",
+    "source": "scanrook v1.14.2 warm-cache scan (pre-existing benchmark artifact)",
+    "total": 18152,
+    "critical": 568,
+    "high": 5027,
+    "medium": 10173,
+    "low": 538,
+    "top_cves": [
+     {
+      "id": "CVE-2005-2023",
+      "severity": "critical",
+      "package": "dirmngr"
+     },
+     {
+      "id": "CVE-2006-6235",
+      "severity": "critical",
+      "package": "dirmngr"
+     },
+     {
+      "id": "CVE-2005-2023",
+      "severity": "critical",
+      "package": "gnupg"
+     },
+     {
+      "id": "CVE-2006-6235",
+      "severity": "critical",
+      "package": "gnupg"
+     },
+     {
+      "id": "CVE-2005-2023",
+      "severity": "critical",
+      "package": "gnupg-l10n"
+     }
+    ],
+    "alt": {
+     "tag": "golang:1.23-alpine",
+     "total": 379,
+     "critical": 23,
+     "high": 176,
+     "medium": 150,
+     "low": 10
+    }
+   },
+   "busybox": {
+    "tag": "busybox:1.37",
+    "source": "scanrook v1.14.2 warm-cache scan (2026-07-04, local)",
+    "total": 2,
+    "critical": 0,
+    "high": 0,
+    "medium": 1,
+    "low": 1,
+    "top_cves": [
+     {
+      "id": "CVE-2025-60876",
+      "severity": "medium",
+      "package": "busybox"
+     },
+     {
+      "id": "CVE-2025-46394",
+      "severity": "low",
+      "package": "busybox"
+     }
+    ],
+    "note": "Scan was partial (runtime inventory unavailable, heuristics only). busybox is genuinely minimal, but supplement with public advisory data."
+   },
+   "alpine": {
+    "tag": "alpine:3.20",
+    "source": "scanrook v1.14.2 warm-cache scan (pre-existing benchmark artifact)",
+    "total": 301,
+    "critical": 20,
+    "high": 136,
+    "medium": 131,
+    "low": 10,
+    "top_cves": [
+     {
+      "id": "CVE-2021-42377",
+      "severity": "critical",
+      "package": "busybox-binsh"
+     },
+     {
+      "id": "CVE-2022-48174",
+      "severity": "critical",
+      "package": "busybox-binsh"
+     },
+     {
+      "id": "CVE-2016-2148",
+      "severity": "critical",
+      "package": "busybox-binsh"
+     },
+     {
+      "id": "CVE-2021-3711",
+      "severity": "critical",
+      "package": "libcrypto3"
+     },
+     {
+      "id": "CVE-2022-2274",
+      "severity": "critical",
+      "package": "libcrypto3"
+     }
+    ]
+   }
+  },
+  "scan_meta": {
+   "generated": "2026-07-04",
+   "scanner_version": "1.14.2"
+  }
+ },
+ {
+  "slug": "how-to-reduce-cves-in-docker-images",
+  "enhancement": "comparison-chart",
+  "scan_data": {
+   "node": {
+    "tag": "node:22",
+    "source": "scanrook v1.14.2 warm-cache scan (pre-existing benchmark artifact)",
+    "total": 30726,
+    "critical": 1794,
+    "high": 8867,
+    "medium": 17133,
+    "low": 1058,
+    "top_cves": [
+     {
+      "id": "CVE-2005-2023",
+      "severity": "critical",
+      "package": "dirmngr"
+     },
+     {
+      "id": "CVE-2006-6235",
+      "severity": "critical",
+      "package": "dirmngr"
+     },
+     {
+      "id": "CVE-2004-1304",
+      "severity": "critical",
+      "package": "file"
+     },
+     {
+      "id": "CVE-2005-2023",
+      "severity": "critical",
+      "package": "gnupg"
+     },
+     {
+      "id": "CVE-2006-6235",
+      "severity": "critical",
+      "package": "gnupg"
+     }
+    ],
+    "alt": {
+     "tag": "node:22-alpine",
+     "total": 306,
+     "critical": 23,
+     "high": 141,
+     "medium": 134,
+     "low": 8
+    }
+   },
+   "alpine": {
+    "tag": "alpine:3.20",
+    "source": "scanrook v1.14.2 warm-cache scan (pre-existing benchmark artifact)",
+    "total": 301,
+    "critical": 20,
+    "high": 136,
+    "medium": 131,
+    "low": 10,
+    "top_cves": [
+     {
+      "id": "CVE-2021-42377",
+      "severity": "critical",
+      "package": "busybox-binsh"
+     },
+     {
+      "id": "CVE-2022-48174",
+      "severity": "critical",
+      "package": "busybox-binsh"
+     },
+     {
+      "id": "CVE-2016-2148",
+      "severity": "critical",
+      "package": "busybox-binsh"
+     },
+     {
+      "id": "CVE-2021-3711",
+      "severity": "critical",
+      "package": "libcrypto3"
+     },
+     {
+      "id": "CVE-2022-2274",
+      "severity": "critical",
+      "package": "libcrypto3"
+     }
+    ]
+   },
+   "busybox": {
+    "tag": "busybox:1.37",
+    "source": "scanrook v1.14.2 warm-cache scan (2026-07-04, local)",
+    "total": 2,
+    "critical": 0,
+    "high": 0,
+    "medium": 1,
+    "low": 1,
+    "top_cves": [
+     {
+      "id": "CVE-2025-60876",
+      "severity": "medium",
+      "package": "busybox"
+     },
+     {
+      "id": "CVE-2025-46394",
+      "severity": "low",
+      "package": "busybox"
+     }
+    ],
+    "note": "Scan was partial (runtime inventory unavailable, heuristics only). busybox is genuinely minimal, but supplement with public advisory data."
+   },
+   "nginx": {
+    "tag": "nginx:1.27",
+    "source": "scanrook v1.14.2 warm-cache scan (pre-existing benchmark artifact)",
+    "total": 2952,
+    "critical": 408,
+    "high": 928,
+    "medium": 1361,
+    "low": 213,
+    "top_cves": [
+     {
+      "id": "CVE-2005-2023",
+      "severity": "critical",
+      "package": "gpgv"
+     },
+     {
+      "id": "CVE-2006-6235",
+      "severity": "critical",
+      "package": "gpgv"
+     },
+     {
+      "id": "CVE-2009-1300",
+      "severity": "critical",
+      "package": "libapt-pkg6.0"
+     },
+     {
+      "id": "CVE-2009-1358",
+      "severity": "critical",
+      "package": "libapt-pkg6.0"
+     },
+     {
+      "id": "CVE-2015-0235",
+      "severity": "critical",
+      "package": "libc-bin"
+     }
+    ],
+    "alt": {
+     "tag": "nginx:1.27-alpine",
+     "total": 619,
+     "critical": 84,
+     "high": 263,
+     "medium": 242,
+     "low": 26
+    }
+   }
+  },
+  "scan_meta": {
+   "generated": "2026-07-04",
+   "scanner_version": "1.14.2"
+  }
+ },
+ {
+  "slug": "multi-stage-docker-builds-security",
+  "enhancement": "comparison-chart",
+  "scan_data": {
+   "golang": {
+    "tag": "golang:1.23",
+    "source": "scanrook v1.14.2 warm-cache scan (pre-existing benchmark artifact)",
+    "total": 18152,
+    "critical": 568,
+    "high": 5027,
+    "medium": 10173,
+    "low": 538,
+    "top_cves": [
+     {
+      "id": "CVE-2005-2023",
+      "severity": "critical",
+      "package": "dirmngr"
+     },
+     {
+      "id": "CVE-2006-6235",
+      "severity": "critical",
+      "package": "dirmngr"
+     },
+     {
+      "id": "CVE-2005-2023",
+      "severity": "critical",
+      "package": "gnupg"
+     },
+     {
+      "id": "CVE-2006-6235",
+      "severity": "critical",
+      "package": "gnupg"
+     },
+     {
+      "id": "CVE-2005-2023",
+      "severity": "critical",
+      "package": "gnupg-l10n"
+     }
+    ],
+    "alt": {
+     "tag": "golang:1.23-alpine",
+     "total": 379,
+     "critical": 23,
+     "high": 176,
+     "medium": 150,
+     "low": 10
+    }
+   },
+   "busybox": {
+    "tag": "busybox:1.37",
+    "source": "scanrook v1.14.2 warm-cache scan (2026-07-04, local)",
+    "total": 2,
+    "critical": 0,
+    "high": 0,
+    "medium": 1,
+    "low": 1,
+    "top_cves": [
+     {
+      "id": "CVE-2025-60876",
+      "severity": "medium",
+      "package": "busybox"
+     },
+     {
+      "id": "CVE-2025-46394",
+      "severity": "low",
+      "package": "busybox"
+     }
+    ],
+    "note": "Scan was partial (runtime inventory unavailable, heuristics only). busybox is genuinely minimal, but supplement with public advisory data."
+   },
+   "alpine": {
+    "tag": "alpine:3.20",
+    "source": "scanrook v1.14.2 warm-cache scan (pre-existing benchmark artifact)",
+    "total": 301,
+    "critical": 20,
+    "high": 136,
+    "medium": 131,
+    "low": 10,
+    "top_cves": [
+     {
+      "id": "CVE-2021-42377",
+      "severity": "critical",
+      "package": "busybox-binsh"
+     },
+     {
+      "id": "CVE-2022-48174",
+      "severity": "critical",
+      "package": "busybox-binsh"
+     },
+     {
+      "id": "CVE-2016-2148",
+      "severity": "critical",
+      "package": "busybox-binsh"
+     },
+     {
+      "id": "CVE-2021-3711",
+      "severity": "critical",
+      "package": "libcrypto3"
+     },
+     {
+      "id": "CVE-2022-2274",
+      "severity": "critical",
+      "package": "libcrypto3"
+     }
+    ]
+   }
+  },
+  "scan_meta": {
+   "generated": "2026-07-04",
+   "scanner_version": "1.14.2"
+  }
+ },
+ {
+  "slug": "how-to-patch-docker-base-image-vulnerabilities",
+  "enhancement": "comparison-chart",
+  "scan_data": {
+   "nginx": {
+    "tag": "nginx:1.27",
+    "source": "scanrook v1.14.2 warm-cache scan (pre-existing benchmark artifact)",
+    "total": 2952,
+    "critical": 408,
+    "high": 928,
+    "medium": 1361,
+    "low": 213,
+    "top_cves": [
+     {
+      "id": "CVE-2005-2023",
+      "severity": "critical",
+      "package": "gpgv"
+     },
+     {
+      "id": "CVE-2006-6235",
+      "severity": "critical",
+      "package": "gpgv"
+     },
+     {
+      "id": "CVE-2009-1300",
+      "severity": "critical",
+      "package": "libapt-pkg6.0"
+     },
+     {
+      "id": "CVE-2009-1358",
+      "severity": "critical",
+      "package": "libapt-pkg6.0"
+     },
+     {
+      "id": "CVE-2015-0235",
+      "severity": "critical",
+      "package": "libc-bin"
+     }
+    ],
+    "alt": {
+     "tag": "nginx:1.27-alpine",
+     "total": 619,
+     "critical": 84,
+     "high": 263,
+     "medium": 242,
+     "low": 26
+    }
+   },
+   "ubuntu": {
+    "tag": "ubuntu:24.04",
+    "source": "scanrook v1.14.2 warm-cache scan (pre-existing benchmark artifact)",
+    "total": 1365,
+    "critical": 130,
+    "high": 426,
+    "medium": 652,
+    "low": 128,
+    "top_cves": [
+     {
+      "id": "CVE-2005-2023",
+      "severity": "critical",
+      "package": "gpgv"
+     },
+     {
+      "id": "CVE-2006-6235",
+      "severity": "critical",
+      "package": "gpgv"
+     },
+     {
+      "id": "CVE-2009-1300",
+      "severity": "critical",
+      "package": "libapt-pkg6.0t64"
+     },
+     {
+      "id": "CVE-2009-1358",
+      "severity": "critical",
+      "package": "libapt-pkg6.0t64"
+     },
+     {
+      "id": "CVE-2015-0235",
+      "severity": "critical",
+      "package": "libc-bin"
+     }
+    ]
+   },
+   "alpine": {
+    "tag": "alpine:3.20",
+    "source": "scanrook v1.14.2 warm-cache scan (pre-existing benchmark artifact)",
+    "total": 301,
+    "critical": 20,
+    "high": 136,
+    "medium": 131,
+    "low": 10,
+    "top_cves": [
+     {
+      "id": "CVE-2021-42377",
+      "severity": "critical",
+      "package": "busybox-binsh"
+     },
+     {
+      "id": "CVE-2022-48174",
+      "severity": "critical",
+      "package": "busybox-binsh"
+     },
+     {
+      "id": "CVE-2016-2148",
+      "severity": "critical",
+      "package": "busybox-binsh"
+     },
+     {
+      "id": "CVE-2021-3711",
+      "severity": "critical",
+      "package": "libcrypto3"
+     },
+     {
+      "id": "CVE-2022-2274",
+      "severity": "critical",
+      "package": "libcrypto3"
+     }
+    ]
+   }
+  },
+  "scan_meta": {
+   "generated": "2026-07-04",
+   "scanner_version": "1.14.2"
+  }
+ }
+]

@@ -102,6 +102,40 @@ const faqJsonLd = {
   ],
 };
 
+const SEVERITY_ROWS: { tag: string; total: number; buckets: { label: string; count: number }[] }[] = [
+  {
+    tag: "nginx:1.27",
+    total: 2952,
+    buckets: [
+      { label: "Critical", count: 408 },
+      { label: "High", count: 928 },
+      { label: "Medium", count: 1361 },
+      { label: "Low", count: 213 },
+    ],
+  },
+  {
+    tag: "nginx:1.27-alpine",
+    total: 619,
+    buckets: [
+      { label: "Critical", count: 84 },
+      { label: "High", count: 263 },
+      { label: "Medium", count: 242 },
+      { label: "Low", count: 26 },
+    ],
+  },
+];
+
+const SEVERITY_MAX = Math.max(
+  ...SEVERITY_ROWS.flatMap((r) => r.buckets.map((b) => b.count)),
+);
+
+const SEVERITY_FILL: Record<string, string> = {
+  Critical: "fill-[var(--dg-accent,#2563eb)]",
+  High: "fill-current opacity-50",
+  Medium: "fill-current opacity-30",
+  Low: "fill-current opacity-20",
+};
+
 export default function Page() {
   if (!isPublished({ publishDate: PUBLISH_DATE })) notFound();
   return (
@@ -192,6 +226,58 @@ export default function Page() {
           <p className="text-xs text-gray-500 dark:text-gray-400">
             ScanRook v1.14.2, warm-cache scan, 2026-07-04. Counts change as new advisories publish.
           </p>
+          <figure className="overflow-x-auto surface-card p-4">
+            <svg
+              viewBox="0 0 596 204"
+              className="w-full"
+              style={{ maxWidth: "640px" }}
+              role="img"
+              aria-label="Grouped bar chart of ScanRook severity counts. nginx:1.27: 2,952 findings total, 408 critical, 928 high, 1,361 medium, 213 low. nginx:1.27-alpine: 619 findings total, 84 critical, 263 high, 242 medium, 26 low."
+            >
+              <title>Grouped bar chart of ScanRook severity counts. nginx:1.27: 2,952 findings total, 408 critical, 928 high, 1,361 medium, 213 low. nginx:1.27-alpine: 619 findings total, 84 critical, 263 high, 242 medium, 26 low.</title>
+              {SEVERITY_ROWS.map((row, i) => {
+                const gy = 14 + i * 104;
+                return (
+                  <g key={row.tag}>
+                    <text x="0" y={gy} className="fill-current text-[11px] font-semibold font-mono">
+                      {row.tag}
+                    </text>
+                    <text x="0" y={gy + 14} className="fill-current text-[9px] opacity-60">
+                      {row.total.toLocaleString("en-US")} findings total
+                    </text>
+                    {row.buckets.map((b, j) => {
+                      const y = gy + 22 + j * 19;
+                      const w = Math.max(2, Math.round((b.count / SEVERITY_MAX) * 380));
+                      return (
+                        <g key={b.label}>
+                          <text x="0" y={y + 10} className="fill-current text-[10px] opacity-80">
+                            {b.label}
+                          </text>
+                          <rect
+                            x="100"
+                            y={y}
+                            width={w}
+                            height="13"
+                            rx="2"
+                            className={SEVERITY_FILL[b.label]}
+                          />
+                          <text x={105 + w} y={y + 10} className="fill-current text-[9px] opacity-70">
+                            {b.count.toLocaleString("en-US")}
+                          </text>
+                        </g>
+                      );
+                    })}
+                  </g>
+                );
+              })}
+            </svg>
+            <figcaption className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+              The same scan data as a chart &mdash; ScanRook v1.14.2 warm-cache scan of nginx:1.27 and
+              nginx:1.27-alpine, 2026-07-04. Bar length is proportional to the count in each severity bucket,
+              on a scale shared by both tags; the figure beside each tag name is the total finding
+              count that scan reported.
+            </figcaption>
+          </figure>
           <p className="text-sm muted">
             The headline number looks alarming, but almost none of it is nginx. The Debian-based
             image ships a complete GNU userland &mdash; glibc, APT, GnuPG helpers, coreutils &mdash;

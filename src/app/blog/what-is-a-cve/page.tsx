@@ -201,6 +201,83 @@ export default function WhatIsACvePage() {
           </p>
         </section>
 
+        <figure className="grid gap-3">
+          <figcaption className="text-sm font-semibold">
+            The CVE lifecycle, from report to a finding in your scan
+          </figcaption>
+          <div className="overflow-x-auto">
+            <svg
+              viewBox="0 0 800 210"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              className="w-full min-w-[680px]"
+              role="img"
+              aria-label="Timeline diagram of the CVE lifecycle: discovery and report, reserved by a CNA, published with description and references, enriched with CVSS CPE and CWE, and finally matched by a scanner to a package in your artifact to become a finding. The first four stages happen upstream in the CVE program; only the last happens in your environment."
+            >
+              <title>CVE lifecycle from report to finding</title>
+              <rect width="800" height="210" rx="16" className="fill-black/[.02] dark:fill-white/[.02]" />
+
+              {/* Stage 1 */}
+              <rect x="9" y="34" width="142" height="96" rx="10" className="fill-black/[.05] dark:fill-white/[.08] stroke-black/10 dark:stroke-white/10" strokeWidth="1" />
+              <text x="80" y="60" textAnchor="middle" className="fill-current" fontSize="12" fontWeight="600">Discovery</text>
+              <text x="80" y="82" textAnchor="middle" className="fill-current" fontSize="9" opacity="0.7">A researcher or vendor</text>
+              <text x="80" y="96" textAnchor="middle" className="fill-current" fontSize="9" opacity="0.7">finds a flaw and reports</text>
+              <text x="80" y="110" textAnchor="middle" className="fill-current" fontSize="9" opacity="0.7">it under disclosure</text>
+
+              <polyline points="151,82 163,82" className="stroke-current" strokeWidth="1.5" fill="none" opacity="0.4" />
+              <polygon points="163,77 169,82 163,87" className="fill-current" opacity="0.4" />
+
+              {/* Stage 2 */}
+              <rect x="169" y="34" width="142" height="96" rx="10" className="fill-black/[.05] dark:fill-white/[.08] stroke-black/10 dark:stroke-white/10" strokeWidth="1" />
+              <text x="240" y="60" textAnchor="middle" className="fill-current" fontSize="12" fontWeight="600">Reserved</text>
+              <text x="240" y="82" textAnchor="middle" className="fill-current" fontSize="9" opacity="0.7">A CNA reserves the ID.</text>
+              <text x="240" y="96" textAnchor="middle" className="fill-current" fontSize="9" opacity="0.7">The ID exists, but the</text>
+              <text x="240" y="110" textAnchor="middle" className="fill-current" fontSize="9" opacity="0.7">record has no details</text>
+
+              <polyline points="311,82 323,82" className="stroke-current" strokeWidth="1.5" fill="none" opacity="0.4" />
+              <polygon points="323,77 329,82 323,87" className="fill-current" opacity="0.4" />
+
+              {/* Stage 3 */}
+              <rect x="329" y="34" width="142" height="96" rx="10" className="fill-black/[.05] dark:fill-white/[.08] stroke-black/10 dark:stroke-white/10" strokeWidth="1" />
+              <text x="400" y="60" textAnchor="middle" className="fill-current" fontSize="12" fontWeight="600">Published</text>
+              <text x="400" y="82" textAnchor="middle" className="fill-current" fontSize="9" opacity="0.7">Description and</text>
+              <text x="400" y="96" textAnchor="middle" className="fill-current" fontSize="9" opacity="0.7">references go public,</text>
+              <text x="400" y="110" textAnchor="middle" className="fill-current" fontSize="9" opacity="0.7">often beside a patch</text>
+
+              <polyline points="471,82 483,82" className="stroke-current" strokeWidth="1.5" fill="none" opacity="0.4" />
+              <polygon points="483,77 489,82 483,87" className="fill-current" opacity="0.4" />
+
+              {/* Stage 4 */}
+              <rect x="489" y="34" width="142" height="96" rx="10" className="fill-black/[.05] dark:fill-white/[.08] stroke-black/10 dark:stroke-white/10" strokeWidth="1" />
+              <text x="560" y="60" textAnchor="middle" className="fill-current" fontSize="12" fontWeight="600">Enriched</text>
+              <text x="560" y="82" textAnchor="middle" className="fill-current" fontSize="9" opacity="0.7">NVD and others add a</text>
+              <text x="560" y="96" textAnchor="middle" className="fill-current" fontSize="9" opacity="0.7">CVSS score, CPE ids,</text>
+              <text x="560" y="110" textAnchor="middle" className="fill-current" fontSize="9" opacity="0.7">and CWE classes</text>
+
+              <polyline points="631,82 643,82" className="stroke-current" strokeWidth="1.5" fill="none" opacity="0.4" />
+              <polygon points="643,77 649,82 643,87" className="fill-current" opacity="0.4" />
+
+              {/* Stage 5 */}
+              <rect x="649" y="34" width="142" height="96" rx="10" className="fill-[var(--dg-accent,#2563eb)]/10 stroke-[var(--dg-accent,#2563eb)]" strokeWidth="1.5" />
+              <text x="720" y="60" textAnchor="middle" className="fill-current" fontSize="12" fontWeight="600">Matched</text>
+              <text x="720" y="82" textAnchor="middle" className="fill-current" fontSize="9" opacity="0.7">A scanner maps it to a</text>
+              <text x="720" y="96" textAnchor="middle" className="fill-current" fontSize="9" opacity="0.7">package you actually</text>
+              <text x="720" y="110" textAnchor="middle" className="fill-current" fontSize="9" opacity="0.7">ship: it becomes a finding</text>
+
+              {/* Ownership brackets */}
+              <line x1="9" y1="152" x2="631" y2="152" className="stroke-current" strokeWidth="1" strokeDasharray="4 3" opacity="0.35" />
+              <text x="320" y="172" textAnchor="middle" className="fill-current" fontSize="10" opacity="0.7">Upstream: the CVE program, CNAs, and enrichment databases</text>
+              <line x1="649" y1="152" x2="791" y2="152" className="stroke-[var(--dg-accent,#2563eb)]" strokeWidth="1" strokeDasharray="4 3" opacity="0.6" />
+              <text x="720" y="172" textAnchor="middle" className="fill-current" fontSize="10" opacity="0.7">In your environment</text>
+            </svg>
+          </div>
+          <p className="text-xs muted">
+            Structural diagram of the lifecycle described above. Stage order is
+            fixed; the time between stages is not, and is deliberately not drawn
+            to scale here. No timings or volumes are implied.
+          </p>
+        </figure>
+
         <section className="grid gap-3">
           <h2 className="text-xl font-semibold tracking-tight">CVE vs CVSS vs CWE vs EPSS vs KEV</h2>
           <p className="text-sm muted">

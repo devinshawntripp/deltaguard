@@ -321,6 +321,130 @@ export default function BlackDuckPage() {
           </p>
         </section>
 
+        <figure className="grid gap-3">
+          <figcaption className="text-sm font-semibold">
+            The four license-detection techniques, side by side
+          </figcaption>
+          <p className="text-sm muted">
+            Every license scanner -- Black Duck, {APP_NAME}, or anything else --
+            is some combination of these four techniques. They differ in what
+            they read, what data they need behind them, and which cases they
+            structurally cannot see. Understanding the techniques is more useful
+            than comparing product names.
+          </p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[720px]" aria-label="Comparison of open-source detection techniques by what each analyzes and its limitations">
+              <thead>
+                <tr className="border-b border-black/10 dark:border-white/10">
+                  <th className="text-left py-2 pr-4 font-semibold align-bottom">
+                    Technique
+                  </th>
+                  <th className="text-left py-2 pr-4 font-semibold align-bottom">
+                    What it reads
+                  </th>
+                  <th className="text-left py-2 pr-4 font-semibold align-bottom">
+                    What it depends on
+                  </th>
+                  <th className="text-left py-2 pr-4 font-semibold align-bottom">
+                    Finds copied code with no package record?
+                  </th>
+                  <th className="text-left py-2 font-semibold align-bottom">
+                    Inherent limitation
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="muted align-top">
+                <tr className="border-b border-black/5 dark:border-white/5">
+                  <td className="py-2 pr-4">
+                    <strong>Package metadata extraction</strong>
+                  </td>
+                  <td className="py-2 pr-4">
+                    License fields in RPM headers, APK metadata, dpkg copyright
+                    files,{" "}
+                    <code className="bg-black/5 dark:bg-white/10 px-1 rounded text-xs">
+                      package.json
+                    </code>
+                    , pip METADATA, Cargo.toml
+                  </td>
+                  <td className="py-2 pr-4">
+                    Only the artifact itself -- no network calls
+                  </td>
+                  <td className="py-2 pr-4">No</td>
+                  <td className="py-2">
+                    Inherits whatever the publisher declared; silent when a
+                    package declares nothing
+                  </td>
+                </tr>
+                <tr className="border-b border-black/5 dark:border-white/5">
+                  <td className="py-2 pr-4">
+                    <strong>Curated package databases</strong>
+                  </td>
+                  <td className="py-2 pr-4">
+                    Package coordinates looked up against a curated license
+                    dataset (for example ClearlyDefined)
+                  </td>
+                  <td className="py-2 pr-4">
+                    Network access and the dataset&apos;s coverage of that
+                    package
+                  </td>
+                  <td className="py-2 pr-4">No</td>
+                  <td className="py-2">
+                    Coverage varies by ecosystem and by how recently the package
+                    was curated
+                  </td>
+                </tr>
+                <tr className="border-b border-black/5 dark:border-white/5">
+                  <td className="py-2 pr-4">
+                    <strong>License text pattern matching</strong>
+                  </td>
+                  <td className="py-2 pr-4">
+                    LICENSE, COPYING, NOTICE, README files and inline license
+                    headers
+                  </td>
+                  <td className="py-2 pr-4">
+                    A rule set of known license texts and notices (for example
+                    the ScanCode rules, Apache-2.0)
+                  </td>
+                  <td className="py-2 pr-4">
+                    Only if the copied code carried its license header or file
+                    along with it
+                  </td>
+                  <td className="py-2">
+                    Tells you which license text is present, not which upstream
+                    project the code came from
+                  </td>
+                </tr>
+                <tr>
+                  <td className="py-2 pr-4">
+                    <strong>Snippet fingerprint matching</strong>
+                  </td>
+                  <td className="py-2 pr-4">
+                    Hashes of code fragments at function, block, and file
+                    granularity
+                  </td>
+                  <td className="py-2 pr-4">
+                    An index of the world&apos;s source code -- proprietary
+                    (Black Duck&apos;s KnowledgeBase) or public (Software
+                    Heritage)
+                  </td>
+                  <td className="py-2 pr-4">Yes -- this is the case it exists for</td>
+                  <td className="py-2">
+                    Requires building or accessing a large corpus, and more
+                    compute per scan than metadata reads
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p className="text-xs muted">
+            Source: the technique descriptions in this article. Capability
+            comparison only -- no pricing, performance, or accuracy figures are
+            claimed for any product. Products in this space combine several of
+            these techniques, so the right question is which techniques a given
+            tool applies to your artifacts, not which vendor is &quot;better&quot;.
+          </p>
+        </figure>
+
         <section className="grid gap-2">
           <h2 className="text-xl font-semibold tracking-tight">
             Why Integrated Beats Standalone

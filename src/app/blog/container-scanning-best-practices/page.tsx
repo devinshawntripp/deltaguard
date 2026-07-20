@@ -320,6 +320,104 @@ CMD ["server"]`}</code>
 
         <section className="grid gap-3">
           <h2 className="text-xl font-semibold tracking-tight">
+            Rollout Checklist: Adding Scanning to an Existing Pipeline
+          </h2>
+          <p className="text-sm muted">
+            The eight practices above describe what a mature scanning program
+            looks like. Getting there from zero is a separate problem: if you
+            turn on a blocking gate against a codebase that has never been
+            scanned, you will block every build on day one and the gate will be
+            switched off by the end of the week. This checklist covers the
+            sequencing -- the order to turn things on, and the organisational
+            decisions that have to be made before each step, rather than the
+            technical practices themselves.
+          </p>
+          <div className="grid gap-4 rounded-lg border border-black/10 dark:border-white/10 p-5">
+            {[
+              {
+                phase: "Phase 1 — Observe (do not fail anything yet)",
+                items: [
+                  "Run the scanner in report-only mode on every build and publish the report as a CI artifact. Nothing blocks, nothing warns in chat.",
+                  "Record the finding count for each image on the first run. This is your baseline; every later decision is measured against it, not against zero.",
+                  "Scan the base image on its own, separately from your built image. The difference between the two counts tells you how much of the problem is yours versus inherited.",
+                  "Confirm the scanner is reading the package database, not guessing from file paths — a report full of heuristic matches will poison the baseline.",
+                ],
+              },
+              {
+                phase: "Phase 2 — Decide the rules before enforcing them",
+                items: [
+                  "Name an owner per image. An unowned image will never be remediated, no matter what the gate says.",
+                  "Write down which signals block and which only warn (for example KEV status and confidence tier block; raw CVSS warns). Put it in the repo, not in someone's head.",
+                  "Agree the fix-by window for each severity band with the teams who will have to meet it, and write it down. A window nobody agreed to is a window nobody meets.",
+                  "Define the exception path: who approves an accepted risk, where the acceptance is recorded, and when it is revisited.",
+                  "Require every suppression to carry an expiry date and a reason. Suppressions without expiry are how a scanning program silently dies.",
+                ],
+              },
+              {
+                phase: "Phase 3 — Enforce narrowly, then widen",
+                items: [
+                  "Turn the gate on for newly introduced findings only; let the pre-existing baseline through. Teams can stop the bleeding before they pay down debt.",
+                  "Start with one service that has an engaged owner rather than the whole estate. Fix the workflow friction there before it becomes everyone's friction.",
+                  "Fail the build on the policy, not on the tool: a scanner crash, a rate-limited API, or an empty database should be a distinguishable failure from a real policy violation.",
+                  "Ratchet the baseline downward on a schedule instead of demanding a single big cleanup.",
+                ],
+              },
+              {
+                phase: "Phase 4 — Keep it alive",
+                items: [
+                  "Re-scan already-published images on a schedule. New CVEs are disclosed against images you are not rebuilding.",
+                  "Alert on the rate of change, not the absolute count — a jump in findings between two consecutive builds is a signal; a large steady-state number is just your base image.",
+                  "Review expired suppressions on a recurring cadence and treat an expired one as a finding again.",
+                  "Track median time-to-remediate for the findings that actually blocked something. If it is climbing, the policy is too broad and people are routing around it.",
+                  "Re-run the base image comparison periodically — a base image that was the lean choice at adoption may not be a year later.",
+                ],
+              },
+            ].map((group) => (
+              <div key={group.phase} className="grid gap-2">
+                <h3 className="text-sm font-semibold">{group.phase}</h3>
+                <ul className="grid gap-2 list-none pl-0">
+                  {group.items.map((item) => (
+                    <li key={item} className="flex gap-3 text-sm muted">
+                      <svg
+                        viewBox="0 0 16 16"
+                        className="mt-0.5 h-4 w-4 shrink-0"
+                        aria-hidden="true"
+                        focusable="false"
+                      >
+                        <rect
+                          x="1"
+                          y="1"
+                          width="14"
+                          height="14"
+                          rx="3"
+                          className="fill-none stroke-current opacity-40"
+                          strokeWidth="1.5"
+                        />
+                        <path
+                          d="M4.5 8.2 7 10.7l4.5-5"
+                          className="fill-none stroke-[var(--dg-accent,#2563eb)]"
+                          strokeWidth="1.8"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Adoption sequencing checklist for container scanning programs.
+              Structural guidance only -- no thresholds or timings are
+              prescribed here, because the right ones depend on your release
+              cadence and risk appetite.
+            </p>
+          </div>
+        </section>
+
+        <section className="grid gap-3">
+          <h2 className="text-xl font-semibold tracking-tight">
             Get Started
           </h2>
           <pre className="rounded-lg border border-black/10 dark:border-white/10 bg-black/[.04] dark:bg-white/[.04] p-3 text-xs overflow-x-auto">

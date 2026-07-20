@@ -1,0 +1,18 @@
+[
+  {
+    "slug": "scanrook-mcp-ai-vulnerability-scanning",
+    "enhancement": "diagram",
+    "added": "Inline SVG sequence diagram in the Architecture section showing the full MCP request/response round trip (you -> AI assistant -> scanrook-mcp over stdio -> ScanRook API, the scan_status polling loop, and the structured findings returning back to a plain-language summary), with figcaption and aria-label.",
+    "numbers_source": "none (structural)",
+    "lines_added": 201,
+    "lines_removed": 0
+  },
+  {
+    "slug": "why-we-built-scanrook",
+    "enhancement": "diagram",
+    "added": "Inline SVG local-first boundary diagram in the 'Our Approach' section, showing which capabilities run on your machine with no mandatory cloud auth versus what the opt-in cloud enrichment side adds, with an 'opt in' boundary arrow, figcaption and aria-label. Every label is taken from claims already made in the post.",
+    "numbers_source": "none (structural)",
+    "lines_added": 198,
+    "lines_removed": 0
+  }
+]

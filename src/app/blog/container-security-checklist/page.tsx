@@ -631,6 +631,166 @@ spec:
           </div>
         </section>
 
+        {/* Verification checklist */}
+        <section className="grid gap-3">
+          <h2 className="text-xl font-semibold tracking-tight">
+            Verification Checklist: Auditing an Image You Did Not Build
+          </h2>
+          <p className="text-sm muted">
+            The fifteen items above tell you how to build a hardened image.
+            They assume you control the Dockerfile. Often you do not — you are
+            reviewing a vendor image, inheriting a service from another team,
+            or auditing something already running in production. In that
+            situation you need to <em>prove</em> each control is in place from
+            the outside. Every item below is a check you can run against a
+            built image or a live deployment, with the command that answers it.
+          </p>
+          <div className="grid gap-4 rounded-lg border border-black/10 dark:border-white/10 p-5">
+            {[
+              {
+                group: "From the image metadata alone",
+                items: [
+                  {
+                    check:
+                      "Confirm the image does not run as root (verifies item #4). An empty result means UID 0.",
+                    cmd: "docker image inspect --format '{{.Config.User}}' myimage:tag",
+                  },
+                  {
+                    check:
+                      "Read the environment baked into the image and look for anything credential-shaped (verifies item #7).",
+                    cmd: "docker image inspect --format '{{json .Config.Env}}' myimage:tag",
+                  },
+                  {
+                    check:
+                      "Capture the immutable digest so you can pin to it rather than to a mutable tag (verifies item #2).",
+                    cmd: "docker image inspect --format '{{index .RepoDigests 0}}' myimage:tag",
+                  },
+                  {
+                    check:
+                      "Check how old the image build actually is. A hardened image that has not been rebuilt in a long time is still accumulating unpatched CVEs.",
+                    cmd: "docker image inspect --format '{{.Created}}' myimage:tag",
+                  },
+                  {
+                    check:
+                      "List the ports the image declares. Anything beyond what the service needs is a question for the owner.",
+                    cmd: "docker image inspect --format '{{json .Config.ExposedPorts}}' myimage:tag",
+                  },
+                ],
+              },
+              {
+                group: "From the layer history",
+                items: [
+                  {
+                    check:
+                      "Read every build instruction in full. Secrets passed as build arguments, curl-pipe-shell installs, and package managers invoked at build time are all visible here (supports items #7 and #8).",
+                    cmd: "docker history --no-trunc myimage:tag",
+                  },
+                  {
+                    check:
+                      "Remember that a file deleted in a later layer still exists in the earlier one. Export the image and inspect the layers themselves rather than trusting the final filesystem view.",
+                    cmd: "docker save myimage:tag -o image.tar && tar -tvf image.tar",
+                  },
+                ],
+              },
+              {
+                group: "From a scan of the image contents",
+                items: [
+                  {
+                    check:
+                      "Get the full installed package inventory, then check it for compilers, linkers, and -dev/-devel packages. Their presence means the build stage leaked into the runtime image (verifies item #8).",
+                    cmd: "scanrook scan --file image.tar --format json --out report.json",
+                  },
+                  {
+                    check:
+                      "Confirm the findings are backed by the package manager database rather than filename heuristics before you accept or escalate any of them (relates to item #3).",
+                    cmd: "jq -r '.findings[].confidence_tier' report.json | sort | uniq -c",
+                  },
+                  {
+                    check:
+                      "Separate what the image inherited from its base from what the application layers introduced: scan the base image named in the FROM line on its own and compare the two reports.",
+                    cmd: "docker pull BASE:TAG && docker save BASE:TAG -o base.tar && scanrook scan --file base.tar --format json --out base.json",
+                  },
+                ],
+              },
+              {
+                group: "From the deployment manifest (runtime controls the image cannot enforce)",
+                items: [
+                  {
+                    check:
+                      "Verify the root filesystem is actually mounted read-only in the workload spec (verifies item #5). The image cannot set this itself.",
+                    cmd: "kubectl get pod POD -o jsonpath='{.spec.containers[*].securityContext.readOnlyRootFilesystem}'",
+                  },
+                  {
+                    check:
+                      "Verify CPU and memory limits are set, not just requests (verifies item #6).",
+                    cmd: "kubectl get pod POD -o jsonpath='{.spec.containers[*].resources}'",
+                  },
+                  {
+                    check:
+                      "Verify the runtime user was not overridden back to root by the pod spec, which silently defeats a correct USER directive in the image.",
+                    cmd: "kubectl get pod POD -o jsonpath='{.spec.containers[*].securityContext.runAsUser}'",
+                  },
+                  {
+                    check:
+                      "Verify the signature against the identity you expect, not merely that some signature exists (verifies item #9). Supply your key or your keyless identity and issuer flags.",
+                    cmd: "cosign verify myimage:tag",
+                  },
+                  {
+                    check:
+                      "Verify the workload references an immutable digest rather than a floating tag, so what you audited is what runs.",
+                    cmd: "kubectl get pod POD -o jsonpath='{.status.containerStatuses[*].imageID}'",
+                  },
+                ],
+              },
+            ].map((group) => (
+              <div key={group.group} className="grid gap-2">
+                <h3 className="text-sm font-semibold">{group.group}</h3>
+                <ul className="grid gap-3 list-none pl-0">
+                  {group.items.map((item) => (
+                    <li key={item.cmd} className="flex gap-3">
+                      <svg
+                        viewBox="0 0 16 16"
+                        className="mt-0.5 h-4 w-4 shrink-0"
+                        aria-hidden="true"
+                        focusable="false"
+                      >
+                        <rect
+                          x="1"
+                          y="1"
+                          width="14"
+                          height="14"
+                          rx="3"
+                          className="fill-none stroke-current opacity-40"
+                          strokeWidth="1.5"
+                        />
+                        <path
+                          d="M4.5 8.2 7 10.7l4.5-5"
+                          className="fill-none stroke-[var(--dg-accent,#2563eb)]"
+                          strokeWidth="1.8"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                      <div className="grid gap-1.5 min-w-0">
+                        <span className="text-sm muted">{item.check}</span>
+                        <code className="text-xs rounded bg-black/[.06] dark:bg-white/[.06] px-2 py-1 block overflow-x-auto whitespace-pre">
+                          {item.cmd}
+                        </code>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Audit checklist for verifying the fifteen controls above against
+              an image or deployment you did not author. Commands are
+              illustrative &mdash; substitute your own image reference, pod
+              name, and namespace.
+            </p>
+          </div>
+        </section>
+
         {/* Additional guidance */}
         <section className="grid gap-3">
           <h2 className="text-xl font-semibold tracking-tight">

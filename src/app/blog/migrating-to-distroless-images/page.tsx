@@ -154,6 +154,118 @@ export default function Page() {
             : Alpine still has a shell and a package manager, just a smaller one. Distroless has
             neither. Treat the migration below as a checklist, not a single flag flip.
           </p>
+          <figure className="surface-card p-4 my-2 overflow-x-auto">
+            <p className="text-sm font-semibold mb-1">
+              What the toolchain costs you &mdash; ScanRook v1.14.2, 2026-07-04
+            </p>
+            <svg
+              viewBox="0 0 700 228"
+              className="w-full"
+              style={{ maxWidth: "700px" }}
+              role="img"
+              aria-label="Horizontal bar chart of total ScanRook findings per image: busybox 1.37 has 2, alpine 3.20 301, node 22-alpine 306, golang 1.23-alpine 379, golang 1.23 18,152, node 22 30,726"
+            >
+              <title>Horizontal bar chart of total ScanRook findings per image: busybox 1.37 has 2, alpine 3.20 301, node 22-alpine 306, golang 1.23-alpine 379, golang 1.23 18,152, node 22 30,726</title>
+              <g>
+                <rect x="0" y="10" width="10" height="10" rx="2" className="fill-[var(--dg-accent,#2563eb)]" />
+                <text x="14" y="19" className="fill-current text-[10px] opacity-80">
+                  Critical
+                </text>
+                <rect x="77" y="10" width="10" height="10" rx="2" className="fill-current" opacity="0.55" />
+                <text x="91" y="19" className="fill-current text-[10px] opacity-80">
+                  High
+                </text>
+                <rect x="132" y="10" width="10" height="10" rx="2" className="fill-current" opacity="0.32" />
+                <text x="146" y="19" className="fill-current text-[10px] opacity-80">
+                  Medium
+                </text>
+                <rect x="198" y="10" width="10" height="10" rx="2" className="fill-current" opacity="0.18" />
+                <text x="212" y="19" className="fill-current text-[10px] opacity-80">
+                  Low
+                </text>
+                <rect x="247" y="10" width="10" height="10" rx="2" className="fill-current" opacity="0.08" />
+                <text x="261" y="19" className="fill-current text-[10px] opacity-80">
+                  No severity assigned
+                </text>
+              </g>
+              <text x="0" y="56" className="fill-current text-[10px] font-mono opacity-80">
+                busybox:1.37
+              </text>
+              <rect x="136" y="44" width="2" height="16" rx="2" className="fill-current" opacity="0.08" />
+              <rect x="136" y="44" width="1" height="16" className="fill-current" opacity="0.32" />
+              <rect x="137" y="44" width="1" height="16" className="fill-current" opacity="0.18" />
+              <text x="524" y="56" className="fill-current text-[9px] opacity-70">
+                2 total &middot; 0 critical
+              </text>
+              <text x="0" y="86" className="fill-current text-[10px] font-mono opacity-80">
+                alpine:3.20
+              </text>
+              <rect x="136" y="74" width="4" height="16" rx="2" className="fill-current" opacity="0.08" />
+              <rect x="136" y="74" width="1" height="16" className="fill-[var(--dg-accent,#2563eb)]" />
+              <rect x="137" y="74" width="2" height="16" className="fill-current" opacity="0.55" />
+              <rect x="139" y="74" width="1" height="16" className="fill-current" opacity="0.32" />
+              <text x="524" y="86" className="fill-current text-[9px] opacity-70">
+                301 total &middot; 20 critical
+              </text>
+              <text x="0" y="116" className="fill-current text-[10px] font-mono opacity-80">
+                node:22-alpine
+              </text>
+              <rect x="136" y="104" width="4" height="16" rx="2" className="fill-current" opacity="0.08" />
+              <rect x="136" y="104" width="1" height="16" className="fill-[var(--dg-accent,#2563eb)]" />
+              <rect x="137" y="104" width="2" height="16" className="fill-current" opacity="0.55" />
+              <rect x="139" y="104" width="1" height="16" className="fill-current" opacity="0.32" />
+              <text x="524" y="116" className="fill-current text-[9px] opacity-70">
+                306 total &middot; 23 critical
+              </text>
+              <text x="0" y="146" className="fill-current text-[10px] font-mono opacity-80">
+                golang:1.23-alpine
+              </text>
+              <rect x="136" y="134" width="5" height="16" rx="2" className="fill-current" opacity="0.08" />
+              <rect x="136" y="134" width="1" height="16" className="fill-[var(--dg-accent,#2563eb)]" />
+              <rect x="137" y="134" width="2" height="16" className="fill-current" opacity="0.55" />
+              <rect x="139" y="134" width="2" height="16" className="fill-current" opacity="0.32" />
+              <text x="524" y="146" className="fill-current text-[9px] opacity-70">
+                379 total &middot; 23 critical
+              </text>
+              <text x="0" y="176" className="fill-current text-[10px] font-mono opacity-80">
+                golang:1.23
+              </text>
+              <rect x="136" y="164" width="224" height="16" rx="2" className="fill-current" opacity="0.08" />
+              <rect x="136" y="164" width="7" height="16" className="fill-[var(--dg-accent,#2563eb)]" />
+              <rect x="143" y="164" width="62" height="16" className="fill-current" opacity="0.55" />
+              <rect x="205" y="164" width="126" height="16" className="fill-current" opacity="0.32" />
+              <rect x="331" y="164" width="7" height="16" className="fill-current" opacity="0.18" />
+              <text x="524" y="176" className="fill-current text-[9px] opacity-70">
+                18,152 total &middot; 568 critical
+              </text>
+              <text x="0" y="206" className="fill-current text-[10px] font-mono opacity-80">
+                node:22
+              </text>
+              <rect x="136" y="194" width="380" height="16" rx="2" className="fill-current" opacity="0.08" />
+              <rect x="136" y="194" width="22" height="16" className="fill-[var(--dg-accent,#2563eb)]" />
+              <rect x="158" y="194" width="110" height="16" className="fill-current" opacity="0.55" />
+              <rect x="268" y="194" width="212" height="16" className="fill-current" opacity="0.32" />
+              <rect x="480" y="194" width="13" height="16" className="fill-current" opacity="0.18" />
+              <text x="524" y="206" className="fill-current text-[9px] opacity-70">
+                30,726 total &middot; 1,794 critical
+              </text>
+            </svg>
+            <figcaption className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+              The gap that motivates distroless: node:22 reports 30,726 total findings (1,794 critical) while
+              node:22-alpine reports 306 (23 critical); golang:1.23 reports 18,152 (568 critical) against 379
+              (23 critical) for golang:1.23-alpine. busybox:1.37 &mdash; not a distroless image, but the
+              closest thing in this data set to a near-empty runtime &mdash; reports 2. Almost all of that
+              surface is OS userland and build tooling that the runtime never executes, which is exactly what
+              a distroless final stage drops. Note the floor: alpine:3.20 by itself still reports 301, so
+              going minimal shrinks the surface by orders of magnitude without ever reaching zero. Bar length
+              is linear in total findings, so the smallest bars are only a few pixels wide &mdash; exact
+              totals are printed at right. The four rated buckets do not always add up to the total because
+              some advisories carry no CVSS severity; that remainder is the unfilled part of each bar. The
+              busybox:1.37 scan was partial &mdash; its runtime package inventory was unavailable, so matching
+              fell back to heuristics. busybox genuinely is minimal, but treat 2 as a floor rather than a
+              verified complete count.
+            </figcaption>
+          </figure>
         </section>
 
         <section className="grid gap-3">

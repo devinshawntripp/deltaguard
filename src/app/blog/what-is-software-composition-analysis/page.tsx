@@ -102,6 +102,10 @@ const faqJsonLd = {
   ],
 };
 
+const SCA_INPUTS = ["Container image", "Binary / archive", "Lockfile / source tree"];
+const SCA_SOURCES = ["NVD", "OSV", "GHSA", "Vendor"];
+const SCA_OUTPUTS = ["CVE findings", "License issues", "SBOM export"];
+
 export default function Page() {
   if (!isPublished({ publishDate: PUBLISH_DATE })) notFound();
   return (
@@ -217,6 +221,349 @@ export default function Page() {
             you miss every CVE in it; consult one database instead of several and you inherit that
             database&apos;s blind spots.
           </p>
+          <figure className="surface-card p-4 overflow-x-auto">
+            <svg
+              viewBox="0 0 700 270"
+              className="w-full"
+              style={{ maxWidth: "700px" }}
+              role="img"
+              aria-label="The SCA pipeline: an artifact or source tree is turned into a component inventory, that single inventory is then matched against advisory databases such as NVD, OSV, GHSA and vendor feeds and separately checked against license data, and the results are reported as CVE findings, license issues and an SBOM export."
+            >
+              <title>
+                The SCA pipeline: artifact to component inventory, then advisory matching and
+                license checking off the same inventory, then reporting as CVE findings, license
+                issues and an SBOM.
+              </title>
+              <text x="8" y="20" className="fill-current" fontSize="11" fontWeight="600">
+                One inventory, two checks, three outputs
+              </text>
+
+              {/* Advisory and license data feeding the matching step */}
+              <text
+                x="486"
+                y="42"
+                textAnchor="middle"
+                className="fill-current"
+                fontSize="9"
+                opacity="0.65"
+              >
+                Advisory + license data
+              </text>
+              {SCA_SOURCES.map((source, i) => (
+                <g key={source}>
+                  <rect
+                    x={350 + i * 70}
+                    y="48"
+                    width="62"
+                    height="22"
+                    rx="6"
+                    className="fill-black/[.04] dark:fill-white/[.06] stroke-black/10 dark:stroke-white/10"
+                    strokeWidth="1"
+                  />
+                  <text
+                    x={381 + i * 70}
+                    y="63"
+                    textAnchor="middle"
+                    className="fill-current"
+                    fontSize="9"
+                  >
+                    {source}
+                  </text>
+                </g>
+              ))}
+              <line
+                x1="486"
+                y1="72"
+                x2="486"
+                y2="86"
+                className="stroke-current"
+                strokeWidth="1.5"
+                opacity="0.35"
+              />
+              <polygon points="481,86 491,86 486,94" className="fill-current" opacity="0.35" />
+
+              {/* Inputs */}
+              <rect
+                x="8"
+                y="94"
+                width="132"
+                height="110"
+                rx="10"
+                className="fill-black/[.02] dark:fill-white/[.03] stroke-black/10 dark:stroke-white/10"
+                strokeWidth="1"
+              />
+              <text
+                x="74"
+                y="112"
+                textAnchor="middle"
+                className="fill-current"
+                fontSize="10"
+                fontWeight="600"
+              >
+                What you scan
+              </text>
+              {SCA_INPUTS.map((input, i) => (
+                <g key={input}>
+                  <rect
+                    x="16"
+                    y={120 + i * 28}
+                    width="116"
+                    height="22"
+                    rx="6"
+                    className="fill-black/[.05] dark:fill-white/[.08] stroke-black/10 dark:stroke-white/10"
+                    strokeWidth="1"
+                  />
+                  <text
+                    x="74"
+                    y={135 + i * 28}
+                    textAnchor="middle"
+                    className="fill-current"
+                    fontSize="8.5"
+                  >
+                    {input}
+                  </text>
+                </g>
+              ))}
+              <line
+                x1="142"
+                y1="155"
+                x2="158"
+                y2="155"
+                className="stroke-current"
+                strokeWidth="1.5"
+                opacity="0.35"
+              />
+              <polygon points="158,150 167,155 158,160" className="fill-current" opacity="0.35" />
+
+              {/* Step 1 - inventory */}
+              <rect
+                x="170"
+                y="120"
+                width="150"
+                height="80"
+                rx="10"
+                className="fill-[var(--dg-accent,#2563eb)]/[.06] stroke-[var(--dg-accent,#2563eb)]"
+                strokeWidth="1.5"
+              />
+              <text
+                x="245"
+                y="142"
+                textAnchor="middle"
+                className="fill-current"
+                fontSize="10.5"
+                fontWeight="600"
+              >
+                1. Build inventory
+              </text>
+              <text
+                x="245"
+                y="160"
+                textAnchor="middle"
+                className="fill-current"
+                fontSize="8.5"
+                opacity="0.7"
+              >
+                What is actually present:
+              </text>
+              <text
+                x="245"
+                y="173"
+                textAnchor="middle"
+                className="fill-current"
+                fontSize="8.5"
+                opacity="0.7"
+              >
+                name, version, and a
+              </text>
+              <text
+                x="245"
+                y="186"
+                textAnchor="middle"
+                className="fill-current"
+                fontSize="8.5"
+                opacity="0.7"
+              >
+                coordinate per component
+              </text>
+
+              {/* Split from the inventory into both checks */}
+              <polyline
+                points="320,160 334,160 334,132 346,132"
+                className="stroke-current"
+                strokeWidth="1.5"
+                fill="none"
+                opacity="0.35"
+              />
+              <polyline
+                points="334,160 334,222 346,222"
+                className="stroke-current"
+                strokeWidth="1.5"
+                fill="none"
+                opacity="0.35"
+              />
+              <polygon points="346,127 355,132 346,137" className="fill-current" opacity="0.35" />
+              <polygon points="346,217 355,222 346,227" className="fill-current" opacity="0.35" />
+
+              {/* Step 2 - advisory match */}
+              <rect
+                x="357"
+                y="94"
+                width="165"
+                height="76"
+                rx="10"
+                className="fill-black/[.04] dark:fill-white/[.06] stroke-black/10 dark:stroke-white/10"
+                strokeWidth="1"
+              />
+              <text
+                x="439"
+                y="115"
+                textAnchor="middle"
+                className="fill-current"
+                fontSize="10.5"
+                fontWeight="600"
+              >
+                2. Match advisories
+              </text>
+              <text
+                x="439"
+                y="133"
+                textAnchor="middle"
+                className="fill-current"
+                fontSize="8.5"
+                opacity="0.7"
+              >
+                Every component version
+              </text>
+              <text
+                x="439"
+                y="146"
+                textAnchor="middle"
+                className="fill-current"
+                fontSize="8.5"
+                opacity="0.7"
+              >
+                against every source
+              </text>
+              <text
+                x="439"
+                y="159"
+                textAnchor="middle"
+                className="fill-current"
+                fontSize="8.5"
+                opacity="0.7"
+              >
+                you consult
+              </text>
+
+              {/* Step 3 - license check */}
+              <rect
+                x="357"
+                y="190"
+                width="165"
+                height="64"
+                rx="10"
+                className="fill-black/[.04] dark:fill-white/[.06] stroke-black/10 dark:stroke-white/10"
+                strokeWidth="1"
+              />
+              <text
+                x="439"
+                y="211"
+                textAnchor="middle"
+                className="fill-current"
+                fontSize="10.5"
+                fontWeight="600"
+              >
+                3. Check licenses
+              </text>
+              <text
+                x="439"
+                y="229"
+                textAnchor="middle"
+                className="fill-current"
+                fontSize="8.5"
+                opacity="0.7"
+              >
+                The same inventory against
+              </text>
+              <text
+                x="439"
+                y="242"
+                textAnchor="middle"
+                className="fill-current"
+                fontSize="8.5"
+                opacity="0.7"
+              >
+                obligations and conflicts
+              </text>
+
+              {/* Both checks converge on the report */}
+              <polyline
+                points="522,132 537,132 537,172 548,172"
+                className="stroke-current"
+                strokeWidth="1.5"
+                fill="none"
+                opacity="0.35"
+              />
+              <polyline
+                points="522,222 537,222 537,172"
+                className="stroke-current"
+                strokeWidth="1.5"
+                fill="none"
+                opacity="0.35"
+              />
+              <polygon points="548,167 557,172 548,177" className="fill-current" opacity="0.35" />
+
+              {/* Step 4 - report */}
+              <rect
+                x="559"
+                y="110"
+                width="133"
+                height="124"
+                rx="10"
+                className="fill-black/[.02] dark:fill-white/[.03] stroke-black/10 dark:stroke-white/10"
+                strokeWidth="1"
+              />
+              <text
+                x="625"
+                y="130"
+                textAnchor="middle"
+                className="fill-current"
+                fontSize="10.5"
+                fontWeight="600"
+              >
+                4. Report
+              </text>
+              {SCA_OUTPUTS.map((output, i) => (
+                <g key={output}>
+                  <rect
+                    x="567"
+                    y={140 + i * 28}
+                    width="117"
+                    height="22"
+                    rx="6"
+                    className="fill-black/[.05] dark:fill-white/[.08] stroke-black/10 dark:stroke-white/10"
+                    strokeWidth="1"
+                  />
+                  <text
+                    x="625"
+                    y={155 + i * 28}
+                    textAnchor="middle"
+                    className="fill-current"
+                    fontSize="8.5"
+                  >
+                    {output}
+                  </text>
+                </g>
+              ))}
+            </svg>
+            <figcaption className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+              Structural diagram of the SCA pipeline described above. Note that steps 2 and 3 both
+              read the <em>same</em> component inventory produced in step 1 &mdash; which is why a
+              component missed during inventory is invisible to both the vulnerability matching and
+              the license analysis, and why the SBOM and the findings always describe the same set
+              of parts. No counts or timings are implied.
+            </figcaption>
+          </figure>
         </section>
 
         <section className="grid gap-3">

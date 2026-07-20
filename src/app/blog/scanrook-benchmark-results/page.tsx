@@ -265,6 +265,230 @@ export default function ScanRookBenchmarkResultsPage() {
           </p>
         </section>
 
+        <section className="grid gap-3">
+          <h2 className="text-xl font-semibold tracking-tight">
+            Base Image Choice Moves the Number More Than Tool Choice
+          </h2>
+          <p className="text-sm muted">
+            The table above compares scanners against each other. A separate
+            question matters just as much in practice: how much does the base
+            image you pick change the size of your findings list? We scanned
+            five popular application images in both their default
+            Debian/glibc form and their Alpine variant, and charted the total
+            finding counts side by side.
+          </p>
+          <figure className="grid gap-2 rounded-lg border border-black/10 dark:border-white/10 p-4 overflow-x-auto">
+            <svg
+              viewBox="0 0 600 396"
+              className="w-full"
+              style={{ minWidth: "520px" }}
+              role="img"
+              aria-label="Grouped bar chart comparing total ScanRook findings for five container images in their default Debian variant versus their Alpine variant. nginx:1.27 has 2,952 findings versus 619 for nginx:1.27-alpine; postgres:17 has 2,983 versus 410 for postgres:17-alpine; node:22 has 30,726 versus 306 for node:22-alpine; python:3.12 has 31,590 versus 404 for python:3.12-alpine; redis:7 has 1,399 versus 299 for redis:7-alpine."
+            >
+              <title>
+                Total findings: default Debian-based image tags versus their
+                Alpine variants
+              </title>
+
+              {/* Legend */}
+              <g>
+                <rect
+                  x="0"
+                  y="6"
+                  width="10"
+                  height="10"
+                  rx="2"
+                  className="fill-current opacity-45"
+                />
+                <text
+                  x="16"
+                  y="15"
+                  className="fill-current opacity-80"
+                  fontSize="10"
+                >
+                  Default (Debian/glibc) tag
+                </text>
+                <rect
+                  x="190"
+                  y="6"
+                  width="10"
+                  height="10"
+                  rx="2"
+                  className="fill-[var(--dg-accent,#2563eb)]"
+                />
+                <text
+                  x="206"
+                  y="15"
+                  className="fill-current opacity-80"
+                  fontSize="10"
+                >
+                  Alpine variant
+                </text>
+              </g>
+
+              {[
+                {
+                  base: "nginx",
+                  fullTag: "nginx:1.27",
+                  fullTotal: "2,952",
+                  fullWidth: 40,
+                  alpineTag: "nginx:1.27-alpine",
+                  alpineTotal: "619",
+                  alpineWidth: 8,
+                },
+                {
+                  base: "postgres",
+                  fullTag: "postgres:17",
+                  fullTotal: "2,983",
+                  fullWidth: 41,
+                  alpineTag: "postgres:17-alpine",
+                  alpineTotal: "410",
+                  alpineWidth: 6,
+                },
+                {
+                  base: "node",
+                  fullTag: "node:22",
+                  fullTotal: "30,726",
+                  fullWidth: 418,
+                  alpineTag: "node:22-alpine",
+                  alpineTotal: "306",
+                  alpineWidth: 4,
+                },
+                {
+                  base: "python",
+                  fullTag: "python:3.12",
+                  fullTotal: "31,590",
+                  fullWidth: 430,
+                  alpineTag: "python:3.12-alpine",
+                  alpineTotal: "404",
+                  alpineWidth: 6,
+                },
+                {
+                  base: "redis",
+                  fullTag: "redis:7",
+                  fullTotal: "1,399",
+                  fullWidth: 19,
+                  alpineTag: "redis:7-alpine",
+                  alpineTotal: "299",
+                  alpineWidth: 4,
+                },
+              ].map((row, i) => {
+                const y = 40 + i * 70;
+                return (
+                  <g key={row.base}>
+                    <text
+                      x="0"
+                      y={y + 22}
+                      className="fill-current opacity-80"
+                      fontSize="10"
+                      fontFamily="monospace"
+                    >
+                      {row.base}
+                    </text>
+                    <rect
+                      x="110"
+                      y={y}
+                      width={row.fullWidth}
+                      height="13"
+                      rx="2"
+                      className="fill-current opacity-45"
+                    />
+                    <text
+                      x={115 + row.fullWidth}
+                      y={y + 11}
+                      className="fill-current opacity-70"
+                      fontSize="9"
+                    >
+                      {row.fullTag} &middot; {row.fullTotal}
+                    </text>
+                    <rect
+                      x="110"
+                      y={y + 19}
+                      width={row.alpineWidth}
+                      height="13"
+                      rx="2"
+                      className="fill-[var(--dg-accent,#2563eb)]"
+                    />
+                    <text
+                      x={115 + row.alpineWidth}
+                      y={y + 30}
+                      className="fill-current opacity-70"
+                      fontSize="9"
+                    >
+                      {row.alpineTag} &middot; {row.alpineTotal}
+                    </text>
+                  </g>
+                );
+              })}
+            </svg>
+            <figcaption className="text-xs text-gray-500 dark:text-gray-400">
+              Total findings per image, linear scale (bar length is
+              proportional to the count, so the Alpine bars really are that
+              small). Source: ScanRook v1.14.2 warm-cache scans of the tags
+              shown, generated 2026-07-04. These are total findings across all
+              severities, not the unique-CVE counts used in the tool-comparison
+              table above, and they were produced by a later scanner version --
+              compare them to each other, not to the table.
+            </figcaption>
+          </figure>
+          <p className="text-sm muted">
+            The pattern is consistent and it is not subtle. Switching{" "}
+            <code className="text-xs rounded bg-black/[.06] dark:bg-white/[.06] px-1.5 py-0.5">
+              python:3.12
+            </code>{" "}
+            to{" "}
+            <code className="text-xs rounded bg-black/[.06] dark:bg-white/[.06] px-1.5 py-0.5">
+              python:3.12-alpine
+            </code>{" "}
+            takes the total from 31,590 findings to 404, and the critical count
+            from 1,875 to 38. For{" "}
+            <code className="text-xs rounded bg-black/[.06] dark:bg-white/[.06] px-1.5 py-0.5">
+              node:22
+            </code>{" "}
+            it is 30,726 down to 306 total, and 1,794 down to 23 critical. The
+            reason is surface area: the default{" "}
+            <code className="text-xs rounded bg-black/[.06] dark:bg-white/[.06] px-1.5 py-0.5">
+              node
+            </code>{" "}
+            and{" "}
+            <code className="text-xs rounded bg-black/[.06] dark:bg-white/[.06] px-1.5 py-0.5">
+              python
+            </code>{" "}
+            images ship a full Debian userland plus a build toolchain, so every
+            one of those packages is eligible for an advisory match. The
+            Alpine variants ship musl and a handful of BusyBox applets.
+          </p>
+          <p className="text-sm muted">
+            The gap narrows where the base is already lean. Between{" "}
+            <code className="text-xs rounded bg-black/[.06] dark:bg-white/[.06] px-1.5 py-0.5">
+              redis:7
+            </code>{" "}
+            (1,399 findings, 114 critical) and{" "}
+            <code className="text-xs rounded bg-black/[.06] dark:bg-white/[.06] px-1.5 py-0.5">
+              redis:7-alpine
+            </code>{" "}
+            (299 findings, 20 critical) the gap is a fraction of what it is on
+            node or python. Alpine is also not vulnerability-free: the critical
+            findings in{" "}
+            <code className="text-xs rounded bg-black/[.06] dark:bg-white/[.06] px-1.5 py-0.5">
+              redis:7-alpine
+            </code>{" "}
+            land on{" "}
+            <code className="text-xs rounded bg-black/[.06] dark:bg-white/[.06] px-1.5 py-0.5">
+              busybox-binsh
+            </code>{" "}
+            (CVE-2021-42377, CVE-2022-48174, CVE-2016-2148) and{" "}
+            <code className="text-xs rounded bg-black/[.06] dark:bg-white/[.06] px-1.5 py-0.5">
+              libcrypto3
+            </code>{" "}
+            (CVE-2021-3711, CVE-2022-2274). The takeaway is not &ldquo;Alpine
+            fixes security&rdquo; -- it is that most of what a scanner reports
+            on a default image is inherited from the base layer, so the cheapest
+            remediation available to you is usually a smaller base, not a
+            per-CVE triage marathon.
+          </p>
+        </section>
+
         <section className="grid gap-2">
           <h2 className="text-xl font-semibold tracking-tight">
             The Value of EPSS and KEV Enrichment

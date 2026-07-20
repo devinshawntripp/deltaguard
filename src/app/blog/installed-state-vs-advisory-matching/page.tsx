@@ -206,6 +206,143 @@ export default function InstalledStateVsAdvisoryPage() {
           </p>
         </section>
 
+        <figure className="grid gap-3">
+          <figcaption className="text-sm font-semibold">
+            How the detection method decides the confidence tier
+          </figcaption>
+          <div className="overflow-x-auto">
+            <svg
+              viewBox="0 0 800 280"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              className="w-full min-w-[640px]"
+              role="img"
+              aria-label="Flow diagram: an artifact is inspected either by advisory matching on file paths or by reading package manager databases; both paths are matched against advisory data, and the detection method determines whether the finding is labelled HeuristicUnverified or ConfirmedInstalled."
+            >
+              <title>
+                Detection method to confidence tier flow
+              </title>
+              <rect
+                width="800"
+                height="280"
+                rx="16"
+                className="fill-black/[.02] dark:fill-white/[.02]"
+              />
+
+              {/* Artifact */}
+              <rect
+                x="16"
+                y="120"
+                width="124"
+                height="60"
+                rx="10"
+                className="fill-black/[.05] dark:fill-white/[.08] stroke-black/10 dark:stroke-white/10"
+                strokeWidth="1"
+              />
+              <text x="78" y="146" textAnchor="middle" className="fill-current" fontSize="11" fontWeight="600">Artifact</text>
+              <text x="78" y="163" textAnchor="middle" className="fill-current" fontSize="9" opacity="0.7">image, tar, or tree</text>
+
+              {/* Artifact -> paths */}
+              <polyline points="140,150 157,150 157,80 169,80" className="stroke-current" strokeWidth="1.5" fill="none" opacity="0.4" />
+              <polygon points="169,75 175,80 169,85" className="fill-current" opacity="0.4" />
+              <polyline points="140,150 157,150 157,220 169,220" className="stroke-current" strokeWidth="1.5" fill="none" opacity="0.4" />
+              <polygon points="169,215 175,220 169,225" className="fill-current" opacity="0.4" />
+
+              {/* Path A: advisory matching */}
+              <rect
+                x="175"
+                y="40"
+                width="215"
+                height="80"
+                rx="10"
+                className="fill-black/[.05] dark:fill-white/[.08] stroke-black/10 dark:stroke-white/10"
+                strokeWidth="1"
+              />
+              <text x="282" y="66" textAnchor="middle" className="fill-current" fontSize="12" fontWeight="600">Advisory matching</text>
+              <text x="282" y="86" textAnchor="middle" className="fill-current" fontSize="9" opacity="0.7">lock files, manifests, file paths</text>
+              <text x="282" y="102" textAnchor="middle" className="fill-current" fontSize="9" opacity="0.7">seen anywhere in the layer stack</text>
+
+              {/* Path B: installed-state */}
+              <rect
+                x="175"
+                y="180"
+                width="215"
+                height="80"
+                rx="10"
+                className="fill-black/[.05] dark:fill-white/[.08] stroke-black/10 dark:stroke-white/10"
+                strokeWidth="1"
+              />
+              <text x="282" y="206" textAnchor="middle" className="fill-current" fontSize="12" fontWeight="600">Installed-state read</text>
+              <text x="282" y="226" textAnchor="middle" className="fill-current" fontSize="9" opacity="0.7">rpm / apk / dpkg / pacman database</text>
+              <text x="282" y="242" textAnchor="middle" className="fill-current" fontSize="9" opacity="0.7">in the final merged filesystem</text>
+
+              {/* Paths -> enrichment */}
+              <polyline points="390,80 407,80 407,140 419,140" className="stroke-current" strokeWidth="1.5" fill="none" opacity="0.4" />
+              <polygon points="419,135 425,140 419,145" className="fill-current" opacity="0.4" />
+              <polyline points="390,220 407,220 407,160 419,160" className="stroke-current" strokeWidth="1.5" fill="none" opacity="0.4" />
+              <polygon points="419,155 425,160 419,165" className="fill-current" opacity="0.4" />
+
+              {/* Enrichment */}
+              <rect
+                x="425"
+                y="110"
+                width="150"
+                height="80"
+                rx="10"
+                className="stroke-[var(--dg-accent,#2563eb)]"
+                strokeWidth="1.5"
+                fill="none"
+              />
+              <rect x="425" y="110" width="150" height="80" rx="10" className="fill-[var(--dg-accent,#2563eb)]" opacity="0.06" />
+              <text x="500" y="136" textAnchor="middle" className="fill-current" fontSize="12" fontWeight="600">Advisory match</text>
+              <text x="500" y="156" textAnchor="middle" className="fill-current" fontSize="9" opacity="0.7">name + version against</text>
+              <text x="500" y="172" textAnchor="middle" className="fill-current" fontSize="9" opacity="0.7">OSV, NVD, EPSS, KEV</text>
+
+              {/* Enrichment -> tiers */}
+              <polyline points="575,140 592,140 592,80 604,80" className="stroke-current" strokeWidth="1.5" fill="none" opacity="0.4" />
+              <polygon points="604,75 610,80 604,85" className="fill-current" opacity="0.4" />
+              <polyline points="575,160 592,160 592,220 604,220" className="stroke-current" strokeWidth="1.5" fill="none" opacity="0.4" />
+              <polygon points="604,215 610,220 604,225" className="fill-current" opacity="0.4" />
+
+              {/* Tier: HeuristicUnverified */}
+              <rect
+                x="610"
+                y="40"
+                width="174"
+                height="80"
+                rx="10"
+                className="fill-black/[.05] dark:fill-white/[.08] stroke-black/10 dark:stroke-white/10"
+                strokeWidth="1"
+                strokeDasharray="4 3"
+              />
+              <text x="697" y="66" textAnchor="middle" className="fill-current" fontSize="11" fontWeight="600">HeuristicUnverified</text>
+              <text x="697" y="86" textAnchor="middle" className="fill-current" fontSize="9" opacity="0.7">may be real, but presence in</text>
+              <text x="697" y="102" textAnchor="middle" className="fill-current" fontSize="9" opacity="0.7">the final state is unconfirmed</text>
+
+              {/* Tier: ConfirmedInstalled */}
+              <rect
+                x="610"
+                y="180"
+                width="174"
+                height="80"
+                rx="10"
+                className="fill-[var(--dg-accent,#2563eb)]/10 stroke-[var(--dg-accent,#2563eb)]"
+                strokeWidth="1.5"
+              />
+              <text x="697" y="206" textAnchor="middle" className="fill-current" fontSize="11" fontWeight="600">ConfirmedInstalled</text>
+              <text x="697" y="226" textAnchor="middle" className="fill-current" fontSize="9" opacity="0.7">the package manager itself</text>
+              <text x="697" y="242" textAnchor="middle" className="fill-current" fontSize="9" opacity="0.7">records it as installed</text>
+            </svg>
+          </div>
+          <p className="text-xs muted">
+            Structural diagram of the pipeline described in this article. Both
+            paths reach the same advisory data; what differs is the evidence
+            behind the package inventory, and that evidence is what determines
+            the confidence tier attached to each finding. No counts or accuracy
+            rates are implied.
+          </p>
+        </figure>
+
         <section className="grid gap-2">
           <h2 className="text-xl font-semibold tracking-tight">
             Why This Matters in Practice

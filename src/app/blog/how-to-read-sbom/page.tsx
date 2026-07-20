@@ -121,6 +121,44 @@ const faqJsonLd = {
   ],
 };
 
+const intakeChecklist: { group: string; items: string[] }[] = [
+  {
+    group: "Identity and provenance",
+    items: [
+      "The document identifies the exact artifact you received — a digest or hash on the primary component, not only a product name and marketing version.",
+      "A creation timestamp is present (metadata.timestamp in CycloneDX, creationInfo.created in SPDX) and is close to the build date of the artifact, not months earlier.",
+      "The generating tool and its version are recorded (metadata.tools, creationInfo.creators), so you can judge what that generator was capable of seeing.",
+      "The SBOM reached you through a channel you trust — a signed attestation, or at minimum the same authenticated source as the artifact itself.",
+    ],
+  },
+  {
+    group: "Completeness you can verify in a minute",
+    items: [
+      "Components with an empty, placeholder, or NOASSERTION version: anything without a resolvable version cannot be matched against advisory data at all.",
+      "Components with no purl and no CPE: a free-text name alone will silently fail to match, and the failure looks exactly like a clean result.",
+      "Operating-system packages are present, not only application-language dependencies — an image SBOM listing only npm or PyPI entries describes a fraction of what ships.",
+      "Spot-check a component you know is transitive; if only direct dependencies appear, the inventory stops where most of the risk lives.",
+    ],
+  },
+  {
+    group: "Structure",
+    items: [
+      "A relationship graph exists at all — a dependencies array in CycloneDX, DEPENDS_ON relationships in SPDX — rather than a flat bag of components.",
+      "The root or primary component corresponds to the artifact under review, not to a parent product or an unrelated build.",
+      "Every referenced identifier resolves: dangling bom-ref or SPDXID references mean the tree cannot be walked programmatically.",
+    ],
+  },
+  {
+    group: "Fitness for the use you have in mind",
+    items: [
+      "The SBOM was generated from the built artifact rather than from source manifests alone; the two disagree more often than the sender expects.",
+      "You know how it will be regenerated — per release, or produced once and never refreshed.",
+      "License fields are populated, and you know how many are NOASSERTION before you promise anyone a license report.",
+      "If the sender claims a known CVE does not apply, that claim arrives as a VEX document you can process, not as prose in an email thread.",
+    ],
+  },
+];
+
 export default function HowToReadSBOMPage() {
   return (
     <main className="mx-auto max-w-3xl px-6 py-14 grid gap-6">
@@ -630,6 +668,59 @@ NET CHANGE: 0 (same component count)`}</code>
               </p>
             </div>
           </div>
+        </section>
+
+        {/* Intake review checklist */}
+        <section className="grid gap-3">
+          <h2 className="text-xl font-semibold tracking-tight">
+            Intake Checklist: Reviewing an SBOM Someone Hands You
+          </h2>
+          <p className="text-sm muted">
+            Reading an SBOM and accepting one are different jobs. When a vendor, an upstream
+            project, or another team sends you a document, these are the checks that decide whether
+            it is usable evidence or a file that merely looks like compliance.
+          </p>
+          <figure className="grid gap-3">
+            <div className="grid gap-5 rounded-xl border border-black/10 dark:border-white/10 bg-black/[.02] dark:bg-white/[.02] p-5">
+              {intakeChecklist.map((group) => (
+                <div key={group.group} className="grid gap-2">
+                  <h3 className="text-sm font-semibold">{group.group}</h3>
+                  <ul className="grid gap-2 list-none pl-0 m-0">
+                    {group.items.map((item) => (
+                      <li key={item} className="flex items-start gap-2.5 text-sm muted">
+                        <svg
+                          viewBox="0 0 16 16"
+                          width="14"
+                          height="14"
+                          aria-hidden="true"
+                          className="mt-1 shrink-0"
+                        >
+                          <rect
+                            x="1.5"
+                            y="1.5"
+                            width="13"
+                            height="13"
+                            rx="3.5"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                            opacity="0.45"
+                          />
+                        </svg>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+            <figcaption className="text-xs muted">
+              Acceptance checklist for a third-party SBOM, referencing the CycloneDX and SPDX fields
+              annotated earlier in this guide. Structural checks only &mdash; no thresholds or
+              scoring are implied, since an acceptable amount of missing data depends on what you
+              intend to do with the document.
+            </figcaption>
+          </figure>
         </section>
 
         {/* Practical tips */}

@@ -102,6 +102,47 @@ const faqJsonLd = {
   ],
 };
 
+const rolloutChecklist: { phase: string; items: string[] }[] = [
+  {
+    phase: "Phase 1 — Observe (before the gate has teeth)",
+    items: [
+      "Add the scan job with allow_failure: true so a finding never blocks anyone on day one.",
+      "Open a completed job and download report.json from the job page — if you cannot retrieve the artifact, the gate has no evidence trail.",
+      "Record a baseline of what the scan reports for each image you build, so you can tell an inherited base-image finding from something your change introduced.",
+      "Compare job duration on a cold cache versus a warm one, and decide whether the cache: block is pulling its weight on your runners.",
+    ],
+  },
+  {
+    phase: "Phase 2 — Prepare (decisions, not YAML)",
+    items: [
+      "Confirm your runners actually allow privileged mode; if they do not, switch to the registry-pull variant that skips the dind service entirely.",
+      "Store NVD_API_KEY as a masked and protected CI/CD variable, and check that protected-branch pipelines can still read it.",
+      "Agree the severity threshold with the team that will be blocked by it, in writing, before it is enforced.",
+      "Define the exception path: who approves a temporary waiver, where it is recorded, and when it expires.",
+      "Decide who watches scheduled-pipeline failures — a nightly job has no merge request author to notice it went red.",
+    ],
+  },
+  {
+    phase: "Phase 3 — Enforce",
+    items: [
+      "Remove allow_failure: true from the scan job.",
+      "Turn on Settings → Merge requests → Merge checks → Pipelines must succeed, or a red job stays advisory.",
+      "Set the report artifact expiry to match the scan history your audit or incident review actually needs.",
+      "Verify the scheduled pipeline is enabled and pointed at the default branch, not just the merge request trigger.",
+      "Run one deliberate failure — build an image you know is vulnerable — and confirm the merge button is genuinely blocked.",
+    ],
+  },
+  {
+    phase: "Phase 4 — Maintain",
+    items: [
+      "Re-baseline after every base image bump; a big swing in findings is expected there and should not be read as a regression.",
+      "Review open waivers on a fixed cadence and close the ones whose fix has since shipped.",
+      "Move the job into a shared include: project template once a second repository needs it, so the gate is defined in one place.",
+      "Re-check the pinned docker and dind image tags periodically — a pin that never moves is its own stale-dependency problem.",
+    ],
+  },
+];
+
 export default function Page() {
   if (!isPublished({ publishDate: PUBLISH_DATE })) notFound();
   return (
@@ -295,6 +336,53 @@ scan_image:
             scans against it, failing only on newly introduced CVEs. Run the full, ungated scan on
             the scheduled pipeline so nothing silently ages out of view.
           </p>
+        </section>
+
+        <section className="grid gap-3">
+          <h2 className="text-xl font-semibold tracking-tight">Rollout checklist: from first scan to enforced gate</h2>
+          <p className="text-sm muted">
+            The pipeline above is the easy half. Turning it into a gate people trust is a sequence,
+            not a switch &mdash; work through these in order and the enforcement day is uneventful:
+          </p>
+          <figure className="grid gap-3">
+            <div className="grid gap-5 rounded-xl border border-black/10 dark:border-white/10 bg-black/[.02] dark:bg-white/[.02] p-5">
+              {rolloutChecklist.map((group) => (
+                <div key={group.phase} className="grid gap-2">
+                  <h3 className="text-sm font-semibold">{group.phase}</h3>
+                  <ul className="grid gap-2 list-none pl-0 m-0">
+                    {group.items.map((item) => (
+                      <li key={item} className="flex items-start gap-2.5 text-sm muted">
+                        <svg
+                          viewBox="0 0 16 16"
+                          width="14"
+                          height="14"
+                          aria-hidden="true"
+                          className="mt-1 shrink-0"
+                        >
+                          <rect
+                            x="1.5"
+                            y="1.5"
+                            width="13"
+                            height="13"
+                            rx="3.5"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                            opacity="0.45"
+                          />
+                        </svg>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+            <figcaption className="text-xs muted">
+              Phased rollout checklist for the GitLab CI scan job described above. Operational
+              guidance, not scan data &mdash; no finding counts or timings are implied.
+            </figcaption>
+          </figure>
         </section>
 
         <section className="grid gap-3">

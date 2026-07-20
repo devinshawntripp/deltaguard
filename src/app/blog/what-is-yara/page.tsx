@@ -129,6 +129,226 @@ export default function WhatIsYaraPage() {
             If the condition is satisfied, the rule fires and the match is
             reported along with the rule&apos;s metadata.
           </p>
+          <figure className="surface-card p-4 overflow-x-auto">
+            <svg
+              viewBox="0 0 700 250"
+              className="w-full"
+              style={{ maxWidth: "700px" }}
+              role="img"
+              aria-label="How a YARA rule reaches a verdict. A rule is made of a meta section, a strings section listing patterns, and a condition. The engine scans every byte of the target file and records which of the rule's strings matched. The condition is then evaluated over those results, and only if it is true does the rule fire and produce a finding containing the rule name, file path, and matched strings."
+            >
+              <title>
+                How a YARA rule reaches a verdict: rule sections, per-string scan results, condition
+                evaluation, and the resulting finding.
+              </title>
+
+              <text x="93" y="20" textAnchor="middle" className="fill-current" fontSize="10" fontWeight="600">
+                1. The rule
+              </text>
+              <text x="278" y="20" textAnchor="middle" className="fill-current" fontSize="10" fontWeight="600">
+                2. Scan the file
+              </text>
+              <text x="455" y="20" textAnchor="middle" className="fill-current" fontSize="10" fontWeight="600">
+                3. Evaluate
+              </text>
+              <text x="623" y="20" textAnchor="middle" className="fill-current" fontSize="10" fontWeight="600">
+                4. Outcome
+              </text>
+
+              {/* 1. Rule anatomy */}
+              <rect
+                x="8"
+                y="30"
+                width="170"
+                height="185"
+                rx="10"
+                className="fill-black/[.02] dark:fill-white/[.03] stroke-black/10 dark:stroke-white/10"
+                strokeWidth="1"
+              />
+              <text x="93" y="47" textAnchor="middle" className="fill-current" fontSize="9" opacity="0.7">
+                rule example_rule &#123; &hellip; &#125;
+              </text>
+              <rect
+                x="16"
+                y="54"
+                width="154"
+                height="34"
+                rx="6"
+                className="fill-black/[.05] dark:fill-white/[.08] stroke-black/10 dark:stroke-white/10"
+                strokeWidth="1"
+              />
+              <text x="24" y="69" className="fill-current" fontSize="9" fontWeight="600">
+                meta:
+              </text>
+              <text x="24" y="82" className="fill-current" fontSize="8" opacity="0.7">
+                author &middot; description &middot; severity
+              </text>
+              <rect
+                x="16"
+                y="94"
+                width="154"
+                height="66"
+                rx="6"
+                className="fill-black/[.05] dark:fill-white/[.08] stroke-black/10 dark:stroke-white/10"
+                strokeWidth="1"
+              />
+              <text x="24" y="109" className="fill-current" fontSize="9" fontWeight="600">
+                strings:
+              </text>
+              <text x="24" y="123" className="fill-current" fontSize="8" opacity="0.7">
+                $a &mdash; a text pattern
+              </text>
+              <text x="24" y="136" className="fill-current" fontSize="8" opacity="0.7">
+                $b &mdash; a hex byte sequence
+              </text>
+              <text x="24" y="149" className="fill-current" fontSize="8" opacity="0.7">
+                $c &mdash; a regular expression
+              </text>
+              <rect
+                x="16"
+                y="166"
+                width="154"
+                height="38"
+                rx="6"
+                className="fill-[var(--dg-accent,#2563eb)]/[.08] stroke-[var(--dg-accent,#2563eb)]"
+                strokeWidth="1.5"
+              />
+              <text x="24" y="181" className="fill-current" fontSize="9" fontWeight="600">
+                condition:
+              </text>
+              <text x="24" y="195" className="fill-current" fontSize="8" opacity="0.7">
+                e.g. &ldquo;2 of them&rdquo;
+              </text>
+
+              <line x1="180" y1="95" x2="192" y2="95" className="stroke-current" strokeWidth="1.5" opacity="0.35" />
+              <polygon points="192,90 199,95 192,100" className="fill-current" opacity="0.35" />
+
+              {/* 2. Scan results */}
+              <rect
+                x="200"
+                y="30"
+                width="155"
+                height="130"
+                rx="10"
+                className="fill-black/[.02] dark:fill-white/[.03] stroke-black/10 dark:stroke-white/10"
+                strokeWidth="1"
+              />
+              <text x="278" y="50" textAnchor="middle" className="fill-current" fontSize="9" opacity="0.7">
+                every byte of the file
+              </text>
+              <rect
+                x="208"
+                y="60"
+                width="139"
+                height="24"
+                rx="6"
+                className="fill-[var(--dg-accent,#2563eb)]/[.10] stroke-[var(--dg-accent,#2563eb)]"
+                strokeWidth="1.5"
+              />
+              <text x="277" y="76" textAnchor="middle" className="fill-current" fontSize="9">
+                $a matched
+              </text>
+              <rect
+                x="208"
+                y="92"
+                width="139"
+                height="24"
+                rx="6"
+                className="fill-[var(--dg-accent,#2563eb)]/[.10] stroke-[var(--dg-accent,#2563eb)]"
+                strokeWidth="1.5"
+              />
+              <text x="277" y="108" textAnchor="middle" className="fill-current" fontSize="9">
+                $b matched
+              </text>
+              <rect
+                x="208"
+                y="124"
+                width="139"
+                height="24"
+                rx="6"
+                className="fill-black/[.05] dark:fill-white/[.08] stroke-black/10 dark:stroke-white/10"
+                strokeWidth="1"
+                strokeDasharray="3 2"
+              />
+              <text x="277" y="140" textAnchor="middle" className="fill-current" fontSize="9" opacity="0.6">
+                $c not found
+              </text>
+
+              <line x1="357" y1="95" x2="369" y2="95" className="stroke-current" strokeWidth="1.5" opacity="0.35" />
+              <polygon points="369,90 376,95 369,100" className="fill-current" opacity="0.35" />
+
+              {/* 3. Condition evaluation */}
+              <rect
+                x="377"
+                y="30"
+                width="155"
+                height="130"
+                rx="10"
+                className="fill-black/[.02] dark:fill-white/[.03] stroke-black/10 dark:stroke-white/10"
+                strokeWidth="1"
+              />
+              <text x="455" y="50" textAnchor="middle" className="fill-current" fontSize="9" opacity="0.7">
+                the condition, not the hits
+              </text>
+              <text x="455" y="78" textAnchor="middle" className="fill-current" fontSize="9.5">
+                matched: $a, $b
+              </text>
+              <text x="455" y="100" textAnchor="middle" className="fill-current" fontSize="9.5">
+                required: 2 of them
+              </text>
+              <text
+                x="455"
+                y="126"
+                textAnchor="middle"
+                className="fill-[var(--dg-accent,#2563eb)]"
+                fontSize="10.5"
+                fontWeight="600"
+              >
+                condition is true
+              </text>
+
+              <line x1="534" y1="95" x2="546" y2="95" className="stroke-current" strokeWidth="1.5" opacity="0.35" />
+              <polygon points="546,90 553,95 546,100" className="fill-current" opacity="0.35" />
+
+              {/* 4. Outcome */}
+              <rect
+                x="554"
+                y="30"
+                width="138"
+                height="130"
+                rx="10"
+                className="fill-[var(--dg-accent,#2563eb)]/[.06] stroke-[var(--dg-accent,#2563eb)]"
+                strokeWidth="1.5"
+              />
+              <text x="623" y="52" textAnchor="middle" className="fill-current" fontSize="10.5" fontWeight="600">
+                Rule fires
+              </text>
+              <text x="623" y="72" textAnchor="middle" className="fill-current" fontSize="8.5" opacity="0.7">
+                The finding records:
+              </text>
+              <text x="570" y="92" className="fill-current" fontSize="9">
+                &middot; rule name
+              </text>
+              <text x="570" y="110" className="fill-current" fontSize="9">
+                &middot; file path
+              </text>
+              <text x="570" y="128" className="fill-current" fontSize="9">
+                &middot; matched strings
+              </text>
+
+              <text x="8" y="238" className="fill-current" fontSize="9" opacity="0.65">
+                If the condition evaluates false, nothing is reported &mdash; matched strings alone
+                are not a finding.
+              </text>
+            </svg>
+            <figcaption className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+              Structural diagram of YARA&apos;s matching logic, using a three-string rule with a
+              &ldquo;2 of them&rdquo; condition as the worked example. The point it makes is that
+              the <em>condition</em> decides the verdict, not the raw number of string hits: the
+              same set of matches would produce no finding under a stricter condition such as
+              &ldquo;all of them.&rdquo;
+            </figcaption>
+          </figure>
         </section>
 
         <section className="grid gap-2">

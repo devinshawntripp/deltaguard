@@ -1,0 +1,32 @@
+[
+ {
+  "slug": "cve-database-comparison",
+  "enhancement": "comparison-table",
+  "scan_data": null,
+  "scan_meta": null
+ },
+ {
+  "slug": "understanding-nvd-and-cvss",
+  "enhancement": "comparison-table",
+  "scan_data": null,
+  "scan_meta": null
+ },
+ {
+  "slug": "cisa-kev-guide",
+  "enhancement": "comparison-table",
+  "scan_data": null,
+  "scan_meta": null
+ },
+ {
+  "slug": "epss-scores-explained",
+  "enhancement": "comparison-table",
+  "scan_data": null,
+  "scan_meta": null
+ },
+ {
+  "slug": "epss-vulnerability-prioritization",
+  "enhancement": "comparison-table",
+  "scan_data": null,
+  "scan_meta": null
+ }
+]

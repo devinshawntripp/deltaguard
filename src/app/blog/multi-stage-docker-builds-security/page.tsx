@@ -235,6 +235,95 @@ ENTRYPOINT ["/server"]`}</pre>
             covers the debugging and compatibility tradeoffs between these three options in more
             depth.
           </p>
+          <figure className="surface-card p-4 my-2 overflow-x-auto">
+            <p className="text-sm font-semibold mb-1">
+              Build stage vs runtime stage &mdash; ScanRook v1.14.2, 2026-07-04
+            </p>
+            <svg
+              viewBox="0 0 700 168"
+              className="w-full"
+              style={{ maxWidth: "700px" }}
+              role="img"
+              aria-label="Horizontal bar chart of total ScanRook findings per image: busybox 1.37 has 2, alpine 3.20 301, golang 1.23-alpine 379, golang 1.23 18,152"
+            >
+              <title>Horizontal bar chart of total ScanRook findings per image: busybox 1.37 has 2, alpine 3.20 301, golang 1.23-alpine 379, golang 1.23 18,152</title>
+              <g>
+                <rect x="0" y="10" width="10" height="10" rx="2" className="fill-[var(--dg-accent,#2563eb)]" />
+                <text x="14" y="19" className="fill-current text-[10px] opacity-80">
+                  Critical
+                </text>
+                <rect x="77" y="10" width="10" height="10" rx="2" className="fill-current" opacity="0.55" />
+                <text x="91" y="19" className="fill-current text-[10px] opacity-80">
+                  High
+                </text>
+                <rect x="132" y="10" width="10" height="10" rx="2" className="fill-current" opacity="0.32" />
+                <text x="146" y="19" className="fill-current text-[10px] opacity-80">
+                  Medium
+                </text>
+                <rect x="198" y="10" width="10" height="10" rx="2" className="fill-current" opacity="0.18" />
+                <text x="212" y="19" className="fill-current text-[10px] opacity-80">
+                  Low
+                </text>
+                <rect x="247" y="10" width="10" height="10" rx="2" className="fill-current" opacity="0.08" />
+                <text x="261" y="19" className="fill-current text-[10px] opacity-80">
+                  No severity assigned
+                </text>
+              </g>
+              <text x="0" y="56" className="fill-current text-[10px] font-mono opacity-80">
+                busybox:1.37
+              </text>
+              <rect x="136" y="44" width="2" height="16" rx="2" className="fill-current" opacity="0.08" />
+              <rect x="136" y="44" width="1" height="16" className="fill-current" opacity="0.32" />
+              <rect x="137" y="44" width="1" height="16" className="fill-current" opacity="0.18" />
+              <text x="524" y="56" className="fill-current text-[9px] opacity-70">
+                2 total &middot; 0 critical
+              </text>
+              <text x="0" y="86" className="fill-current text-[10px] font-mono opacity-80">
+                alpine:3.20
+              </text>
+              <rect x="136" y="74" width="6" height="16" rx="2" className="fill-current" opacity="0.08" />
+              <rect x="136" y="74" width="1" height="16" className="fill-[var(--dg-accent,#2563eb)]" />
+              <rect x="137" y="74" width="3" height="16" className="fill-current" opacity="0.55" />
+              <rect x="140" y="74" width="2" height="16" className="fill-current" opacity="0.32" />
+              <text x="524" y="86" className="fill-current text-[9px] opacity-70">
+                301 total &middot; 20 critical
+              </text>
+              <text x="0" y="116" className="fill-current text-[10px] font-mono opacity-80">
+                golang:1.23-alpine
+              </text>
+              <rect x="136" y="104" width="8" height="16" rx="2" className="fill-current" opacity="0.08" />
+              <rect x="136" y="104" width="1" height="16" className="fill-[var(--dg-accent,#2563eb)]" />
+              <rect x="137" y="104" width="4" height="16" className="fill-current" opacity="0.55" />
+              <rect x="141" y="104" width="3" height="16" className="fill-current" opacity="0.32" />
+              <text x="524" y="116" className="fill-current text-[9px] opacity-70">
+                379 total &middot; 23 critical
+              </text>
+              <text x="0" y="146" className="fill-current text-[10px] font-mono opacity-80">
+                golang:1.23
+              </text>
+              <rect x="136" y="134" width="380" height="16" rx="2" className="fill-current" opacity="0.08" />
+              <rect x="136" y="134" width="12" height="16" className="fill-[var(--dg-accent,#2563eb)]" />
+              <rect x="148" y="134" width="105" height="16" className="fill-current" opacity="0.55" />
+              <rect x="253" y="134" width="213" height="16" className="fill-current" opacity="0.32" />
+              <rect x="466" y="134" width="11" height="16" className="fill-current" opacity="0.18" />
+              <text x="524" y="146" className="fill-current text-[9px] opacity-70">
+                18,152 total &middot; 568 critical
+              </text>
+            </svg>
+            <figcaption className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+              This is what shipping your build stage costs: golang:1.23, the image you compile in, reports
+              18,152 total findings (568 critical). golang:1.23-alpine reports 379 (23 critical), alpine:3.20
+              reports 301 (20 critical), and busybox:1.37 reports 2. A multi-stage build does not fix a single
+              one of those CVEs &mdash; it decides which row you ship. The compiler, headers and package
+              manager stay in the builder, where they are never part of the running attack surface. Bar length
+              is linear in total findings, so the smallest bars are only a few pixels wide &mdash; exact
+              totals are printed at right. The four rated buckets do not always add up to the total because
+              some advisories carry no CVSS severity; that remainder is the unfilled part of each bar. The
+              busybox:1.37 scan was partial &mdash; its runtime package inventory was unavailable, so matching
+              fell back to heuristics. busybox genuinely is minimal, but treat 2 as a floor rather than a
+              verified complete count.
+            </figcaption>
+          </figure>
         </section>
 
         <section className="grid gap-3">

@@ -1,0 +1,42 @@
+[
+  {
+    "slug": "on-prem-vs-saas-scanning",
+    "enhancement": "comparison-table",
+    "added": "Eleven-row qualitative SaaS vs on-prem/self-hosted deployment comparison table (processing location, air-gap, residency, ops ownership, data updates, upgrade timing, cost shape, scaling, time to first scan, failure domain, audit evidence), scrollable, placed after the Operational Considerations section",
+    "numbers_source": "none (structural)",
+    "lines_added": 140,
+    "lines_removed": 0
+  },
+  {
+    "slug": "what-we-learned-from-black-duck",
+    "enhancement": "comparison-table",
+    "added": "Technique-level comparison table of the four license-detection methods (package metadata, curated databases, license-text pattern matching, snippet fingerprinting) by what they read, what they depend on, whether they catch package-less copied code, and their inherent limitation, placed after the layered-approach section",
+    "numbers_source": "none (structural)",
+    "lines_added": 124,
+    "lines_removed": 0
+  },
+  {
+    "slug": "open-source-license-compliance-guide",
+    "enhancement": "comparison-table",
+    "added": "License obligations table covering ten license families (permissive, Apache-2.0, MPL-2.0, LGPL-2.1/3.0, GPL-2.0/3.0, AGPL-3.0, SSPL-1.0, no-license) by copyleft scope, obligation trigger, source that must be made available, express patent grant, and attribution, placed after The License Landscape in 2026",
+    "numbers_source": "none (structural)",
+    "lines_added": 205,
+    "lines_removed": 0
+  },
+  {
+    "slug": "installed-state-vs-advisory-matching",
+    "enhancement": "diagram",
+    "added": "Inline SVG flow diagram showing the artifact splitting into the advisory-matching path and the installed-state read path, converging on advisory enrichment, and the detection method determining the HeuristicUnverified vs ConfirmedInstalled tier, placed after the Confidence Tiers section",
+    "numbers_source": "none (structural)",
+    "lines_added": 137,
+    "lines_removed": 0
+  },
+  {
+    "slug": "what-is-a-cve",
+    "enhancement": "diagram",
+    "added": "Inline SVG five-stage CVE lifecycle timeline (Discovery, Reserved, Published, Enriched, Matched) with an upstream vs your-environment ownership bracket, placed directly after The CVE lifecycle section",
+    "numbers_source": "none (structural)",
+    "lines_added": 77,
+    "lines_removed": 0
+  }
+]

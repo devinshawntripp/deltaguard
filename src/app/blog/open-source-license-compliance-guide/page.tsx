@@ -242,6 +242,211 @@ export default function LicenseComplianceGuidePage() {
           </p>
         </section>
 
+        {/* License Obligations At A Glance */}
+        <figure className="grid gap-3">
+          <figcaption className="text-sm font-semibold">
+            License obligations at a glance
+          </figcaption>
+          <p className="text-sm muted">
+            Knowing which license a component carries only helps once you know
+            what that license asks of you. This table summarises the obligation
+            structure of the license families you will actually encounter in a
+            scan, grouped by how far their copyleft reaches.
+          </p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[860px]" aria-label="Comparison of open-source license families by copyleft scope and obligations">
+              <thead>
+                <tr className="border-b border-black/10 dark:border-white/10">
+                  <th className="text-left py-2 pr-4 font-semibold align-bottom">
+                    License family
+                  </th>
+                  <th className="text-left py-2 pr-4 font-semibold align-bottom">
+                    Copyleft scope
+                  </th>
+                  <th className="text-left py-2 pr-4 font-semibold align-bottom">
+                    What triggers the obligation
+                  </th>
+                  <th className="text-left py-2 pr-4 font-semibold align-bottom">
+                    Source you must make available
+                  </th>
+                  <th className="text-left py-2 pr-4 font-semibold align-bottom">
+                    Express patent grant
+                  </th>
+                  <th className="text-left py-2 font-semibold align-bottom">
+                    Attribution required
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="muted align-top">
+                <tr className="border-b border-black/5 dark:border-white/5">
+                  <td className="py-2 pr-4">
+                    <strong>MIT, ISC, BSD-2/3-Clause</strong>
+                  </td>
+                  <td className="py-2 pr-4">None</td>
+                  <td className="py-2 pr-4">
+                    Distribution, for the notice requirement only
+                  </td>
+                  <td className="py-2 pr-4">None</td>
+                  <td className="py-2 pr-4">No</td>
+                  <td className="py-2">
+                    Yes -- retain copyright notice and license text
+                  </td>
+                </tr>
+                <tr className="border-b border-black/5 dark:border-white/5">
+                  <td className="py-2 pr-4">
+                    <strong>Apache-2.0</strong>
+                  </td>
+                  <td className="py-2 pr-4">None</td>
+                  <td className="py-2 pr-4">
+                    Distribution, for notice and change-statement requirements
+                  </td>
+                  <td className="py-2 pr-4">None</td>
+                  <td className="py-2 pr-4">
+                    Yes -- terminates on patent litigation over the work
+                  </td>
+                  <td className="py-2">
+                    Yes -- notices, license text, and propagation of any NOTICE
+                    file
+                  </td>
+                </tr>
+                <tr className="border-b border-black/5 dark:border-white/5">
+                  <td className="py-2 pr-4">
+                    <strong>MPL-2.0</strong>
+                  </td>
+                  <td className="py-2 pr-4">Per file</td>
+                  <td className="py-2 pr-4">
+                    Distributing the covered files, in source or binary form
+                  </td>
+                  <td className="py-2 pr-4">
+                    The MPL-covered files and your modifications to them -- not
+                    the rest of your codebase
+                  </td>
+                  <td className="py-2 pr-4">Yes</td>
+                  <td className="py-2">Yes</td>
+                </tr>
+                <tr className="border-b border-black/5 dark:border-white/5">
+                  <td className="py-2 pr-4">
+                    <strong>LGPL-2.1</strong>
+                  </td>
+                  <td className="py-2 pr-4">Per library</td>
+                  <td className="py-2 pr-4">
+                    Distributing a work that uses the library
+                  </td>
+                  <td className="py-2 pr-4">
+                    The library&apos;s source and your modifications to it; the
+                    larger work can stay proprietary if users can relink it
+                  </td>
+                  <td className="py-2 pr-4">No</td>
+                  <td className="py-2">Yes</td>
+                </tr>
+                <tr className="border-b border-black/5 dark:border-white/5">
+                  <td className="py-2 pr-4">
+                    <strong>LGPL-3.0</strong>
+                  </td>
+                  <td className="py-2 pr-4">Per library</td>
+                  <td className="py-2 pr-4">
+                    Distributing a work that uses the library
+                  </td>
+                  <td className="py-2 pr-4">
+                    Same as LGPL-2.1, with GPL-3.0&apos;s relinking and
+                    installation-information terms
+                  </td>
+                  <td className="py-2 pr-4">Yes -- via GPL-3.0 terms</td>
+                  <td className="py-2">Yes</td>
+                </tr>
+                <tr className="border-b border-black/5 dark:border-white/5">
+                  <td className="py-2 pr-4">
+                    <strong>GPL-2.0</strong>
+                  </td>
+                  <td className="py-2 pr-4">Whole derivative work</td>
+                  <td className="py-2 pr-4">
+                    Distribution -- not internal use, and not SaaS
+                  </td>
+                  <td className="py-2 pr-4">
+                    Complete corresponding source of the combined work, under
+                    GPL-2.0
+                  </td>
+                  <td className="py-2 pr-4">No</td>
+                  <td className="py-2">Yes</td>
+                </tr>
+                <tr className="border-b border-black/5 dark:border-white/5">
+                  <td className="py-2 pr-4">
+                    <strong>GPL-3.0</strong>
+                  </td>
+                  <td className="py-2 pr-4">Whole derivative work</td>
+                  <td className="py-2 pr-4">
+                    Distribution -- not internal use, and not SaaS
+                  </td>
+                  <td className="py-2 pr-4">
+                    Complete corresponding source under GPL-3.0, plus
+                    installation information for consumer devices
+                  </td>
+                  <td className="py-2 pr-4">Yes</td>
+                  <td className="py-2">Yes</td>
+                </tr>
+                <tr className="border-b border-black/5 dark:border-white/5">
+                  <td className="py-2 pr-4">
+                    <strong>AGPL-3.0</strong>
+                  </td>
+                  <td className="py-2 pr-4">Whole derivative work</td>
+                  <td className="py-2 pr-4">
+                    Distribution <em>or</em> letting users interact with it over
+                    a network
+                  </td>
+                  <td className="py-2 pr-4">
+                    Complete corresponding source, offered to remote users of
+                    the service
+                  </td>
+                  <td className="py-2 pr-4">Yes</td>
+                  <td className="py-2">Yes</td>
+                </tr>
+                <tr className="border-b border-black/5 dark:border-white/5">
+                  <td className="py-2 pr-4">
+                    <strong>SSPL-1.0</strong>{" "}
+                    <span className="opacity-70">(source-available)</span>
+                  </td>
+                  <td className="py-2 pr-4">
+                    Whole derivative work plus service infrastructure
+                  </td>
+                  <td className="py-2 pr-4">
+                    Offering the software&apos;s functionality to third parties
+                    as a service
+                  </td>
+                  <td className="py-2 pr-4">
+                    Source of the service management stack used to offer it
+                  </td>
+                  <td className="py-2 pr-4">Yes -- derived from AGPL-3.0 text</td>
+                  <td className="py-2">Yes</td>
+                </tr>
+                <tr>
+                  <td className="py-2 pr-4">
+                    <strong>No license declared</strong>
+                  </td>
+                  <td className="py-2 pr-4">
+                    Not applicable -- no rights granted
+                  </td>
+                  <td className="py-2 pr-4">
+                    Any use, modification, or distribution
+                  </td>
+                  <td className="py-2 pr-4">
+                    Not applicable -- you have no permission to ship it at all
+                  </td>
+                  <td className="py-2 pr-4">No</td>
+                  <td className="py-2">Not applicable</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p className="text-xs muted">
+            Source: the license texts themselves, as published by the FSF,
+            Apache Software Foundation, Mozilla, and MongoDB. Note that SSPL-1.0
+            is source-available and is not OSI-approved. This table summarises
+            license structure for engineering triage; it is not legal advice,
+            and how a license applies depends on how you build and ship your
+            product.
+          </p>
+        </figure>
+
         {/* Common Compliance Mistakes */}
         <section className="grid gap-2">
           <h2 className="text-xl font-semibold tracking-tight">

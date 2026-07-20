@@ -163,6 +163,146 @@ export default function OnPremVsSaasScanningPage() {
           </p>
         </section>
 
+        <figure className="grid gap-3">
+          <figcaption className="text-sm font-semibold">
+            Side-by-side: what actually differs between the two deployment
+            models
+          </figcaption>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[640px]" aria-label="Comparison of SaaS and on-premises vulnerability scanning across operational dimensions">
+              <thead>
+                <tr className="border-b border-black/10 dark:border-white/10">
+                  <th className="text-left py-2 pr-4 font-semibold align-bottom">
+                    Dimension
+                  </th>
+                  <th className="text-left py-2 pr-4 font-semibold align-bottom">
+                    SaaS scanning
+                  </th>
+                  <th className="text-left py-2 font-semibold align-bottom">
+                    On-prem / self-hosted
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="muted align-top">
+                <tr className="border-b border-black/5 dark:border-white/5">
+                  <td className="py-2 pr-4">
+                    <strong>Where artifacts are processed</strong>
+                  </td>
+                  <td className="py-2 pr-4">On the vendor&apos;s infrastructure</td>
+                  <td className="py-2">On infrastructure you control</td>
+                </tr>
+                <tr className="border-b border-black/5 dark:border-white/5">
+                  <td className="py-2 pr-4">
+                    <strong>Works with no internet access</strong>
+                  </td>
+                  <td className="py-2 pr-4">No</td>
+                  <td className="py-2">
+                    Yes, given a local copy of the vulnerability data
+                  </td>
+                </tr>
+                <tr className="border-b border-black/5 dark:border-white/5">
+                  <td className="py-2 pr-4">
+                    <strong>Data residency control</strong>
+                  </td>
+                  <td className="py-2 pr-4">
+                    Bounded by the regions and subprocessors the vendor offers
+                  </td>
+                  <td className="py-2">Determined by where you deploy</td>
+                </tr>
+                <tr className="border-b border-black/5 dark:border-white/5">
+                  <td className="py-2 pr-4">
+                    <strong>Who operates the scanner</strong>
+                  </td>
+                  <td className="py-2 pr-4">The vendor</td>
+                  <td className="py-2">Your team</td>
+                </tr>
+                <tr className="border-b border-black/5 dark:border-white/5">
+                  <td className="py-2 pr-4">
+                    <strong>Vulnerability data updates</strong>
+                  </td>
+                  <td className="py-2 pr-4">Applied by the vendor for you</td>
+                  <td className="py-2">
+                    You pull updates, or import snapshots for offline use
+                  </td>
+                </tr>
+                <tr className="border-b border-black/5 dark:border-white/5">
+                  <td className="py-2 pr-4">
+                    <strong>Upgrade timing</strong>
+                  </td>
+                  <td className="py-2 pr-4">
+                    Follows the vendor&apos;s release schedule
+                  </td>
+                  <td className="py-2">You choose when to upgrade</td>
+                </tr>
+                <tr className="border-b border-black/5 dark:border-white/5">
+                  <td className="py-2 pr-4">
+                    <strong>Cost shape</strong>
+                  </td>
+                  <td className="py-2 pr-4">
+                    Recurring subscription, commonly scaling with assets or scan
+                    volume
+                  </td>
+                  <td className="py-2">
+                    Fixed infrastructure plus staff time; little to no marginal
+                    cost per extra scan
+                  </td>
+                </tr>
+                <tr className="border-b border-black/5 dark:border-white/5">
+                  <td className="py-2 pr-4">
+                    <strong>Scaling scan volume</strong>
+                  </td>
+                  <td className="py-2 pr-4">
+                    Vendor absorbs the capacity; your bill usually tracks volume
+                  </td>
+                  <td className="py-2">
+                    You add capacity; cost rises in infrastructure steps, not per
+                    scan
+                  </td>
+                </tr>
+                <tr className="border-b border-black/5 dark:border-white/5">
+                  <td className="py-2 pr-4">
+                    <strong>Time to first scan</strong>
+                  </td>
+                  <td className="py-2 pr-4">
+                    Fast -- create an account and upload
+                  </td>
+                  <td className="py-2">
+                    Slower -- deploy and configure the stack first
+                  </td>
+                </tr>
+                <tr className="border-b border-black/5 dark:border-white/5">
+                  <td className="py-2 pr-4">
+                    <strong>Failure domain</strong>
+                  </td>
+                  <td className="py-2 pr-4">
+                    A vendor outage can block your pipeline
+                  </td>
+                  <td className="py-2">
+                    Your own cluster&apos;s availability blocks your pipeline
+                  </td>
+                </tr>
+                <tr>
+                  <td className="py-2 pr-4">
+                    <strong>Evidence for auditors</strong>
+                  </td>
+                  <td className="py-2 pr-4">
+                    Vendor attestations and reports, plus your own logs
+                  </td>
+                  <td className="py-2">
+                    Your own logs and controls end to end
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p className="text-xs muted">
+            Qualitative capability comparison of the two deployment models
+            described above. No pricing or vendor-specific performance figures
+            are implied -- the &quot;cost shape&quot; row describes how each
+            model bills, not what it costs.
+          </p>
+        </figure>
+
         <section className="grid gap-2">
           <h2 className="text-xl font-semibold tracking-tight">
             ScanRook&apos;s Hybrid Model

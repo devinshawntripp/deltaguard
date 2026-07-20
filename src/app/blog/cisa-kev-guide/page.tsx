@@ -174,6 +174,93 @@ export default function CisaKevGuidePage() {
           </div>
         </section>
 
+        {/* Exploitation evidence sources */}
+        <section className="grid gap-2">
+          <h2 className="text-xl font-semibold tracking-tight">
+            KEV Among the Other Exploitation Signals
+          </h2>
+          <p className="text-sm muted">
+            KEV is not the only place exploitation evidence shows up, and the
+            sources are not interchangeable. Each answers a different question
+            and each fails differently. The table below is the mental model to
+            keep when a finding carries more than one of these signals.
+          </p>
+          <figure className="grid gap-2">
+            <div className="overflow-x-auto rounded-lg border border-black/10 dark:border-white/10">
+              <table
+                className="w-full text-xs border-collapse"
+                aria-label="Comparison of CISA KEV against EPSS, public exploit code, and vendor advisories as exploitation signals"
+              >
+                <thead>
+                  <tr className="border-b border-black/10 dark:border-white/10">
+                    <th className="text-left py-2 px-3 font-medium">Dimension</th>
+                    <th className="text-left py-2 px-3 font-medium">CISA KEV</th>
+                    <th className="text-left py-2 px-3 font-medium">EPSS</th>
+                    <th className="text-left py-2 px-3 font-medium">Public exploit code</th>
+                    <th className="text-left py-2 px-3 font-medium">Vendor advisory</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-black/5 dark:divide-white/5 muted">
+                  <tr>
+                    <td className="py-2 px-3 font-medium">Kind of evidence</td>
+                    <td className="py-2 px-3">Confirmed exploitation observed in the wild</td>
+                    <td className="py-2 px-3">Modelled prediction of near-term exploitation</td>
+                    <td className="py-2 px-3">Demonstrated exploitability -- code exists</td>
+                    <td className="py-2 px-3">Vendor-attested attacks against its own product</td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 px-3 font-medium">Published by</td>
+                    <td className="py-2 px-3">CISA</td>
+                    <td className="py-2 px-3">FIRST.org</td>
+                    <td className="py-2 px-3">Exploit-DB, Metasploit, public PoC repositories</td>
+                    <td className="py-2 px-3">The affected software vendor</td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 px-3 font-medium">Entry criteria</td>
+                    <td className="py-2 px-3">CVE ID, reliable exploitation evidence, and an available fix -- all three</td>
+                    <td className="py-2 px-3">Automatic: every scored CVE gets a value, with no human gate</td>
+                    <td className="py-2 px-3">Whatever the publisher chose to release; no review standard</td>
+                    <td className="py-2 px-3">Vendor&apos;s own incident reports and customer disclosures</td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 px-3 font-medium">Cadence</td>
+                    <td className="py-2 px-3">Updated as CISA confirms new cases</td>
+                    <td className="py-2 px-3">Recomputed daily</td>
+                    <td className="py-2 px-3">Continuous and uncoordinated</td>
+                    <td className="py-2 px-3">Tied to the vendor&apos;s advisory schedule</td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 px-3 font-medium">Carries a deadline</td>
+                    <td className="py-2 px-3">Yes -- binding for U.S. federal civilian agencies under BOD 22-01</td>
+                    <td className="py-2 px-3">No</td>
+                    <td className="py-2 px-3">No</td>
+                    <td className="py-2 px-3">Sometimes, as a vendor-recommended urgency</td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 px-3 font-medium">Principal limitation</td>
+                    <td className="py-2 px-3">Backward-looking; absence from the catalog is not evidence of safety</td>
+                    <td className="py-2 px-3">A prediction, not an observation; blind to genuine zero-days</td>
+                    <td className="py-2 px-3">Availability is not usage, and code quality varies enormously</td>
+                    <td className="py-2 px-3">Covers only that vendor&apos;s products</td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 px-3 font-medium">Best triage use</td>
+                    <td className="py-2 px-3">Force the finding to the front of the queue</td>
+                    <td className="py-2 px-3">Rank everything the catalog does not cover</td>
+                    <td className="py-2 px-3">Gauge how much work weaponization still requires</td>
+                    <td className="py-2 px-3">Confirm affected versions and get the official mitigation</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <figcaption className="text-xs muted">
+              How the CISA KEV catalog compares with the other exploitation
+              signals a finding may carry. Qualitative comparison of documented
+              behaviour -- no counts, scores, or scan data are used.
+            </figcaption>
+          </figure>
+        </section>
+
         <section className="grid gap-2">
           <h2 className="text-xl font-semibold tracking-tight">
             How ScanRook Uses CISA KEV
