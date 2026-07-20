@@ -149,6 +149,97 @@ export default function Page() {
             silently accumulate a year of unpatched advisories, even though the maintainer fixed
             every one of them upstream. The six steps below close that gap and keep it closed.
           </p>
+          <figure className="surface-card p-4 my-2 overflow-x-auto">
+            <p className="text-sm font-semibold mb-1">
+              What patching can and cannot reach &mdash; ScanRook v1.14.2, 2026-07-04
+            </p>
+            <svg
+              viewBox="0 0 700 168"
+              className="w-full"
+              style={{ maxWidth: "700px" }}
+              role="img"
+              aria-label="Horizontal bar chart of total ScanRook findings per image: alpine 3.20 has 301, nginx 1.27-alpine 619, ubuntu 24.04 1,365, nginx 1.27 2,952"
+            >
+              <title>Horizontal bar chart of total ScanRook findings per image: alpine 3.20 has 301, nginx 1.27-alpine 619, ubuntu 24.04 1,365, nginx 1.27 2,952</title>
+              <g>
+                <rect x="0" y="10" width="10" height="10" rx="2" className="fill-[var(--dg-accent,#2563eb)]" />
+                <text x="14" y="19" className="fill-current text-[10px] opacity-80">
+                  Critical
+                </text>
+                <rect x="77" y="10" width="10" height="10" rx="2" className="fill-current" opacity="0.55" />
+                <text x="91" y="19" className="fill-current text-[10px] opacity-80">
+                  High
+                </text>
+                <rect x="132" y="10" width="10" height="10" rx="2" className="fill-current" opacity="0.32" />
+                <text x="146" y="19" className="fill-current text-[10px] opacity-80">
+                  Medium
+                </text>
+                <rect x="198" y="10" width="10" height="10" rx="2" className="fill-current" opacity="0.18" />
+                <text x="212" y="19" className="fill-current text-[10px] opacity-80">
+                  Low
+                </text>
+                <rect x="247" y="10" width="10" height="10" rx="2" className="fill-current" opacity="0.08" />
+                <text x="261" y="19" className="fill-current text-[10px] opacity-80">
+                  No severity assigned
+                </text>
+              </g>
+              <text x="0" y="56" className="fill-current text-[10px] font-mono opacity-80">
+                alpine:3.20
+              </text>
+              <rect x="136" y="44" width="39" height="16" rx="2" className="fill-current" opacity="0.08" />
+              <rect x="136" y="44" width="3" height="16" className="fill-[var(--dg-accent,#2563eb)]" />
+              <rect x="139" y="44" width="18" height="16" className="fill-current" opacity="0.55" />
+              <rect x="157" y="44" width="17" height="16" className="fill-current" opacity="0.32" />
+              <rect x="174" y="44" width="1" height="16" className="fill-current" opacity="0.18" />
+              <text x="524" y="56" className="fill-current text-[9px] opacity-70">
+                301 total &middot; 20 critical
+              </text>
+              <text x="0" y="86" className="fill-current text-[10px] font-mono opacity-80">
+                nginx:1.27-alpine
+              </text>
+              <rect x="136" y="74" width="80" height="16" rx="2" className="fill-current" opacity="0.08" />
+              <rect x="136" y="74" width="11" height="16" className="fill-[var(--dg-accent,#2563eb)]" />
+              <rect x="147" y="74" width="34" height="16" className="fill-current" opacity="0.55" />
+              <rect x="181" y="74" width="31" height="16" className="fill-current" opacity="0.32" />
+              <rect x="212" y="74" width="3" height="16" className="fill-current" opacity="0.18" />
+              <text x="524" y="86" className="fill-current text-[9px] opacity-70">
+                619 total &middot; 84 critical
+              </text>
+              <text x="0" y="116" className="fill-current text-[10px] font-mono opacity-80">
+                ubuntu:24.04
+              </text>
+              <rect x="136" y="104" width="176" height="16" rx="2" className="fill-current" opacity="0.08" />
+              <rect x="136" y="104" width="17" height="16" className="fill-[var(--dg-accent,#2563eb)]" />
+              <rect x="153" y="104" width="55" height="16" className="fill-current" opacity="0.55" />
+              <rect x="208" y="104" width="84" height="16" className="fill-current" opacity="0.32" />
+              <rect x="292" y="104" width="16" height="16" className="fill-current" opacity="0.18" />
+              <text x="524" y="116" className="fill-current text-[9px] opacity-70">
+                1,365 total &middot; 130 critical
+              </text>
+              <text x="0" y="146" className="fill-current text-[10px] font-mono opacity-80">
+                nginx:1.27
+              </text>
+              <rect x="136" y="134" width="380" height="16" rx="2" className="fill-current" opacity="0.08" />
+              <rect x="136" y="134" width="53" height="16" className="fill-[var(--dg-accent,#2563eb)]" />
+              <rect x="189" y="134" width="119" height="16" className="fill-current" opacity="0.55" />
+              <rect x="308" y="134" width="175" height="16" className="fill-current" opacity="0.32" />
+              <rect x="483" y="134" width="27" height="16" className="fill-current" opacity="0.18" />
+              <text x="524" y="146" className="fill-current text-[9px] opacity-70">
+                2,952 total &middot; 408 critical
+              </text>
+            </svg>
+            <figcaption className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+              Rebuilding narrows the gap; the base you rebuild onto sets it. nginx:1.27 reports 2,952 total
+              findings (408 critical) against 619 (84 critical) for nginx:1.27-alpine &mdash; the same server,
+              a smaller base. ubuntu:24.04 reports 1,365 (130 critical) and alpine:3.20 reports 301 (20
+              critical) with no application on top at all, which is the floor the steps below are patching
+              toward. If a rebuilt image is still reporting thousands of findings, the remaining lever is the
+              base image, not another patch pass. Bar length is linear in total findings, so the smallest bars
+              are only a few pixels wide &mdash; exact totals are printed at right. The four rated buckets do
+              not always add up to the total because some advisories carry no CVSS severity; that remainder is
+              the unfilled part of each bar.
+            </figcaption>
+          </figure>
         </section>
 
         <section className="grid gap-3">

@@ -1,0 +1,272 @@
+[
+ {
+  "slug": "is-nginx-docker-image-safe",
+  "enhancement": "severity-chart",
+  "scan_data": {
+   "nginx": {
+    "tag": "nginx:1.27",
+    "source": "scanrook v1.14.2 warm-cache scan (pre-existing benchmark artifact)",
+    "total": 2952,
+    "critical": 408,
+    "high": 928,
+    "medium": 1361,
+    "low": 213,
+    "top_cves": [
+     {
+      "id": "CVE-2005-2023",
+      "severity": "critical",
+      "package": "gpgv"
+     },
+     {
+      "id": "CVE-2006-6235",
+      "severity": "critical",
+      "package": "gpgv"
+     },
+     {
+      "id": "CVE-2009-1300",
+      "severity": "critical",
+      "package": "libapt-pkg6.0"
+     },
+     {
+      "id": "CVE-2009-1358",
+      "severity": "critical",
+      "package": "libapt-pkg6.0"
+     },
+     {
+      "id": "CVE-2015-0235",
+      "severity": "critical",
+      "package": "libc-bin"
+     }
+    ],
+    "alt": {
+     "tag": "nginx:1.27-alpine",
+     "total": 619,
+     "critical": 84,
+     "high": 263,
+     "medium": 242,
+     "low": 26
+    }
+   }
+  },
+  "scan_meta": {
+   "generated": "2026-07-04",
+   "scanner_version": "1.14.2"
+  }
+ },
+ {
+  "slug": "is-postgres-docker-image-safe",
+  "enhancement": "severity-chart",
+  "scan_data": {
+   "postgres": {
+    "tag": "postgres:17",
+    "source": "scanrook v1.14.2 warm-cache scan (pre-existing benchmark artifact)",
+    "total": 2983,
+    "critical": 387,
+    "high": 970,
+    "medium": 1344,
+    "low": 241,
+    "top_cves": [
+     {
+      "id": "CVE-2005-2023",
+      "severity": "critical",
+      "package": "dirmngr"
+     },
+     {
+      "id": "CVE-2006-6235",
+      "severity": "critical",
+      "package": "dirmngr"
+     },
+     {
+      "id": "CVE-2005-2023",
+      "severity": "critical",
+      "package": "gnupg"
+     },
+     {
+      "id": "CVE-2006-6235",
+      "severity": "critical",
+      "package": "gnupg"
+     },
+     {
+      "id": "CVE-2005-2023",
+      "severity": "critical",
+      "package": "gnupg-l10n"
+     }
+    ],
+    "alt": {
+     "tag": "postgres:17-alpine",
+     "total": 410,
+     "critical": 36,
+     "high": 194,
+     "medium": 168,
+     "low": 9
+    }
+   }
+  },
+  "scan_meta": {
+   "generated": "2026-07-04",
+   "scanner_version": "1.14.2"
+  }
+ },
+ {
+  "slug": "is-redis-docker-image-safe",
+  "enhancement": "severity-chart",
+  "scan_data": {
+   "redis": {
+    "tag": "redis:7-alpine",
+    "source": "scanrook v1.14.2 warm-cache scan (pre-existing benchmark artifact)",
+    "total": 299,
+    "critical": 20,
+    "high": 136,
+    "medium": 131,
+    "low": 8,
+    "top_cves": [
+     {
+      "id": "CVE-2021-42377",
+      "severity": "critical",
+      "package": "busybox-binsh"
+     },
+     {
+      "id": "CVE-2022-48174",
+      "severity": "critical",
+      "package": "busybox-binsh"
+     },
+     {
+      "id": "CVE-2016-2148",
+      "severity": "critical",
+      "package": "busybox-binsh"
+     },
+     {
+      "id": "CVE-2021-3711",
+      "severity": "critical",
+      "package": "libcrypto3"
+     },
+     {
+      "id": "CVE-2022-2274",
+      "severity": "critical",
+      "package": "libcrypto3"
+     }
+    ],
+    "alt": {
+     "tag": "redis:7",
+     "total": 1399,
+     "critical": 114,
+     "high": 307,
+     "medium": 345,
+     "low": 45
+    }
+   }
+  },
+  "scan_meta": {
+   "generated": "2026-07-04",
+   "scanner_version": "1.14.2"
+  }
+ },
+ {
+  "slug": "is-node-docker-image-safe",
+  "enhancement": "severity-chart",
+  "scan_data": {
+   "node": {
+    "tag": "node:22",
+    "source": "scanrook v1.14.2 warm-cache scan (pre-existing benchmark artifact)",
+    "total": 30726,
+    "critical": 1794,
+    "high": 8867,
+    "medium": 17133,
+    "low": 1058,
+    "top_cves": [
+     {
+      "id": "CVE-2005-2023",
+      "severity": "critical",
+      "package": "dirmngr"
+     },
+     {
+      "id": "CVE-2006-6235",
+      "severity": "critical",
+      "package": "dirmngr"
+     },
+     {
+      "id": "CVE-2004-1304",
+      "severity": "critical",
+      "package": "file"
+     },
+     {
+      "id": "CVE-2005-2023",
+      "severity": "critical",
+      "package": "gnupg"
+     },
+     {
+      "id": "CVE-2006-6235",
+      "severity": "critical",
+      "package": "gnupg"
+     }
+    ],
+    "alt": {
+     "tag": "node:22-alpine",
+     "total": 306,
+     "critical": 23,
+     "high": 141,
+     "medium": 134,
+     "low": 8
+    }
+   }
+  },
+  "scan_meta": {
+   "generated": "2026-07-04",
+   "scanner_version": "1.14.2"
+  }
+ },
+ {
+  "slug": "is-python-docker-image-safe",
+  "enhancement": "severity-chart",
+  "scan_data": {
+   "python": {
+    "tag": "python:3.12",
+    "source": "scanrook v1.14.2 warm-cache scan (pre-existing benchmark artifact)",
+    "total": 31590,
+    "critical": 1875,
+    "high": 9213,
+    "medium": 17514,
+    "low": 1115,
+    "top_cves": [
+     {
+      "id": "CVE-2005-2023",
+      "severity": "critical",
+      "package": "dirmngr"
+     },
+     {
+      "id": "CVE-2006-6235",
+      "severity": "critical",
+      "package": "dirmngr"
+     },
+     {
+      "id": "CVE-2004-1304",
+      "severity": "critical",
+      "package": "file"
+     },
+     {
+      "id": "CVE-2005-2023",
+      "severity": "critical",
+      "package": "gnupg"
+     },
+     {
+      "id": "CVE-2006-6235",
+      "severity": "critical",
+      "package": "gnupg"
+     }
+    ],
+    "alt": {
+     "tag": "python:3.12-alpine",
+     "total": 404,
+     "critical": 38,
+     "high": 179,
+     "medium": 174,
+     "low": 10
+    }
+   }
+  },
+  "scan_meta": {
+   "generated": "2026-07-04",
+   "scanner_version": "1.14.2"
+  }
+ }
+]

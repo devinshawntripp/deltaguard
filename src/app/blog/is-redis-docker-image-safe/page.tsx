@@ -102,6 +102,40 @@ const faqJsonLd = {
   ],
 };
 
+const SEVERITY_ROWS: { tag: string; total: number; buckets: { label: string; count: number }[] }[] = [
+  {
+    tag: "redis:7-alpine",
+    total: 299,
+    buckets: [
+      { label: "Critical", count: 20 },
+      { label: "High", count: 136 },
+      { label: "Medium", count: 131 },
+      { label: "Low", count: 8 },
+    ],
+  },
+  {
+    tag: "redis:7",
+    total: 1399,
+    buckets: [
+      { label: "Critical", count: 114 },
+      { label: "High", count: 307 },
+      { label: "Medium", count: 345 },
+      { label: "Low", count: 45 },
+    ],
+  },
+];
+
+const SEVERITY_MAX = Math.max(
+  ...SEVERITY_ROWS.flatMap((r) => r.buckets.map((b) => b.count)),
+);
+
+const SEVERITY_FILL: Record<string, string> = {
+  Critical: "fill-[var(--dg-accent,#2563eb)]",
+  High: "fill-current opacity-50",
+  Medium: "fill-current opacity-30",
+  Low: "fill-current opacity-20",
+};
+
 export default function Page() {
   if (!isPublished({ publishDate: PUBLISH_DATE })) notFound();
   return (
@@ -194,6 +228,58 @@ export default function Page() {
           <p className="text-xs text-gray-500 dark:text-gray-400">
             ScanRook v1.14.2, warm-cache scan, 2026-07-04. Counts change as new advisories publish.
           </p>
+          <figure className="overflow-x-auto surface-card p-4">
+            <svg
+              viewBox="0 0 596 204"
+              className="w-full"
+              style={{ maxWidth: "640px" }}
+              role="img"
+              aria-label="Grouped bar chart of ScanRook severity counts. redis:7-alpine: 299 findings total, 20 critical, 136 high, 131 medium, 8 low. redis:7: 1,399 findings total, 114 critical, 307 high, 345 medium, 45 low."
+            >
+              <title>Grouped bar chart of ScanRook severity counts. redis:7-alpine: 299 findings total, 20 critical, 136 high, 131 medium, 8 low. redis:7: 1,399 findings total, 114 critical, 307 high, 345 medium, 45 low.</title>
+              {SEVERITY_ROWS.map((row, i) => {
+                const gy = 14 + i * 104;
+                return (
+                  <g key={row.tag}>
+                    <text x="0" y={gy} className="fill-current text-[11px] font-semibold font-mono">
+                      {row.tag}
+                    </text>
+                    <text x="0" y={gy + 14} className="fill-current text-[9px] opacity-60">
+                      {row.total.toLocaleString("en-US")} findings total
+                    </text>
+                    {row.buckets.map((b, j) => {
+                      const y = gy + 22 + j * 19;
+                      const w = Math.max(2, Math.round((b.count / SEVERITY_MAX) * 380));
+                      return (
+                        <g key={b.label}>
+                          <text x="0" y={y + 10} className="fill-current text-[10px] opacity-80">
+                            {b.label}
+                          </text>
+                          <rect
+                            x="100"
+                            y={y}
+                            width={w}
+                            height="13"
+                            rx="2"
+                            className={SEVERITY_FILL[b.label]}
+                          />
+                          <text x={105 + w} y={y + 10} className="fill-current text-[9px] opacity-70">
+                            {b.count.toLocaleString("en-US")}
+                          </text>
+                        </g>
+                      );
+                    })}
+                  </g>
+                );
+              })}
+            </svg>
+            <figcaption className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+              The same scan data as a chart &mdash; ScanRook v1.14.2 warm-cache scan of redis:7-alpine and
+              redis:7, 2026-07-04. Bar length is proportional to the count in each severity bucket,
+              on a scale shared by both tags; the figure beside each tag name is the total finding
+              count that scan reported.
+            </figcaption>
+          </figure>
           <p className="text-sm muted">
             Redis is unusual in this series in that its leanest tag is also its most common
             production choice. The Alpine build still isn&apos;t zero-risk &mdash; it inherits

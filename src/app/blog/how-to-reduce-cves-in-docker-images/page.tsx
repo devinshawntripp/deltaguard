@@ -183,6 +183,117 @@ FROM gcr.io/distroless/nodejs22-debian12`}</pre>
             covers the tradeoffs in depth. If you can only make one change from this article, make
             this one.
           </p>
+          <figure className="surface-card p-4 my-2 overflow-x-auto">
+            <p className="text-sm font-semibold mb-1">
+              Base image choice, measured &mdash; ScanRook v1.14.2, 2026-07-04
+            </p>
+            <svg
+              viewBox="0 0 700 228"
+              className="w-full"
+              style={{ maxWidth: "700px" }}
+              role="img"
+              aria-label="Horizontal bar chart of total ScanRook findings per image: busybox 1.37 has 2, alpine 3.20 301, node 22-alpine 306, nginx 1.27-alpine 619, nginx 1.27 2,952, node 22 30,726"
+            >
+              <title>Horizontal bar chart of total ScanRook findings per image: busybox 1.37 has 2, alpine 3.20 301, node 22-alpine 306, nginx 1.27-alpine 619, nginx 1.27 2,952, node 22 30,726</title>
+              <g>
+                <rect x="0" y="10" width="10" height="10" rx="2" className="fill-[var(--dg-accent,#2563eb)]" />
+                <text x="14" y="19" className="fill-current text-[10px] opacity-80">
+                  Critical
+                </text>
+                <rect x="77" y="10" width="10" height="10" rx="2" className="fill-current" opacity="0.55" />
+                <text x="91" y="19" className="fill-current text-[10px] opacity-80">
+                  High
+                </text>
+                <rect x="132" y="10" width="10" height="10" rx="2" className="fill-current" opacity="0.32" />
+                <text x="146" y="19" className="fill-current text-[10px] opacity-80">
+                  Medium
+                </text>
+                <rect x="198" y="10" width="10" height="10" rx="2" className="fill-current" opacity="0.18" />
+                <text x="212" y="19" className="fill-current text-[10px] opacity-80">
+                  Low
+                </text>
+                <rect x="247" y="10" width="10" height="10" rx="2" className="fill-current" opacity="0.08" />
+                <text x="261" y="19" className="fill-current text-[10px] opacity-80">
+                  No severity assigned
+                </text>
+              </g>
+              <text x="0" y="56" className="fill-current text-[10px] font-mono opacity-80">
+                busybox:1.37
+              </text>
+              <rect x="136" y="44" width="2" height="16" rx="2" className="fill-current" opacity="0.08" />
+              <rect x="136" y="44" width="1" height="16" className="fill-current" opacity="0.32" />
+              <rect x="137" y="44" width="1" height="16" className="fill-current" opacity="0.18" />
+              <text x="524" y="56" className="fill-current text-[9px] opacity-70">
+                2 total &middot; 0 critical
+              </text>
+              <text x="0" y="86" className="fill-current text-[10px] font-mono opacity-80">
+                alpine:3.20
+              </text>
+              <rect x="136" y="74" width="4" height="16" rx="2" className="fill-current" opacity="0.08" />
+              <rect x="136" y="74" width="1" height="16" className="fill-[var(--dg-accent,#2563eb)]" />
+              <rect x="137" y="74" width="2" height="16" className="fill-current" opacity="0.55" />
+              <rect x="139" y="74" width="1" height="16" className="fill-current" opacity="0.32" />
+              <text x="524" y="86" className="fill-current text-[9px] opacity-70">
+                301 total &middot; 20 critical
+              </text>
+              <text x="0" y="116" className="fill-current text-[10px] font-mono opacity-80">
+                node:22-alpine
+              </text>
+              <rect x="136" y="104" width="4" height="16" rx="2" className="fill-current" opacity="0.08" />
+              <rect x="136" y="104" width="1" height="16" className="fill-[var(--dg-accent,#2563eb)]" />
+              <rect x="137" y="104" width="2" height="16" className="fill-current" opacity="0.55" />
+              <rect x="139" y="104" width="1" height="16" className="fill-current" opacity="0.32" />
+              <text x="524" y="116" className="fill-current text-[9px] opacity-70">
+                306 total &middot; 23 critical
+              </text>
+              <text x="0" y="146" className="fill-current text-[10px] font-mono opacity-80">
+                nginx:1.27-alpine
+              </text>
+              <rect x="136" y="134" width="8" height="16" rx="2" className="fill-current" opacity="0.08" />
+              <rect x="136" y="134" width="1" height="16" className="fill-[var(--dg-accent,#2563eb)]" />
+              <rect x="137" y="134" width="3" height="16" className="fill-current" opacity="0.55" />
+              <rect x="140" y="134" width="3" height="16" className="fill-current" opacity="0.32" />
+              <rect x="143" y="134" width="1" height="16" className="fill-current" opacity="0.18" />
+              <text x="524" y="146" className="fill-current text-[9px] opacity-70">
+                619 total &middot; 84 critical
+              </text>
+              <text x="0" y="176" className="fill-current text-[10px] font-mono opacity-80">
+                nginx:1.27
+              </text>
+              <rect x="136" y="164" width="37" height="16" rx="2" className="fill-current" opacity="0.08" />
+              <rect x="136" y="164" width="5" height="16" className="fill-[var(--dg-accent,#2563eb)]" />
+              <rect x="141" y="164" width="11" height="16" className="fill-current" opacity="0.55" />
+              <rect x="152" y="164" width="17" height="16" className="fill-current" opacity="0.32" />
+              <rect x="169" y="164" width="3" height="16" className="fill-current" opacity="0.18" />
+              <text x="524" y="176" className="fill-current text-[9px] opacity-70">
+                2,952 total &middot; 408 critical
+              </text>
+              <text x="0" y="206" className="fill-current text-[10px] font-mono opacity-80">
+                node:22
+              </text>
+              <rect x="136" y="194" width="380" height="16" rx="2" className="fill-current" opacity="0.08" />
+              <rect x="136" y="194" width="22" height="16" className="fill-[var(--dg-accent,#2563eb)]" />
+              <rect x="158" y="194" width="110" height="16" className="fill-current" opacity="0.55" />
+              <rect x="268" y="194" width="212" height="16" className="fill-current" opacity="0.32" />
+              <rect x="480" y="194" width="13" height="16" className="fill-current" opacity="0.18" />
+              <text x="524" y="206" className="fill-current text-[9px] opacity-70">
+                30,726 total &middot; 1,794 critical
+              </text>
+            </svg>
+            <figcaption className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+              Base image choice is the largest single lever in this article: node:22 reports 30,726 total
+              findings (1,794 critical) against 306 (23 critical) for node:22-alpine, and nginx:1.27 reports
+              2,952 (408 critical) against 619 (84 critical) for nginx:1.27-alpine &mdash; same application,
+              smaller base. Alpine is not empty either: alpine:3.20 alone reports 301 (20 critical), so Steps
+              2 through 6 still matter. Switching bases shrinks the surface by orders of magnitude; it does
+              not eliminate it. Bar length is linear in total findings, so the smallest bars are only a few
+              pixels wide &mdash; exact totals are printed at right. The four rated buckets do not always add
+              up to the total because some advisories carry no CVSS severity; that remainder is the unfilled
+              part of each bar. The busybox:1.37 scan was partial &mdash; its runtime package inventory was
+              unavailable, so matching fell back to heuristics. busybox genuinely is minimal, but treat 2 as a
+              floor rather than a verified complete count.
+            </figcaption>
+          </figure>
         </section>
 
         <section className="grid gap-3">

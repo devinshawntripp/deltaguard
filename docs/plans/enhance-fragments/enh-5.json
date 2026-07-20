@@ -1,0 +1,42 @@
+[
+ {
+  "slug": "cve-database-comparison",
+  "enhancement": "comparison-table",
+  "added": "Added a 'Where Each Database Goes Blind' table (structural blind spot, how it surfaces in a scan, compensating source) before the decision-tree section, distinct from the existing feature matrix.",
+  "numbers_source": "none (structural)",
+  "lines_added": 68,
+  "lines_removed": 0
+ },
+ {
+  "slug": "understanding-nvd-and-cvss",
+  "enhancement": "comparison-table",
+  "added": "Added a 'CVSS v2 vs v3.1 vs v4.0' specification comparison table (metric groups, prerequisites, UI values, impact model, exploit maturity, severity bands, practical guidance) after the CVSS v3.1 section.",
+  "numbers_source": "none (structural)",
+  "lines_added": 81,
+  "lines_removed": 0
+ },
+ {
+  "slug": "cisa-kev-guide",
+  "enhancement": "comparison-table",
+  "added": "Added a 'KEV Among the Other Exploitation Signals' table comparing CISA KEV, EPSS, public exploit code, and vendor advisories on evidence type, entry criteria, cadence, deadlines, limitations, and triage use.",
+  "numbers_source": "none (structural)",
+  "lines_added": 87,
+  "lines_removed": 0
+ },
+ {
+  "slug": "epss-scores-explained",
+  "enhancement": "comparison-table",
+  "added": "Added a 'Probability or Percentile' table contrasting the two EPSS outputs on meaning, what moves them, cross-date comparability, best use, poor fit, and common misreadings, after the percentiles section.",
+  "numbers_source": "none (structural)",
+  "lines_added": 71,
+  "lines_removed": 0
+ },
+ {
+  "slug": "epss-vulnerability-prioritization",
+  "enhancement": "comparison-table",
+  "added": "Added a 'Prioritization Strategies Compared' table (CVSS-only, EPSS-only, KEV-only, CVSS+EPSS, layered, layered+asset context) covering what each optimizes for, blind spots, backlog shape, and best fit.",
+  "numbers_source": "none (structural)",
+  "lines_added": 80,
+  "lines_removed": 0
+ }
+]

@@ -50,6 +50,50 @@ const articleJsonLd = {
   dateModified: "2026-02-27",
 };
 
+const evidenceChecklist: { group: string; items: string[] }[] = [
+  {
+    group: "Scope and inventory",
+    items: [
+      "A dated inventory of every in-scope system, image, and repository, each with a named owner.",
+      "A mapping from each in-scope asset to the specific scan job or schedule that covers it — an asset no job touches is a finding waiting to be written up.",
+      "Written justification for anything deliberately excluded from scope, approved by whoever owns the boundary.",
+    ],
+  },
+  {
+    group: "Scan evidence",
+    items: [
+      "Reports covering every required period in the audit window with no gaps, including holiday and change-freeze weeks.",
+      "Scanner name, version, and advisory-data date recorded on each report, so an assessor can tell what the scan actually knew at the time.",
+      "Proof the scan ran against the in-scope environment or artifact, not a lookalike build — image digests or artifact hashes, not just tags.",
+      "Evidence that authenticated or credentialed scans really authenticated, where the framework requires it.",
+    ],
+  },
+  {
+    group: "Remediation evidence",
+    items: [
+      "For each closed finding, a traceable chain from discovery to fix to deployment: ticket, commit or change record, and release.",
+      "The SLA clock start visible per finding — discovery timestamp, not the date somebody got around to filing the ticket.",
+      "A verifying re-scan that shows the finding gone, rather than a ticket closed on assertion.",
+    ],
+  },
+  {
+    group: "Exceptions and unresolved findings",
+    items: [
+      "Signed risk acceptances with an approver, a rationale, compensating controls, and an expiry date.",
+      "A list of suppressed findings and false positives with the reasoning for each, kept in version control alongside the scan config.",
+      "POA&M or equivalent entries reconciled against the current scan output as of the audit date, not as of last quarter.",
+    ],
+  },
+  {
+    group: "Process evidence",
+    items: [
+      "The written scanning policy whose stated cadence matches the actual timestamps on your reports — a mismatch here is one of the easiest findings for an assessor to write.",
+      "Version history showing which revision of that policy was in force during the audit window.",
+      "A named program owner and a documented escalation path for missed SLAs.",
+    ],
+  },
+];
+
 export default function ComplianceScanningGuidePage() {
   return (
     <main className="mx-auto max-w-3xl px-6 py-14 grid gap-6">
@@ -201,6 +245,58 @@ export default function ComplianceScanningGuidePage() {
               with compensating controls documented.
             </li>
           </ul>
+        </section>
+
+        <section className="grid gap-3">
+          <h2 className="text-xl font-semibold tracking-tight">
+            Audit-Week Evidence Pull Checklist
+          </h2>
+          <p className="text-sm muted">
+            Knowing what auditors want is one thing; producing it on request without a scramble is
+            another. Work through this list before the assessor asks, not after &mdash; each item is
+            something a real evidence request has turned on.
+          </p>
+          <figure className="grid gap-3">
+            <div className="grid gap-5 rounded-xl border border-black/10 dark:border-white/10 bg-black/[.02] dark:bg-white/[.02] p-5">
+              {evidenceChecklist.map((group) => (
+                <div key={group.group} className="grid gap-2">
+                  <h3 className="text-sm font-semibold">{group.group}</h3>
+                  <ul className="grid gap-2 list-none pl-0 m-0">
+                    {group.items.map((item) => (
+                      <li key={item} className="flex items-start gap-2.5 text-sm muted">
+                        <svg
+                          viewBox="0 0 16 16"
+                          width="14"
+                          height="14"
+                          aria-hidden="true"
+                          className="mt-1 shrink-0"
+                        >
+                          <rect
+                            x="1.5"
+                            y="1.5"
+                            width="13"
+                            height="13"
+                            rx="3.5"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                            opacity="0.45"
+                          />
+                        </svg>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+            <figcaption className="text-xs muted">
+              Evidence-collection checklist derived from the framework requirements described above.
+              Retention periods, cadences, and required artifacts vary by framework and by your own
+              control descriptions &mdash; confirm the specifics against the authoritative text for
+              your program.
+            </figcaption>
+          </figure>
         </section>
 
         <section className="grid gap-2">

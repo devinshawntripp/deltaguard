@@ -276,6 +276,84 @@ docker save my-image:tag -o my-image.tar`}</pre>
         </section>
 
         <section className="grid gap-3">
+          <h2 className="text-xl font-semibold tracking-tight">
+            Sanity checklist: is the scan even valid?
+          </h2>
+          <p className="text-sm muted">
+            Before you read a single finding, confirm the scanner actually saw
+            the image you think it saw. Most &ldquo;the scanner is wrong&rdquo;
+            complaints turn out to be a scan of the wrong artifact, the wrong
+            architecture, or a tarball the scanner could not fully parse. Run
+            through this list once per pipeline &mdash; not once per scan
+            &mdash; and it stops being an issue.
+          </p>
+          <div className="grid gap-4 rounded-lg border border-black/10 dark:border-white/10 p-5">
+            {[
+              {
+                group: "Before you scan",
+                items: [
+                  "Use docker save, not docker export. docker export flattens a running container to a filesystem tar and throws away the image manifest and layer metadata, so a scanner reading it sees far less than it should.",
+                  "Match the architecture you actually deploy. On a multi-arch tag, docker save exports whatever platform you pulled. If you ship arm64 and scan an amd64 pull, the package versions can differ. Pull explicitly with --platform.",
+                  "Export the final stage of a multi-stage build, not an intermediate one. A tarball produced from a --target build stage will contain the compiler toolchain and none of the runtime layers.",
+                  "Resolve the tag to a digest and record it. Tags move. If you scan my-image:latest on Monday and deploy my-image:latest on Friday, you have audited a different image.",
+                  "Refresh the vulnerability database before a gating run. A scanner with a stale local database quietly reports fewer findings, and a clean report is indistinguishable from a broken one.",
+                  "Authenticate to the registry before pulling a private image, and check the pull actually succeeded. A silently failed pull that falls back to a stale local copy is the classic way to scan last month's image.",
+                ],
+              },
+              {
+                group: "After the scan, before you trust it",
+                items: [
+                  "Check the package count, not just the finding count. If the scanner reports zero OS packages on a Debian- or Alpine-based image, it failed to parse the package database — that is a broken scan, not a clean image.",
+                  "Confirm the ecosystems you expect are represented. A Node app whose report lists only OS packages means the npm dependency tree was never walked.",
+                  "Treat a suspiciously empty result as a failure. Wire your CI to fail when the report contains no packages at all, the same way you fail on a policy violation.",
+                  "Check whether findings are backed by the package manager database or by filename heuristics before you escalate any of them.",
+                  "Re-scan the same tarball with the database refreshed if a report looks unexpectedly different from the previous build. Confirm the change came from your image, not from the data source.",
+                ],
+              },
+            ].map((group) => (
+              <div key={group.group} className="grid gap-2">
+                <h3 className="text-sm font-semibold">{group.group}</h3>
+                <ul className="grid gap-2 list-none pl-0">
+                  {group.items.map((item) => (
+                    <li key={item} className="flex gap-3 text-sm muted">
+                      <svg
+                        viewBox="0 0 16 16"
+                        className="mt-0.5 h-4 w-4 shrink-0"
+                        aria-hidden="true"
+                        focusable="false"
+                      >
+                        <rect
+                          x="1"
+                          y="1"
+                          width="14"
+                          height="14"
+                          rx="3"
+                          className="fill-none stroke-current opacity-40"
+                          strokeWidth="1.5"
+                        />
+                        <path
+                          d="M4.5 8.2 7 10.7l4.5-5"
+                          className="fill-none stroke-[var(--dg-accent,#2563eb)]"
+                          strokeWidth="1.8"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Validity checklist for container image scans. Structural guidance
+              only &mdash; no thresholds are prescribed, because the right ones
+              depend on your base image and release cadence.
+            </p>
+          </div>
+        </section>
+
+        <section className="grid gap-3">
           <h2 className="text-xl font-semibold tracking-tight">How to read the results</h2>
           <p className="text-sm muted">
             Every scanner reports the same core fields. Learn to read them and the output stops being

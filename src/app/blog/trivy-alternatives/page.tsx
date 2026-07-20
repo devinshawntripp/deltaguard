@@ -102,6 +102,107 @@ const faqJsonLd = {
   ],
 };
 
+const capabilityColumns = [
+  "Trivy",
+  "ScanRook",
+  "Grype",
+  "Snyk Container",
+  "Docker Scout",
+];
+
+const capabilityRows: { capability: string; cells: string[] }[] = [
+  {
+    capability: "Advisory data model",
+    cells: [
+      "One pre-aggregated database",
+      "OSV, NVD and Red Hat OVAL queried per package",
+      "One pre-aggregated database",
+      "Snyk's own curated database",
+      "Docker-curated advisory data",
+    ],
+  },
+  {
+    capability: "Runs offline / air-gapped",
+    cells: [
+      "Yes, with a pre-downloaded database",
+      "Yes, in local-database mode",
+      "Yes, with a pre-downloaded database",
+      "No, requires the Snyk service",
+      "No, analysis is cloud-backed",
+    ],
+  },
+  {
+    capability: "IaC misconfiguration checks",
+    cells: [
+      "Yes",
+      "No",
+      "No",
+      "Separate Snyk IaC product",
+      "No",
+    ],
+  },
+  {
+    capability: "Secret detection",
+    cells: [
+      "Yes",
+      "No",
+      "No",
+      "Not part of the container product",
+      "No",
+    ],
+  },
+  {
+    capability: "Kubernetes cluster scanning",
+    cells: [
+      "Yes, via its Kubernetes command and operator",
+      "No",
+      "No",
+      "Yes, via its Kubernetes integration",
+      "No",
+    ],
+  },
+  {
+    capability: "SBOM generation",
+    cells: [
+      "Yes (CycloneDX, SPDX)",
+      "Yes (CycloneDX, SPDX)",
+      "Via Syft, its sibling project",
+      "Yes",
+      "Yes",
+    ],
+  },
+  {
+    capability: "Takes an existing SBOM as scan input",
+    cells: [
+      "Yes",
+      "Yes (CycloneDX, SPDX, Syft JSON)",
+      "Yes — its native input",
+      "Check the current CLI docs",
+      "Check the current CLI docs",
+    ],
+  },
+  {
+    capability: "Remediation guidance in output",
+    cells: [
+      "Fixed-in versions",
+      "Fixed-in versions plus confidence tiers",
+      "Fixed-in versions",
+      "Fix pull requests and base-image advice",
+      "Base-image update recommendations",
+    ],
+  },
+  {
+    capability: "Self-hosted operation",
+    cells: [
+      "Yes, runs entirely on your own machines",
+      "Yes, self-hosted deployment supported",
+      "Yes, runs entirely on your own machines",
+      "Hosted service; broker for on-prem access",
+      "No, Docker-hosted",
+    ],
+  },
+];
+
 export default function Page() {
   if (!isPublished({ publishDate: PUBLISH_DATE })) notFound();
   return (
@@ -209,6 +310,65 @@ export default function Page() {
             <Link href="/compare/grype" className="underline">ScanRook vs Grype</Link>, and{" "}
             <Link href="/compare/snyk" className="underline">ScanRook vs Snyk</Link>.
           </p>
+        </section>
+
+        <section className="grid gap-3">
+          <h2 className="text-xl font-semibold tracking-tight">Capability matrix</h2>
+          <p className="text-sm muted">
+            The table above summarizes positioning; this one is about what each tool can and cannot
+            do. Most migrations stall on a row here rather than on finding counts &mdash; an
+            air-gapped build farm or an existing IaC gate narrows the field faster than any
+            benchmark does.
+          </p>
+          <figure className="grid gap-3">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-black/10 dark:border-white/10">
+                    <th scope="col" className="text-left py-2 pr-4 font-semibold align-bottom">
+                      Capability
+                    </th>
+                    {capabilityColumns.map((col) => (
+                      <th
+                        key={col}
+                        scope="col"
+                        className="text-left py-2 pr-4 font-semibold align-bottom whitespace-nowrap"
+                      >
+                        {col}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="muted">
+                  {capabilityRows.map((row) => (
+                    <tr
+                      key={row.capability}
+                      className="border-b border-black/5 dark:border-white/5 last:border-0"
+                    >
+                      <th
+                        scope="row"
+                        className="text-left py-2 pr-4 align-top font-medium text-current"
+                      >
+                        {row.capability}
+                      </th>
+                      {row.cells.map((cell, i) => (
+                        <td key={capabilityColumns[i]} className="py-2 pr-4 align-top text-xs">
+                          {cell}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <figcaption className="text-xs muted">
+              Capability comparison compiled from each project&apos;s public documentation and
+              product scope at the time of writing. Behaviour and feature coverage only &mdash; no
+              performance, pricing, or finding-count claims are made in this table, and scanner
+              feature sets move quickly, so confirm anything decision-critical against current
+              vendor docs.
+            </figcaption>
+          </figure>
         </section>
 
         <section className="grid gap-3">

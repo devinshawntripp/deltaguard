@@ -1,0 +1,42 @@
+[
+  {
+    "slug": "scanrook-benchmark-results",
+    "enhancement": "comparison-chart",
+    "added": "New section 'Base Image Choice Moves the Number More Than Tool Choice': grouped horizontal bar chart (inline SVG, linear scale, theme-aware) comparing total findings for nginx/postgres/node/python/redis in default Debian tag vs Alpine variant, plus two analysis paragraphs citing critical counts and the redis:7-alpine top CVEs.",
+    "numbers_source": "scan_data",
+    "lines_added": 224,
+    "lines_removed": 0
+  },
+  {
+    "slug": "container-scanning-best-practices",
+    "enhancement": "checklist",
+    "added": "New 'Rollout Checklist: Adding Scanning to an Existing Pipeline' -- 4-phase adoption sequencing checklist (observe / decide rules / enforce narrowly / keep alive) covering the organisational mechanics the article's 8 technical practices do not address.",
+    "numbers_source": "none (structural)",
+    "lines_added": 98,
+    "lines_removed": 0
+  },
+  {
+    "slug": "container-security-checklist",
+    "enhancement": "checklist",
+    "added": "New 'Verification Checklist: Auditing an Image You Did Not Build' -- 15 outside-in audit checks with the concrete command that proves each existing checklist item, grouped by image metadata / layer history / scan contents / deployment manifest.",
+    "numbers_source": "none (structural)",
+    "lines_added": 160,
+    "lines_removed": 0
+  },
+  {
+    "slug": "how-to-scan-docker-image-for-vulnerabilities",
+    "enhancement": "checklist",
+    "added": "New 'Sanity checklist: is the scan even valid?' -- pre-scan and post-scan validity checks (docker save vs export, multi-arch platform, multi-stage target, tag drift, stale DB, empty-report detection) placed between the tarball-export and read-the-results sections.",
+    "numbers_source": "none (structural)",
+    "lines_added": 78,
+    "lines_removed": 0
+  },
+  {
+    "slug": "scan-docker-images-github-actions",
+    "enhancement": "checklist",
+    "added": "New 'Failure-mode checklist: what silently breaks a scanning workflow' -- GitHub Actions platform behaviours that green-check a scan that did not happen (schedule auto-disable, fork-PR secrets, security-events permission, cache scoping, runner disk, timeouts, step-summary output, empty-report guard), with YAML/shell snippets.",
+    "numbers_source": "none (structural)",
+    "lines_added": 131,
+    "lines_removed": 0
+  }
+]

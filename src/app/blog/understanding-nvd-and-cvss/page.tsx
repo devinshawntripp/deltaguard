@@ -172,6 +172,87 @@ export default function NvdCvssPage() {
           </p>
         </section>
 
+        {/* CVSS version comparison */}
+        <section className="grid gap-2">
+          <h2 className="text-xl font-semibold tracking-tight">
+            CVSS v2 vs v3.1 vs v4.0
+          </h2>
+          <p className="text-sm muted">
+            CVE records do not all speak the same version of CVSS. Older entries
+            carry v2 vectors, most current NVD records carry v3.1, and v4.0
+            vectors are appearing as CNAs adopt the newer specification. Knowing
+            which version produced a score matters, because the versions do not
+            model the same things.
+          </p>
+          <figure className="grid gap-2">
+            <div className="overflow-x-auto rounded-lg border border-black/10 dark:border-white/10">
+              <table
+                className="w-full text-xs border-collapse"
+                aria-label="Comparison of the CVSS v2, v3.1, and v4.0 specifications"
+              >
+                <thead>
+                  <tr className="border-b border-black/10 dark:border-white/10">
+                    <th className="text-left py-2 px-3 font-medium">Aspect</th>
+                    <th className="text-left py-2 px-3 font-medium">CVSS v2</th>
+                    <th className="text-left py-2 px-3 font-medium">CVSS v3.1</th>
+                    <th className="text-left py-2 px-3 font-medium">CVSS v4.0</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-black/5 dark:divide-white/5 muted">
+                  <tr>
+                    <td className="py-2 px-3 font-medium">Metric groups</td>
+                    <td className="py-2 px-3">Base, Temporal, Environmental</td>
+                    <td className="py-2 px-3">Base, Temporal, Environmental</td>
+                    <td className="py-2 px-3">Base, Threat, Environmental, Supplemental</td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 px-3 font-medium">Attacker prerequisites</td>
+                    <td className="py-2 px-3">Authentication (Au)</td>
+                    <td className="py-2 px-3">Privileges Required (PR) and User Interaction (UI)</td>
+                    <td className="py-2 px-3">PR and UI, plus a separate Attack Requirements (AT) metric for environmental preconditions</td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 px-3 font-medium">User Interaction values</td>
+                    <td className="py-2 px-3">Not modelled</td>
+                    <td className="py-2 px-3">None or Required</td>
+                    <td className="py-2 px-3">None, Passive, or Active</td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 px-3 font-medium">Impact model</td>
+                    <td className="py-2 px-3">C/I/A rated None, Partial, or Complete</td>
+                    <td className="py-2 px-3">C/I/A rated None, Low, or High, with a Scope flag for impact crossing a security boundary</td>
+                    <td className="py-2 px-3">Split into Vulnerable System (VC/VI/VA) and Subsequent System (SC/SI/SA) impact; Scope is removed</td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 px-3 font-medium">Exploit maturity</td>
+                    <td className="py-2 px-3">Temporal metric (Exploitability), rarely populated in practice</td>
+                    <td className="py-2 px-3">Temporal metric (Exploit Code Maturity), rarely populated in practice</td>
+                    <td className="py-2 px-3">Promoted into the Threat group as Exploit Maturity (E)</td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 px-3 font-medium">Severity ratings</td>
+                    <td className="py-2 px-3">Low, Medium, High -- no Critical band</td>
+                    <td className="py-2 px-3">None, Low, Medium, High, Critical</td>
+                    <td className="py-2 px-3">Same five bands, but scores are labelled CVSS-B, CVSS-BT, CVSS-BE, or CVSS-BTE to show which groups were used</td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 px-3 font-medium">What to do with it</td>
+                    <td className="py-2 px-3">Treat as legacy context on older records; do not compare directly against v3 or v4 numbers</td>
+                    <td className="py-2 px-3">The practical default for automated triage today</td>
+                    <td className="py-2 px-3">Read the vector, not just the number -- a bare CVSS-B score omits the threat and environmental context v4.0 was designed to carry</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <figcaption className="text-xs muted">
+              Specification differences between CVSS versions, summarised from
+              the published FIRST specifications. Qualitative comparison only --
+              no scan data is used, and scores from different versions are not
+              interchangeable.
+            </figcaption>
+          </figure>
+        </section>
+
         <section className="grid gap-2">
           <h2 className="text-xl font-semibold tracking-tight">
             The Limitations of CVSS Alone

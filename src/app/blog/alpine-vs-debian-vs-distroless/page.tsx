@@ -509,6 +509,110 @@ export default function AlpineVsDebianVsDistrolessPage() {
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
             Scanned with ScanRook v1.14.2, April 2026. CVE counts change daily as new advisories are published.
           </p>
+          <figure className="surface-card p-4 my-2 overflow-x-auto">
+            <p className="text-sm font-semibold mb-1">
+              Total findings by image &mdash; ScanRook v1.14.2, 2026-07-04
+            </p>
+            <svg
+              viewBox="0 0 700 198"
+              className="w-full"
+              style={{ maxWidth: "700px" }}
+              role="img"
+              aria-label="Horizontal bar chart of total ScanRook findings per base image: busybox 1.37 has 2, redis 7-alpine 299, alpine 3.20 301, ubuntu 24.04 1,365, redis 7 (Debian-based) 1,399"
+            >
+              <title>Horizontal bar chart of total ScanRook findings per base image: busybox 1.37 has 2, redis 7-alpine 299, alpine 3.20 301, ubuntu 24.04 1,365, redis 7 (Debian-based) 1,399</title>
+              <g>
+                <rect x="0" y="10" width="10" height="10" rx="2" className="fill-[var(--dg-accent,#2563eb)]" />
+                <text x="14" y="19" className="fill-current text-[10px] opacity-80">
+                  Critical
+                </text>
+                <rect x="77" y="10" width="10" height="10" rx="2" className="fill-current" opacity="0.55" />
+                <text x="91" y="19" className="fill-current text-[10px] opacity-80">
+                  High
+                </text>
+                <rect x="132" y="10" width="10" height="10" rx="2" className="fill-current" opacity="0.32" />
+                <text x="146" y="19" className="fill-current text-[10px] opacity-80">
+                  Medium
+                </text>
+                <rect x="198" y="10" width="10" height="10" rx="2" className="fill-current" opacity="0.18" />
+                <text x="212" y="19" className="fill-current text-[10px] opacity-80">
+                  Low
+                </text>
+                <rect x="247" y="10" width="10" height="10" rx="2" className="fill-current" opacity="0.08" />
+                <text x="261" y="19" className="fill-current text-[10px] opacity-80">
+                  No severity assigned
+                </text>
+              </g>
+              <text x="0" y="56" className="fill-current text-[10px] font-mono opacity-80">
+                busybox:1.37
+              </text>
+              <rect x="136" y="44" width="2" height="16" rx="2" className="fill-current" opacity="0.08" />
+              <rect x="136" y="44" width="1" height="16" className="fill-current" opacity="0.32" />
+              <rect x="137" y="44" width="1" height="16" className="fill-current" opacity="0.18" />
+              <text x="524" y="56" className="fill-current text-[9px] opacity-70">
+                2 total &middot; 0 critical
+              </text>
+              <text x="0" y="86" className="fill-current text-[10px] font-mono opacity-80">
+                redis:7-alpine
+              </text>
+              <rect x="136" y="74" width="81" height="16" rx="2" className="fill-current" opacity="0.08" />
+              <rect x="136" y="74" width="5" height="16" className="fill-[var(--dg-accent,#2563eb)]" />
+              <rect x="141" y="74" width="37" height="16" className="fill-current" opacity="0.55" />
+              <rect x="178" y="74" width="36" height="16" className="fill-current" opacity="0.32" />
+              <rect x="214" y="74" width="2" height="16" className="fill-current" opacity="0.18" />
+              <text x="524" y="86" className="fill-current text-[9px] opacity-70">
+                299 total &middot; 20 critical
+              </text>
+              <text x="0" y="116" className="fill-current text-[10px] font-mono opacity-80">
+                alpine:3.20
+              </text>
+              <rect x="136" y="104" width="82" height="16" rx="2" className="fill-current" opacity="0.08" />
+              <rect x="136" y="104" width="5" height="16" className="fill-[var(--dg-accent,#2563eb)]" />
+              <rect x="141" y="104" width="37" height="16" className="fill-current" opacity="0.55" />
+              <rect x="178" y="104" width="36" height="16" className="fill-current" opacity="0.32" />
+              <rect x="214" y="104" width="3" height="16" className="fill-current" opacity="0.18" />
+              <text x="524" y="116" className="fill-current text-[9px] opacity-70">
+                301 total &middot; 20 critical
+              </text>
+              <text x="0" y="146" className="fill-current text-[10px] font-mono opacity-80">
+                ubuntu:24.04
+              </text>
+              <rect x="136" y="134" width="371" height="16" rx="2" className="fill-current" opacity="0.08" />
+              <rect x="136" y="134" width="35" height="16" className="fill-[var(--dg-accent,#2563eb)]" />
+              <rect x="171" y="134" width="116" height="16" className="fill-current" opacity="0.55" />
+              <rect x="287" y="134" width="177" height="16" className="fill-current" opacity="0.32" />
+              <rect x="464" y="134" width="35" height="16" className="fill-current" opacity="0.18" />
+              <text x="524" y="146" className="fill-current text-[9px] opacity-70">
+                1,365 total &middot; 130 critical
+              </text>
+              <text x="0" y="176" className="fill-current text-[10px] font-mono opacity-80">
+                redis:7
+              </text>
+              <rect x="136" y="164" width="380" height="16" rx="2" className="fill-current" opacity="0.08" />
+              <rect x="136" y="164" width="31" height="16" className="fill-[var(--dg-accent,#2563eb)]" />
+              <rect x="167" y="164" width="83" height="16" className="fill-current" opacity="0.55" />
+              <rect x="250" y="164" width="94" height="16" className="fill-current" opacity="0.32" />
+              <rect x="344" y="164" width="12" height="16" className="fill-current" opacity="0.18" />
+              <text x="524" y="176" className="fill-current text-[9px] opacity-70">
+                1,399 total &middot; 114 critical
+              </text>
+            </svg>
+            <figcaption className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+              Same workload, different base: redis:7-alpine reports 299 total findings (20 critical) against
+              1,399 (114 critical) for the Debian-based redis:7. Bare alpine:3.20 on its own reports a
+              comparable 301, which indicates most of what redis:7-alpine carries is inherited from its base
+              rather than added by Redis. ubuntu:24.04 reports 1,365 (130 critical) with no application on top
+              at all, and the near-empty busybox:1.37 reports 2. Minimal bases really do carry less, but none
+              of them carry nothing. These totals come from a separate ScanRook v1.14.2 run on 2026-07-04 and
+              are counted differently from the per-image CVE column in the table above &mdash; compare the
+              bars with each other, not with that table. Bar length is linear in total findings, so the
+              smallest bars are only a few pixels wide &mdash; exact totals are printed at right. The four
+              rated buckets do not always add up to the total because some advisories carry no CVSS severity;
+              that remainder is the unfilled part of each bar. The busybox:1.37 scan was partial &mdash; its
+              runtime package inventory was unavailable, so matching fell back to heuristics. busybox
+              genuinely is minimal, but treat 2 as a floor rather than a verified complete count.
+            </figcaption>
+          </figure>
         </section>
 
         <section className="grid gap-3">

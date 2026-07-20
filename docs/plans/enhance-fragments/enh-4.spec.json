@@ -1,0 +1,32 @@
+[
+ {
+  "slug": "scan-docker-images-gitlab-ci",
+  "enhancement": "checklist",
+  "scan_data": null,
+  "scan_meta": null
+ },
+ {
+  "slug": "compliance-scanning-guide",
+  "enhancement": "checklist",
+  "scan_data": null,
+  "scan_meta": null
+ },
+ {
+  "slug": "vulnerability-management-guide",
+  "enhancement": "checklist",
+  "scan_data": null,
+  "scan_meta": null
+ },
+ {
+  "slug": "how-to-read-sbom",
+  "enhancement": "checklist",
+  "scan_data": null,
+  "scan_meta": null
+ },
+ {
+  "slug": "trivy-alternatives",
+  "enhancement": "comparison-table",
+  "scan_data": null,
+  "scan_meta": null
+ }
+]

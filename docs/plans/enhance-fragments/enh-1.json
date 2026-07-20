@@ -1,0 +1,42 @@
+[
+ {
+  "slug": "is-nginx-docker-image-safe",
+  "enhancement": "severity-chart",
+  "added": "Inline theme-aware grouped-bar SVG figure (critical/high/medium/low on a shared scale, plus each tag's total) for nginx:1.27 vs nginx:1.27-alpine, inserted directly after the existing severity table and its source note, with role=img, <title>, and a provenance figcaption naming ScanRook v1.14.2 / 2026-07-04.",
+  "numbers_source": "scan_data",
+  "lines_added": 86,
+  "lines_removed": 0
+ },
+ {
+  "slug": "is-postgres-docker-image-safe",
+  "enhancement": "severity-chart",
+  "added": "Inline theme-aware grouped-bar SVG figure (critical/high/medium/low on a shared scale, plus each tag's total) for postgres:17 vs postgres:17-alpine, inserted directly after the existing severity table and its source note, with role=img, <title>, and a provenance figcaption naming ScanRook v1.14.2 / 2026-07-04.",
+  "numbers_source": "scan_data",
+  "lines_added": 86,
+  "lines_removed": 0
+ },
+ {
+  "slug": "is-redis-docker-image-safe",
+  "enhancement": "severity-chart",
+  "added": "Inline theme-aware grouped-bar SVG figure (critical/high/medium/low on a shared scale, plus each tag's total) for redis:7-alpine vs redis:7, inserted directly after the existing severity table and its source note, with role=img, <title>, and a provenance figcaption naming ScanRook v1.14.2 / 2026-07-04.",
+  "numbers_source": "scan_data",
+  "lines_added": 86,
+  "lines_removed": 0
+ },
+ {
+  "slug": "is-node-docker-image-safe",
+  "enhancement": "severity-chart",
+  "added": "Inline theme-aware grouped-bar SVG figure (critical/high/medium/low on a shared scale, plus each tag's total) for node:22 vs node:22-alpine, inserted directly after the existing severity table and its source note, with role=img, <title>, and a provenance figcaption naming ScanRook v1.14.2 / 2026-07-04.",
+  "numbers_source": "scan_data",
+  "lines_added": 86,
+  "lines_removed": 0
+ },
+ {
+  "slug": "is-python-docker-image-safe",
+  "enhancement": "severity-chart",
+  "added": "Inline theme-aware grouped-bar SVG figure (critical/high/medium/low on a shared scale, plus each tag's total) for python:3.12 vs python:3.12-alpine, inserted directly after the existing severity table and its source note, with role=img, <title>, and a provenance figcaption naming ScanRook v1.14.2 / 2026-07-04.",
+  "numbers_source": "scan_data",
+  "lines_added": 86,
+  "lines_removed": 0
+ }
+]

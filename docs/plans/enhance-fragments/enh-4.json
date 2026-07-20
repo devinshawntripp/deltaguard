@@ -1,0 +1,42 @@
+[
+ {
+  "slug": "scan-docker-images-gitlab-ci",
+  "enhancement": "checklist",
+  "added": "Four-phase rollout checklist (observe / prepare / enforce / maintain) for turning the scan job into an enforced merge gate, placed after the severity-gating section",
+  "numbers_source": "none (structural)",
+  "lines_added": 88,
+  "lines_removed": 0
+ },
+ {
+  "slug": "compliance-scanning-guide",
+  "enhancement": "checklist",
+  "added": "Audit-week evidence pull checklist grouped by scope, scan evidence, remediation evidence, exceptions, and process, placed after the evidence-requirements section",
+  "numbers_source": "none (structural)",
+  "lines_added": 96,
+  "lines_removed": 0
+ },
+ {
+  "slug": "vulnerability-management-guide",
+  "enhancement": "checklist",
+  "added": "Quarterly program self-audit checklist (coverage, signal quality, flow, exceptions, trend) placed after the metrics section",
+  "numbers_source": "none (structural)",
+  "lines_added": 95,
+  "lines_removed": 0
+ },
+ {
+  "slug": "how-to-read-sbom",
+  "enhancement": "checklist",
+  "added": "Intake/acceptance checklist for reviewing a third-party SBOM, referencing the CycloneDX and SPDX fields annotated earlier in the article",
+  "numbers_source": "none (structural)",
+  "lines_added": 91,
+  "lines_removed": 0
+ },
+ {
+  "slug": "trivy-alternatives",
+  "enhancement": "comparison-table",
+  "added": "Nine-row capability matrix (data model, air-gap, IaC, secrets, K8s, SBOM gen/ingest, remediation guidance, self-hosting) across Trivy, ScanRook, Grype, Snyk Container and Docker Scout, in an overflow-x-auto wrapper",
+  "numbers_source": "none (structural)",
+  "lines_added": 160,
+  "lines_removed": 0
+ }
+]

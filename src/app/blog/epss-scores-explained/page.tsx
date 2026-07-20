@@ -145,6 +145,77 @@ export default function EpssExplainedPage() {
           </p>
         </section>
 
+        {/* Probability vs percentile */}
+        <section className="grid gap-2">
+          <h2 className="text-xl font-semibold tracking-tight">
+            Probability or Percentile: Which One to Use
+          </h2>
+          <p className="text-sm muted">
+            EPSS hands you two numbers for every CVE, and teams routinely use
+            the wrong one for the job. They are not two views of the same thing:
+            one is an absolute likelihood, the other a rank position within a
+            population that shifts underneath it.
+          </p>
+          <figure className="grid gap-2">
+            <div className="overflow-x-auto rounded-lg border border-black/10 dark:border-white/10">
+              <table
+                className="w-full text-xs border-collapse"
+                aria-label="Comparison of the EPSS probability score and the EPSS percentile ranking"
+              >
+                <thead>
+                  <tr className="border-b border-black/10 dark:border-white/10">
+                    <th className="text-left py-2 px-3 font-medium">Dimension</th>
+                    <th className="text-left py-2 px-3 font-medium">EPSS probability</th>
+                    <th className="text-left py-2 px-3 font-medium">EPSS percentile</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-black/5 dark:divide-white/5 muted">
+                  <tr>
+                    <td className="py-2 px-3 font-medium">Question it answers</td>
+                    <td className="py-2 px-3">How likely is this CVE to be exploited in the next 30 days?</td>
+                    <td className="py-2 px-3">Where does this CVE rank against every other scored CVE?</td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 px-3 font-medium">What the value is</td>
+                    <td className="py-2 px-3">An absolute likelihood between 0 and 1</td>
+                    <td className="py-2 px-3">A relative position in the scored population, between 0 and 1</td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 px-3 font-medium">What moves it</td>
+                    <td className="py-2 px-3">Only the model&apos;s assessment of this CVE</td>
+                    <td className="py-2 px-3">This CVE, or any shift in the rest of the population</td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 px-3 font-medium">Comparable across dates</td>
+                    <td className="py-2 px-3">Yes -- the meaning of a probability is fixed</td>
+                    <td className="py-2 px-3">Less so -- the same percentile can correspond to a different probability later</td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 px-3 font-medium">Use it for</td>
+                    <td className="py-2 px-3">Risk statements to stakeholders, policy gates that need a real likelihood, comparing a CVE against its own history</td>
+                    <td className="py-2 px-3">Ordering a triage queue and cutting a backlog at a workable size</td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 px-3 font-medium">Poor fit for</td>
+                    <td className="py-2 px-3">Sizing a work queue, since scores bunch tightly near the bottom of the range</td>
+                    <td className="py-2 px-3">Reasoning about absolute risk, since a high rank can still be a small probability</td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 px-3 font-medium">Common misreading</td>
+                    <td className="py-2 px-3">Reading a low probability as &quot;safe&quot; rather than &quot;unlikely for now&quot;</td>
+                    <td className="py-2 px-3">Reading a high percentile as &quot;exploitation is likely&quot;</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <figcaption className="text-xs muted">
+              The two EPSS outputs and where each one belongs. Structural
+              comparison of how the values are defined -- no scan data and no
+              example scores are involved.
+            </figcaption>
+          </figure>
+        </section>
+
         <section className="grid gap-2">
           <h2 className="text-xl font-semibold tracking-tight">
             EPSS vs. CVSS: Why Both Matter

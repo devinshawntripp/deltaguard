@@ -395,6 +395,137 @@ jobs:
           </p>
         </section>
 
+        <section className="grid gap-3">
+          <h2 className="text-xl font-semibold tracking-tight">
+            Failure-mode checklist: what silently breaks a scanning workflow
+          </h2>
+          <p className="text-sm muted">
+            The workflow above is correct, and it will still stop protecting
+            you if one of the GitHub Actions platform behaviours below catches
+            you out. None of these produce a red X &mdash; they produce a green
+            check on a scan that did not really happen, which is worse. Walk
+            this list once after you merge the workflow.
+          </p>
+          <div className="grid gap-4 rounded-lg border border-black/10 dark:border-white/10 p-5">
+            {[
+              {
+                group: "Triggers and permissions",
+                items: [
+                  {
+                    text: "Scheduled workflows are disabled automatically after a long period of repository inactivity. On a low-traffic repo your nightly scan stops running and nothing tells you. Check the Actions tab periodically, or have the schedule job report success to somewhere you actually watch.",
+                    cmd: null,
+                  },
+                  {
+                    text: "Secrets are not available to workflow runs triggered by pull requests from forks. Your NVD_API_KEY silently resolves to an empty string, enrichment degrades, and the report still looks fine. Handle the empty case explicitly rather than assuming the secret is present.",
+                    cmd: null,
+                  },
+                  {
+                    text: "If you upload results to GitHub code scanning, the job needs the security-events write permission. The top-level permissions block in the workflow above grants contents: read only.",
+                    cmd: "permissions:\n  contents: read\n  security-events: write",
+                  },
+                  {
+                    text: "A failing job blocks a merge only when the workflow is a required status check. Confirm it in branch protection after the first successful run, because the check name has to exist before you can require it.",
+                    cmd: null,
+                  },
+                ],
+              },
+              {
+                group: "Runner and caching behaviour",
+                items: [
+                  {
+                    text: "Hosted runners have a finite disk. docker build plus docker save writes the image twice, and a large image can exhaust the runner mid-job. Free space before the save step, or scan straight from the registry, if you hit this.",
+                    cmd: null,
+                  },
+                  {
+                    text: "Give the job a timeout so a hung network call during enrichment cannot sit there consuming your Actions minutes until the platform maximum.",
+                    cmd: "jobs:\n  scan:\n    runs-on: ubuntu-latest\n    timeout-minutes: 20",
+                  },
+                  {
+                    text: "Cache scope is directional: a branch can restore caches created on its base branch, but a cache created on a PR branch is not visible to other branches. Expect the first run on a new branch to be a cold scan, and do not treat the slower time as a regression.",
+                    cmd: null,
+                  },
+                  {
+                    text: "Add a concurrency group so a rapid series of pushes cancels superseded scans instead of queueing five runs of the same image.",
+                    cmd: "concurrency:\n  group: scan-${{ github.ref }}\n  cancel-in-progress: true",
+                  },
+                  {
+                    text: "If you build for a different architecture than the runner, build and save that platform explicitly. Scanning an amd64 build of an image you deploy as arm64 audits packages you do not ship.",
+                    cmd: "docker build --platform linux/arm64 -t myapp:ci .",
+                  },
+                ],
+              },
+              {
+                group: "Making the result visible and durable",
+                items: [
+                  {
+                    text: "Write the summary into the job summary so a developer sees the counts on the run page without downloading and opening the JSON artifact. This single change does more for adoption than any gate tuning.",
+                    cmd: 'echo "### Scan summary" >> "$GITHUB_STEP_SUMMARY"\njq -r \'.summary | to_entries[] | "- \\(.key): \\(.value)"\' report.json >> "$GITHUB_STEP_SUMMARY"',
+                  },
+                  {
+                    text: "Artifacts expire on your repository retention setting. If you are keeping reports as a compliance trail, copy them somewhere durable in the same job rather than relying on artifact storage.",
+                    cmd: null,
+                  },
+                  {
+                    text: "Guard the gate step against a missing or empty report. If the scan step failed early, jq returns nothing, the comparison is against an empty string, and the step can pass by accident. Fail explicitly when the report is absent.",
+                    cmd: 'test -s report.json || { echo "::error::no scan report produced"; exit 1; }',
+                  },
+                  {
+                    text: "Fail the job when the report contains no packages at all. A parse failure and a genuinely clean image both produce zero findings, and only one of them is good news.",
+                    cmd: null,
+                  },
+                ],
+              },
+            ].map((group) => (
+              <div key={group.group} className="grid gap-2">
+                <h3 className="text-sm font-semibold">{group.group}</h3>
+                <ul className="grid gap-3 list-none pl-0">
+                  {group.items.map((item) => (
+                    <li key={item.text} className="flex gap-3">
+                      <svg
+                        viewBox="0 0 16 16"
+                        className="mt-0.5 h-4 w-4 shrink-0"
+                        aria-hidden="true"
+                        focusable="false"
+                      >
+                        <rect
+                          x="1"
+                          y="1"
+                          width="14"
+                          height="14"
+                          rx="3"
+                          className="fill-none stroke-current opacity-40"
+                          strokeWidth="1.5"
+                        />
+                        <path
+                          d="M4.5 8.2 7 10.7l4.5-5"
+                          className="fill-none stroke-[var(--dg-accent,#2563eb)]"
+                          strokeWidth="1.8"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                      <div className="grid gap-1.5 min-w-0">
+                        <span className="text-sm muted">{item.text}</span>
+                        {item.cmd ? (
+                          <pre className="text-xs rounded bg-black/[.06] dark:bg-white/[.06] px-2 py-1.5 overflow-x-auto">
+                            {item.cmd}
+                          </pre>
+                        ) : null}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Failure modes specific to running container scans on GitHub
+              Actions. Structural guidance only &mdash; no thresholds, timings,
+              or quota figures are asserted here; check the current GitHub
+              Actions documentation for the limits that apply to your plan.
+            </p>
+          </div>
+        </section>
+
         <section className="grid gap-4">
           <h2 className="text-xl font-semibold tracking-tight">Frequently asked questions</h2>
           <div className="grid gap-4">
