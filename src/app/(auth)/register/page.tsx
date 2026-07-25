@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import ThemeToggle from "@/components/ThemeToggle";
 import BrandLogo from "@/components/BrandLogo";
 import { APP_NAME } from "@/lib/brand";
+import { friendlyAuthFetchError } from "@/lib/authClientErrors";
 
 export default function RegisterPage() {
     const router = useRouter();
@@ -34,11 +35,14 @@ export default function RegisterPage() {
         const name = String(form.get("name") || "").trim();
         const password = String(form.get("password") || "");
 
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 30000);
         try {
             const res = await fetch("/api/auth/register", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email, name, password, invite_token: inviteToken || undefined }),
+                signal: controller.signal,
             });
             const json = await res.json();
             if (!res.ok) throw new Error(json?.error || `HTTP ${res.status}`);
@@ -50,8 +54,9 @@ export default function RegisterPage() {
             setSuccess(`Account created.${inviteNotice} Redirecting to sign in...`);
             setTimeout(() => router.push("/signin"), 900);
         } catch (err: unknown) {
-            setError(err instanceof Error ? err.message : String(err));
+            setError(friendlyAuthFetchError(err));
         } finally {
+            clearTimeout(timeout);
             setLoading(false);
         }
     }
