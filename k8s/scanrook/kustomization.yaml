@@ -16,5 +16,6 @@ resources:
   - hpa.yaml
   - minio-lifecycle-job.yaml
   - s3-reaper-cronjob.yaml
+  - scan-reaper-cronjob.yaml
   # - configmap.yaml
   # - secret.yaml
