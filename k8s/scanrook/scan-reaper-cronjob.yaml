@@ -1,0 +1,122 @@
+# Scan-job reaper — deletes finished scan Jobs (label app=scanrook-scan) that
+# have no active pod and are older than the grace window. Deleting the Job
+# cascades to its pod, so this clears both. Runs hourly.
+#
+# Why this exists: the dispatcher creates one Job per scan with RestartPolicy
+# Never and (historically) no ttlSecondsAfterFinished, so finished Jobs+pods
+# accumulated (147 dead pods observed, 120 in Init:Error from MinIO being full).
+# The durable fix is ttlSecondsAfterFinished on the Job in the dispatcher; this
+# CronJob is the safety net + backlog cleaner that needs no image rebuild.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: scan-reaper
+  namespace: scanrook
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: scan-reaper
+  namespace: scanrook
+rules:
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["get", "list", "delete"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: scan-reaper
+  namespace: scanrook
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: scan-reaper
+subjects:
+  - kind: ServiceAccount
+    name: scan-reaper
+    namespace: scanrook
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: scan-reaper
+  namespace: scanrook
+  labels:
+    app: scan-reaper
+spec:
+  schedule: "0 * * * *"        # hourly
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 120
+      ttlSecondsAfterFinished: 600   # the reaper cleans up after itself, too
+      template:
+        metadata:
+          labels:
+            app: scan-reaper
+        spec:
+          serviceAccountName: scan-reaper
+          restartPolicy: Never
+          containers:
+            - name: reaper
+              image: bitnami/kubectl:latest
+              command:
+                - /bin/bash
+                - -c
+                - |
+                  set -eu
+                  GRACE_HOURS="${GRACE_HOURS:-6}"
+                  NOW=$(date -u +%s)
+
+                  age_ok() {  # $1=RFC3339 timestamp -> exit 0 if older than grace
+                    local created
+                    created=$(date -u -d "$1" +%s 2>/dev/null || echo "$NOW")
+                    [ "$(( (NOW - created) / 3600 ))" -ge "$GRACE_HOURS" ]
+                  }
+
+                  # Pass 1 — terminal scan PODS (label app=scanrook-scan). Selecting
+                  # on phase Succeeded/Failed can NEVER match a running scan (those are
+                  # Running/Pending). Most of these are orphaned (parent Job already
+                  # gone), so deleting the pod directly is what actually clears them.
+                  kubectl get pods -n scanrook -l app=scanrook-scan \
+                    -o go-template='{{range .items}}{{if or (eq .status.phase "Succeeded") (eq .status.phase "Failed")}}{{.metadata.name}} {{.metadata.creationTimestamp}}{{"\n"}}{{end}}{{end}}' \
+                  | while read -r name ts; do
+                      [ -z "${name:-}" ] && continue
+                      if age_ok "$ts"; then
+                        kubectl delete pod "$name" -n scanrook --wait=false >/dev/null 2>&1 \
+                          && echo "reaped pod $name"
+                      fi
+                    done
+
+                  # Pass 2 — finished scan JOBS (named scan-*, no active pod). Deleting
+                  # the Job cascades to any pod it still owns. "not .status.active"
+                  # skips any running scan Job.
+                  kubectl get jobs -n scanrook \
+                    -o go-template='{{range .items}}{{if not .status.active}}{{.metadata.name}} {{.metadata.creationTimestamp}}{{"\n"}}{{end}}{{end}}' \
+                  | grep '^scan-' \
+                  | while read -r name ts; do
+                      [ -z "${name:-}" ] && continue
+                      if age_ok "$ts"; then
+                        kubectl delete job "$name" -n scanrook --wait=false >/dev/null 2>&1 \
+                          && echo "reaped job $name"
+                      fi
+                    done
+
+                  echo "scan-reaper done at $(date -u), grace=${GRACE_HOURS}h"
+              env:
+                - name: GRACE_HOURS
+                  value: "6"
+              resources:
+                limits:
+                  cpu: 100m
+                  memory: 64Mi
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
