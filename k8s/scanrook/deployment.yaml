@@ -68,6 +68,12 @@ spec:
               value: https://scanrook.io
             - name: NEXT_PUBLIC_APP_NAME
               value: ScanRook
+            # Read at request time by the root layout and passed to the client, so rotating the key
+            # is a restart rather than an image rebuild.
+            - name: POSTHOG_KEY
+              value: phc_ubNn8F7v9GGiTugZ3g9JxBmbtXATE3MjtFDWcdR6vNdr
+            - name: POSTHOG_HOST
+              value: /ingest
           envFrom:
             - secretRef:
                 name: scanrook-secrets

@@ -14,6 +14,9 @@ const PUBLIC_PATHS = [
     "/icon.svg",
     "/brand",
     "/api/auth",
+    // Analytics proxy (see next.config rewrites). Must be public: without it a logged-out visitor's
+    // events are redirected to /signin, which is most of the marketing site's traffic.
+    "/ingest",
     "/favicon.ico",
     "/changelog",
     "/compare",
@@ -32,7 +35,9 @@ function isPublicPath(pathname: string): boolean {
 function withSecurityHeaders(response: NextResponse): NextResponse {
     response.headers.set(
         "Content-Security-Policy",
-        "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https:; frame-ancestors 'none'",
+        // worker-src covers session replay, which runs its recorder in a blob worker — without it the
+        // CSP falls back to default-src 'self', blob: is refused and replays silently never start.
+        "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https:; worker-src 'self' blob:; frame-ancestors 'none'",
     );
     response.headers.set("X-Content-Type-Options", "nosniff");
     response.headers.set("X-Frame-Options", "DENY");

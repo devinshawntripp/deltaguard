@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { getServerSession } from "next-auth";
 import ThemeProvider from "@/components/ThemeProvider";
+import PostHogProvider from "@/components/PostHogProvider";
+import { authOptions } from "@/lib/authOptions";
 import { APP_DESCRIPTION, APP_NAME } from "@/lib/brand";
 import "./globals.css";
 
@@ -124,11 +127,27 @@ const jsonLd = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Read at request time, not build time. NEXT_PUBLIC_* is inlined into the client bundle when the
+  // image is built, but this deployment supplies env vars in the pod — so the key is resolved here
+  // and handed down, which also means rotating it is a restart rather than a rebuild.
+  const posthogKey = (process.env.POSTHOG_KEY || process.env.NEXT_PUBLIC_POSTHOG_KEY || "").trim();
+  // Defaults to our own /ingest proxy (see next.config rewrites) rather than PostHog directly.
+  const posthogHost = (process.env.POSTHOG_HOST || process.env.NEXT_PUBLIC_POSTHOG_HOST || "/ingest").trim();
+
+  // Identify the signed-in account so replays and events attach to a real person rather than an
+  // anonymous id. Never fatal: analytics must not be able to take the site down.
+  let phUser: { id: string; email?: string | null; name?: string | null } | null = null;
+  try {
+    const session = await getServerSession(authOptions);
+    const u = session?.user as { id?: string; email?: string | null; name?: string | null } | undefined;
+    if (u?.id || u?.email) phUser = { id: u.id || u.email!, email: u.email, name: u.name };
+  } catch { /* not signed in, or auth unavailable — track anonymously */ }
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -139,7 +158,13 @@ export default function RootLayout({
         />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <ThemeProvider>{children}</ThemeProvider>
+        {posthogKey ? (
+          <PostHogProvider apiKey={posthogKey} apiHost={posthogHost} user={phUser}>
+            <ThemeProvider>{children}</ThemeProvider>
+          </PostHogProvider>
+        ) : (
+          <ThemeProvider>{children}</ThemeProvider>
+        )}
       </body>
     </html>
   );
